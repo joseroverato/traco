@@ -1,0 +1,601 @@
+[
+  {
+    "name": "get_document",
+    "description": "Resumo do projeto aberto no Traço: arquivo, número de folhas, folha atual, escalas, total de marcações, marcadores de quantitativo e status disponíveis. Use primeiro para se orientar.",
+    "input_schema": {
+      "type": "object",
+      "properties": {}
+    }
+  },
+  {
+    "name": "list_sheets",
+    "description": "Lista as folhas (pranchas) na ordem atual, com número, id, nome, tamanho em pt, escala e quantidade de marcações.",
+    "input_schema": {
+      "type": "object",
+      "properties": {}
+    }
+  },
+  {
+    "name": "get_sheet_image",
+    "description": "Renderiza uma folha (ou um recorte dela) como imagem PNG para você ver o desenho. Coordenadas do Traço: pontos PDF (pt), origem no canto superior esquerdo, x para a direita, y para baixo. A resposta informa quantos pixels da imagem equivalem a 1 pt, para converter o que você vê em coordenadas. Use 'region' para ampliar detalhes (carimbo, legenda, cotas).",
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "sheet": {
+          "type": "string",
+          "description": "Número (1 = primeira), id ou nome da folha. Padrão: folha atual."
+        },
+        "region": {
+          "type": "object",
+          "description": "Recorte em pt: {x, y, w, h}.",
+          "properties": {
+            "x": {
+              "type": "number"
+            },
+            "y": {
+              "type": "number"
+            },
+            "w": {
+              "type": "number"
+            },
+            "h": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "x",
+            "y",
+            "w",
+            "h"
+          ]
+        },
+        "show_markups": {
+          "type": "boolean",
+          "description": "Desenhar as marcações existentes por cima (padrão true)."
+        },
+        "max_size": {
+          "type": "integer",
+          "description": "Maior lado da imagem em px (padrão 1400, máx. 2000)."
+        }
+      }
+    }
+  },
+  {
+    "name": "get_sheet_text",
+    "description": "Texto da folha com a posição (pt) de cada trecho — útil para achar nomes de ambientes, cotas, carimbo e legendas. Em pranchas escaneadas usa o OCR, se já tiver sido feito no app de PC.",
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "sheet": {
+          "type": "string",
+          "description": "Número, id ou nome. Padrão: folha atual."
+        },
+        "contains": {
+          "type": "string",
+          "description": "Filtra os trechos que contêm este texto (sem diferenciar maiúsculas)."
+        }
+      }
+    }
+  },
+  {
+    "name": "find_text",
+    "description": "Procura um texto em todas as folhas e devolve onde aparece (folha e posição em pt).",
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "query": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "query"
+      ]
+    }
+  },
+  {
+    "name": "list_markups",
+    "description": "Lista marcações com tipo, marcador de quantitativo, medida calculada, status, comentário, texto e pontos. Filtros opcionais.",
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "sheet": {
+          "type": "string"
+        },
+        "kind": {
+          "type": "string",
+          "enum": [
+            "rect",
+            "ellipse",
+            "cloud",
+            "arrow",
+            "line",
+            "text",
+            "stamp",
+            "image",
+            "length",
+            "area",
+            "count",
+            "viewport",
+            "redact"
+          ]
+        },
+        "status": {
+          "type": "string"
+        },
+        "preset": {
+          "type": "string",
+          "description": "id ou nome do marcador de quantitativo"
+        },
+        "include_points": {
+          "type": "boolean",
+          "description": "Incluir as coordenadas (padrão false)."
+        }
+      }
+    }
+  },
+  {
+    "name": "get_quantities",
+    "description": "Quantitativo consolidado por marcador (serviço): grupo, código, folhas, itens, medida bruta, fator, quantidade final, unidade, preço, total e colunas personalizadas. Pode agrupar por ambiente, pavimento, folha ou status. Retorna também BDI e total com BDI.",
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "sheet": {
+          "type": "string",
+          "description": "Limita a uma folha (opcional)."
+        },
+        "group_by": {
+          "type": "string",
+          "enum": [
+            "preset",
+            "space",
+            "level",
+            "sheet",
+            "status"
+          ],
+          "description": "Agrupamento (padrão: preset = por serviço)."
+        }
+      }
+    }
+  },
+  {
+    "name": "list_presets",
+    "description": "Lista a biblioteca de marcadores de quantitativo (id, nome, grupo, código, tipo de medida, fator, fórmula, unidade, preço).",
+    "input_schema": {
+      "type": "object",
+      "properties": {}
+    }
+  },
+  {
+    "name": "upsert_preset",
+    "description": "Cria ou altera um marcador de quantitativo. Sem 'id' cria um novo. Fórmula opcional com variáveis L (comprimento m), A (área m²), P (perímetro m), N (contagem), H (fator); ex.: 'A + P*H'.",
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "group": {
+          "type": "string",
+          "description": "Disciplina/etapa: Civil, Elétrica, Hidrossanitário…"
+        },
+        "code": {
+          "type": "string",
+          "description": "Código do orçamento (SINAPI, composição própria)."
+        },
+        "measure": {
+          "type": "string",
+          "enum": [
+            "length",
+            "area",
+            "count"
+          ]
+        },
+        "color": {
+          "type": "string",
+          "description": "#rrggbb"
+        },
+        "factor": {
+          "type": "number"
+        },
+        "factor_label": {
+          "type": "string"
+        },
+        "formula": {
+          "type": "string"
+        },
+        "result_unit": {
+          "type": "string"
+        },
+        "unit_price": {
+          "type": "number"
+        },
+        "pattern": {
+          "type": "string",
+          "enum": [
+            "solid",
+            "hatch",
+            "cross",
+            "dots",
+            "none"
+          ]
+        }
+      }
+    }
+  },
+  {
+    "name": "set_scale",
+    "description": "Define a escala de uma folha (ou de um viewport) pela escala de impressão 1:N.",
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "sheet": {
+          "type": "string"
+        },
+        "ratio": {
+          "type": "number",
+          "description": "N de 1:N, ex.: 50"
+        },
+        "viewport_id": {
+          "type": "string",
+          "description": "Opcional: aplica só a este viewport."
+        },
+        "all_sheets": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "ratio"
+      ]
+    }
+  },
+  {
+    "name": "add_markups",
+    "description": "Cria uma ou mais marcações. Pontos em pt [[x,y],...]: retângulo/nuvem/elipse/seta/linha/texto/carimbo/viewport/tarja usam 2 pontos (cantos ou início-fim); comprimento usa 2+ pontos; área usa 3+ pontos (polígono); contagem usa 1 ponto por item; ambiente (space) usa 3+ pontos e 'text' = nome do ambiente. Área e ambiente aceitam 'holes' (vazios descontados). Nuvens/retângulos/setas/textos são itens de compatibilização e aceitam assignee/priority/due. Para quantitativo informe 'preset' compatível com o tipo (length/area/count). Tudo pode ser desfeito pelo usuário com Ctrl+Z.",
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "markups": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "sheet": {
+                "type": "string"
+              },
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "rect",
+                  "ellipse",
+                  "cloud",
+                  "arrow",
+                  "line",
+                  "text",
+                  "stamp",
+                  "length",
+                  "area",
+                  "count",
+                  "viewport",
+                  "redact",
+                  "space"
+                ]
+              },
+              "points": {
+                "type": "array",
+                "items": {
+                  "type": "array",
+                  "items": {
+                    "type": "number"
+                  },
+                  "minItems": 2,
+                  "maxItems": 2
+                }
+              },
+              "preset": {
+                "type": "string",
+                "description": "id ou nome do marcador"
+              },
+              "text": {
+                "type": "string"
+              },
+              "comment": {
+                "type": "string"
+              },
+              "status": {
+                "type": "string"
+              },
+              "color": {
+                "type": "string"
+              },
+              "deduct": {
+                "type": "boolean",
+                "description": "Dedução (vão) em comprimento/área"
+              },
+              "holes": {
+                "type": "array",
+                "description": "Vazios (fosso, shaft, pilar) descontados de área/ambiente: lista de polígonos [[x,y],...].",
+                "items": {
+                  "type": "array",
+                  "items": {
+                    "type": "array",
+                    "items": {
+                      "type": "number"
+                    }
+                  }
+                }
+              },
+              "assignee": {
+                "type": "string",
+                "description": "Responsável (itens de compatibilização)"
+              },
+              "priority": {
+                "type": "string",
+                "enum": [
+                  "alta",
+                  "média",
+                  "baixa"
+                ]
+              },
+              "due": {
+                "type": "string",
+                "description": "Prazo AAAA-MM-DD"
+              }
+            },
+            "required": [
+              "kind",
+              "points"
+            ]
+          }
+        }
+      },
+      "required": [
+        "markups"
+      ]
+    }
+  },
+  {
+    "name": "update_markups",
+    "description": "Altera marcações existentes (status, comentário, texto, marcador, cor, dedução).",
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "status": {
+          "type": "string"
+        },
+        "comment": {
+          "type": "string"
+        },
+        "text": {
+          "type": "string"
+        },
+        "preset": {
+          "type": "string"
+        },
+        "color": {
+          "type": "string"
+        },
+        "deduct": {
+          "type": "boolean"
+        },
+        "assignee": {
+          "type": "string"
+        },
+        "priority": {
+          "type": "string",
+          "enum": [
+            "alta",
+            "média",
+            "baixa",
+            ""
+          ]
+        },
+        "due": {
+          "type": "string"
+        },
+        "reply": {
+          "type": "string",
+          "description": "Acrescenta uma resposta ao histórico do item"
+        },
+        "add_holes": {
+          "type": "array",
+          "description": "Acrescenta vazios (polígonos) à área/ambiente",
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              }
+            }
+          }
+        }
+      },
+      "required": [
+        "ids"
+      ]
+    }
+  },
+  {
+    "name": "delete_markups",
+    "description": "Exclui marcações pelos ids (o usuário pode desfazer com Ctrl+Z).",
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "ids"
+      ]
+    }
+  },
+  {
+    "name": "rename_sheets",
+    "description": "Renomeia folhas.",
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "renames": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "sheet": {
+                "type": "string"
+              },
+              "label": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "sheet",
+              "label"
+            ]
+          }
+        }
+      },
+      "required": [
+        "renames"
+      ]
+    }
+  },
+  {
+    "name": "go_to",
+    "description": "Mostra uma folha (e opcionalmente seleciona uma marcação) na tela do usuário.",
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "sheet": {
+          "type": "string"
+        },
+        "markup_id": {
+          "type": "string"
+        }
+      }
+    }
+  },
+  {
+    "name": "save_project",
+    "description": "Salva o projeto .traco (no app de PC grava no mesmo arquivo; se ainda não foi salvo, pergunta onde).",
+    "input_schema": {
+      "type": "object",
+      "properties": {}
+    }
+  },
+  {
+    "name": "fill_area_at",
+    "description": "Área por clique: detecta o contorno fechado pelas linhas do PDF em volta do ponto (x,y em pt) e cria uma área de quantitativo ou um ambiente. Vazios internos fechados (fosso, shaft) são descontados automaticamente. Use get_sheet_image para achar um ponto DENTRO do recinto (não sobre uma linha).",
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "sheet": {
+          "type": "string"
+        },
+        "x": {
+          "type": "number"
+        },
+        "y": {
+          "type": "number"
+        },
+        "as": {
+          "type": "string",
+          "enum": [
+            "area",
+            "space"
+          ],
+          "description": "area (padrão) ou space (ambiente)"
+        },
+        "preset": {
+          "type": "string",
+          "description": "Marcador de área (para as=area)"
+        },
+        "name": {
+          "type": "string",
+          "description": "Nome do ambiente (para as=space)"
+        },
+        "gap": {
+          "type": "number",
+          "description": "Fecha aberturas até N pt (portas abertas etc.). Padrão: configuração do usuário."
+        },
+        "hole_of": {
+          "type": "string",
+          "description": "Em vez de criar, desconta o contorno como vazio da área/ambiente com este id."
+        }
+      },
+      "required": [
+        "x",
+        "y"
+      ]
+    }
+  },
+  {
+    "name": "find_symbols",
+    "description": "Contagem automática: dado um retângulo [x,y,w,h] em pt que envolve UM símbolo (ex.: tomada, luminária), encontra todas as cópias iguais (inclusive giradas) e, se 'create' for true, cria marcações de contagem.",
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "sheet": {
+          "type": "string",
+          "description": "Folha onde está o símbolo de exemplo"
+        },
+        "rect": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 4,
+          "maxItems": 4
+        },
+        "all_sheets": {
+          "type": "boolean",
+          "description": "Procurar em todas as folhas"
+        },
+        "create": {
+          "type": "boolean"
+        },
+        "preset": {
+          "type": "string",
+          "description": "Marcador de contagem para as marcações criadas"
+        }
+      },
+      "required": [
+        "rect"
+      ]
+    }
+  },
+  {
+    "name": "set_sheet_level",
+    "description": "Define o pavimento (ex.: Térreo, 1º pavimento) de uma ou mais folhas, usado para agrupar o quantitativo.",
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "sheets": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "level": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "sheets",
+        "level"
+      ]
+    }
+  }
+]

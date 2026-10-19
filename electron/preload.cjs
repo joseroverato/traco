@@ -1,0 +1,35 @@
+const { contextBridge, ipcRenderer } = require('electron')
+
+contextBridge.exposeInMainWorld('traco', {
+  info: () => ipcRenderer.invoke('app:info'),
+  openFile: () => ipcRenderer.invoke('file:open'),
+  readPath: (p) => ipcRenderer.invoke('file:read', p),
+  saveFile: (o) => ipcRenderer.invoke('file:save', o),
+  getSecret: (k) => ipcRenderer.invoke('secret:get', k),
+  setSecret: (k, v) => ipcRenderer.invoke('secret:set', k, v),
+  connectClaudeDesktop: () => ipcRenderer.invoke('claude:connect'),
+  onCommand: (h) => ipcRenderer.on('traco:command', (_e, req) => h(req)),
+  replyCommand: (id, result) => ipcRenderer.send('traco:command-result', { id, result }),
+  onOpenPath: (h) => ipcRenderer.on('traco:open-path', (_e, p) => h(p)),
+  setDirty: (v) => ipcRenderer.send('app:dirty', v),
+  closeNow: () => ipcRenderer.send('app:close-now'),
+  onSaveAndClose: (h) => ipcRenderer.on('traco:save-and-close', () => h()),
+  recovery: {
+    write: (json, info) => ipcRenderer.invoke('recovery:write', json, info),
+    info: () => ipcRenderer.invoke('recovery:info'),
+    read: () => ipcRenderer.invoke('recovery:read'),
+    clear: () => ipcRenderer.invoke('recovery:clear'),
+  },
+  update: {
+    state: () => ipcRenderer.invoke('update:state'),
+    check: () => ipcRenderer.invoke('update:check'),
+    download: () => ipcRenderer.invoke('update:download'),
+    install: () => ipcRenderer.invoke('update:install'),
+    onState: (h) => ipcRenderer.on('traco:update', (_e, s) => h(s)),
+  },
+  engine: {
+    optimize: (pdf) => ipcRenderer.invoke('engine:optimize', pdf),
+    redact: (pdf, items) => ipcRenderer.invoke('engine:redact', pdf, items),
+    ocr: (png) => ipcRenderer.invoke('engine:ocr', png),
+  },
+})

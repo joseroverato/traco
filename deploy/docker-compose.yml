@@ -1,0 +1,8 @@
+services:
+  traco:
+    build: .
+    image: traco-web:1.0.0
+    container_name: traco
+    restart: unless-stopped
+    ports:
+      - "8085:80"

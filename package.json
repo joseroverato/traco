@@ -1,0 +1,134 @@
+{
+  "name": "traco",
+  "private": true,
+  "version": "1.2.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "lint": "eslint .",
+    "preview": "vite preview",
+    "build:web": "tsc -b && vite build",
+    "build:preview": "vite build --mode single",
+    "build:desktop": "tsc -b && vite build --mode desktop && esbuild electron/mcp-server.mjs --bundle --platform=node --format=cjs --target=node20 --outfile=electron/build/mcp-server.cjs",
+    "desktop": "npm run build:desktop && electron .",
+    "dist:win": "npm run build:desktop && electron-builder --win dir --x64 && node scripts/set-exe-icon.mjs && cd deploy && makensis -DVERSION=%npm_package_version% installer.nsi",
+    "dist:win-installer": "npm run build:desktop && electron-builder --win nsis --x64",
+    "dist:win-linux": "npm run build:desktop && electron-builder --win dir --x64 && node scripts/set-exe-icon.mjs && cd deploy && makensis -DVERSION=$npm_package_version installer.nsi"
+  },
+  "dependencies": {
+    "@tesseract.js-data/por": "^1.0.0",
+    "electron-updater": "^6.8.9",
+    "mupdf": "^1.28.1",
+    "tesseract.js": "^7.0.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.25.0",
+    "@modelcontextprotocol/sdk": "^1.32.1",
+    "@types/node": "^22.20.5",
+    "@types/react": "^19.1.2",
+    "@types/react-dom": "^19.1.2",
+    "@vitejs/plugin-react": "^4.4.1",
+    "electron": "^33.4.11",
+    "electron-builder": "^26.15.3",
+    "esbuild": "^0.25.12",
+    "eslint": "^9.25.0",
+    "eslint-plugin-react-hooks": "^5.2.0",
+    "eslint-plugin-react-refresh": "^0.4.19",
+    "fflate": "^0.8.2",
+    "globals": "^16.0.0",
+    "lucide-react": "^0.460.0",
+    "pdf-lib": "^1.17.1",
+    "pdfjs-dist": "^4.10.38",
+    "pe-library": "^1.0.1",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "resedit": "^2.0.3",
+    "typescript": "~5.8.3",
+    "typescript-eslint": "^8.30.1",
+    "vite": "^6.3.5",
+    "vite-plugin-singlefile": "^2.3.3",
+    "xlsx": "^0.18.5",
+    "zod": "^3.25.76",
+    "zustand": "^5.0.15"
+  },
+  "productName": "Traço",
+  "description": "Traço — revisão de pranchas e quantitativos",
+  "author": "Lottos Engenharia",
+  "main": "electron/main.cjs",
+  "build": {
+    "appId": "br.com.lottos.traco",
+    "productName": "Traço",
+    "executableName": "Traco",
+    "copyright": "Lottos Engenharia",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist-desktop/**",
+      "electron/main.cjs",
+      "electron/preload.cjs",
+      "electron/engine.mjs",
+      "electron/icon.png",
+      "package.json",
+      "!node_modules/**/*.br",
+      "!node_modules/@tesseract.js-data/por/4.0.0_best_int/**",
+      "!node_modules/**/*.map",
+      "!node_modules/**/*.d.ts"
+    ],
+    "extraResources": [
+      {
+        "from": "electron/build/mcp-server.cjs",
+        "to": "mcp-server.cjs"
+      },
+      {
+        "from": "electron/app-update.yml",
+        "to": "app-update.yml"
+      }
+    ],
+    "asarUnpack": [
+      "node_modules/**"
+    ],
+    "fileAssociations": [
+      {
+        "ext": "traco",
+        "name": "Projeto Traço",
+        "description": "Projeto Traço",
+        "icon": "electron/icon.ico"
+      }
+    ],
+    "win": {
+      "icon": "electron/icon.ico",
+      "signAndEditExecutable": false,
+      "target": [
+        "zip"
+      ],
+      "artifactName": "Traco-${version}-win-x64.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "shortcutName": "Traço",
+      "artifactName": "Traco-Setup-${version}.exe",
+      "installerIcon": "electron/icon.ico",
+      "uninstallerIcon": "electron/icon.ico"
+    },
+    "portable": {
+      "artifactName": "Traco-Portatil-${version}.exe"
+    },
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "joseroverato",
+        "repo": "traco",
+        "private": true
+      }
+    ]
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/joseroverato/traco.git"
+  }
+}

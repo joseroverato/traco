@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { DEFAULT_SLAB, DEFAULT_SOLID_HEIGHT, DEFAULT_WALL_THICKNESS, COUNT_SIZE, boundsOf, buildSolids3D, snapHeight, solidMetrics, wallRings } from './solids'
+import { areaOf, layerTotals, volumeOf, DEFAULT_SLAB, DEFAULT_SOLID_HEIGHT, DEFAULT_WALL_THICKNESS, COUNT_SIZE, boundsOf, buildSolids3D, snapHeight, solidMetrics, wallRings } from './solids'
 import { measureOf } from './geometry'
 import { summarize } from './summary'
 import { checkFormula } from './formula'
@@ -168,5 +168,29 @@ describe('boundsOf / snapHeight', () => {
     expect(snapHeight(0.001)).toBeCloseTo(0.05)
     expect(snapHeight(-3)).toBeCloseTo(0.05)
     expect(snapHeight(1.26, 0.5)).toBeCloseTo(1.5)
+  })
+})
+
+describe('volumeOf / layerTotals', () => {
+  const markups = [
+    mk({ kind: 'solid', points: square(200), height: 3, holes: [square(100, 50, 50)] }),
+    mk({ kind: 'space', points: square(300) }),
+    mk({ kind: 'area', points: square(300) }),
+  ]
+  const solids = buildSolids3D({ page: 's1', presets: [], scales, markups })
+
+  it('área e volume em metros, com vazios descontados', () => {
+    const s = solids.find((x) => x.kind === 'solid')!
+    expect(areaOf(s)).toBeCloseTo(3)
+    expect(volumeOf(s)).toBeCloseTo(9)
+  })
+
+  it('totais por camada: ambiente = área × pé-direito; laje = área × 10 cm', () => {
+    const t = layerTotals(solids)
+    expect(t.solid).toMatchObject({ n: 1 })
+    expect(t.solid.volume).toBeCloseTo(9)
+    expect(t.space.volume).toBeCloseTo(9 * DEFAULT_SOLID_HEIGHT)
+    expect(t.area.volume).toBeCloseTo(9 * DEFAULT_SLAB)
+    expect(t.count).toEqual({ n: 0, volume: 0 })
   })
 })

@@ -130,3 +130,18 @@ export function boundsOf(solids: Solid3D[]) {
 
 /** Altura arredondada para o passo (puxar/empurrar), com mínimo de 1 passo. */
 export const snapHeight = (h: number, step = 0.05) => Math.max(step, Math.round(h / step) * step)
+
+/** Área da base (m²) de um volume já em metros, descontados os vazios. */
+export const areaOf = (s: Solid3D) => polyArea(s.ring) - s.holes.reduce((t, h) => t + polyArea(h), 0)
+/** Volume (m³) de um volume já em metros. */
+export const volumeOf = (s: Solid3D) => areaOf(s) * s.height
+
+/** Resumo por camada: quantos volumes e quantos m³ (para analisar a obra no 3D). */
+export function layerTotals(solids: Solid3D[]): Record<LayerKind, { n: number; volume: number }> {
+  const out = { solid: { n: 0, volume: 0 }, space: { n: 0, volume: 0 }, area: { n: 0, volume: 0 }, length: { n: 0, volume: 0 }, count: { n: 0, volume: 0 } }
+  for (const s of solids) {
+    out[s.kind].n++
+    out[s.kind].volume += volumeOf(s)
+  }
+  return out
+}

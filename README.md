@@ -31,6 +31,12 @@ Requer Node.js 22 ou superior.
 - **Comparar**: sobrepõe duas revisões (vermelho = removido, azul = acrescentado),
   detecta as regiões alteradas e cria nuvens automaticamente na revisão nova
 
+- **3D**: mostra em volume o que foi medido na folha (sólidos, ambientes, paredes, lajes e contagens),
+  com resumo em m³ por camada, tooltip ao passar o mouse e seleção. O **sólido** (tecla U) é desenhado
+  na planta (base) e a altura é ajustada nas propriedades ou **puxando/empurrando a seta laranja** no 3D
+  (Alt = passo de 1 cm). Volume (m³) entra no quantitativo; variáveis de fórmula: `VOL`, `AL` (área lateral
+  / da parede) e `ALT`. Código: `src/solids.ts` (puro, testado), `src/scene3d.ts` (three.js) e `src/components/View3D.tsx`.
+
 ## Exportar PDF (Ctrl+E)
 Grava marcações/carimbos/imagens no PDF, cria índice de folhas (marcadores), rótulos de página
 com o nome da folha, metadados, e pode remover anotações que vieram no original.

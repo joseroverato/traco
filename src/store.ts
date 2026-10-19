@@ -64,7 +64,7 @@ const ls = {
 // garante campos novos em bibliotecas salvas antes
 const loadPresets = () => ls.get<Preset[]>('traco.presets', defaultPresets()).map((p) => ({ ...p, formula: p.formula ?? '' }))
 
-export type Mode = 'review' | 'pages' | 'compare'
+export type Mode = 'review' | 'pages' | 'compare' | '3d'
 interface Snapshot {
   markups: Markup[]
   sheets: Sheet[]

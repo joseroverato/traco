@@ -8,6 +8,7 @@ const MODES: { id: Mode; label: string }[] = [
   { id: 'review', label: 'Revisar' },
   { id: 'pages', label: 'Pranchas' },
   { id: 'compare', label: 'Comparar' },
+  { id: '3d', label: '3D' },
 ]
 
 export function TopBar({ onOpen }: { onOpen: () => void }) {

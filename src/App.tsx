@@ -10,6 +10,7 @@ import { Viewer } from './components/Viewer'
 import { ScaleDialog } from './components/ScaleDialog'
 // módulos pesados (pdf-lib, comparação, diálogos) só carregam quando usados
 const PagesView = lazy(() => import('./components/PagesView').then((m) => ({ default: m.PagesView })))
+const View3D = lazy(() => import('./components/View3D').then((m) => ({ default: m.View3D })))
 const CompareView = lazy(() => import('./components/CompareView').then((m) => ({ default: m.CompareView })))
 const ExportDialog = lazy(() => import('./components/Dialogs').then((m) => ({ default: m.ExportDialog })))
 const StampDialog = lazy(() => import('./components/Dialogs').then((m) => ({ default: m.StampDialog })))
@@ -141,6 +142,8 @@ export default function App() {
         </div>
       ) : s.mode === 'pages' ? (
         <div key="pages" className="workspace single mode-in"><Suspense fallback={<Loading />}><PagesView /></Suspense></div>
+      ) : s.mode === '3d' ? (
+        <div key="3d" className="workspace single mode-in"><Suspense fallback={<Loading />}><View3D /></Suspense></div>
       ) : (
         <div key="compare" className="workspace single mode-in"><Suspense fallback={<Loading />}><CompareView /></Suspense></div>
       )}

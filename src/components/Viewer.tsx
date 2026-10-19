@@ -139,12 +139,16 @@ export function Viewer({ onOpen }: { onOpen: () => void }) {
   const { baseScale, onScroll } = usePageRender({ box, baseRef, detailRef, proxy, info, src, lk, zoom, layoutFor })
 
   // ---------- teclado (desenho em andamento) ----------
+  // o polígono em andamento vem de uma referência: criar a marcação dentro do atualizador de estado
+  // rodava duas vezes no StrictMode (duplicava o desenho em desenvolvimento)
+  const polyRef = useRef(poly)
+  polyRef.current = poly
   const finishPoly = useCallback(() => {
-    setPoly((pl) => {
-      if (!pl) return null
-      if (pl.points.length >= minVertices(pl.kind)) commitPolygon(pl.kind, page, pl.points)
-      return null
-    })
+    const pl = polyRef.current
+    if (!pl) return
+    setPoly(null)
+    polyRef.current = null // Enter + duplo clique no mesmo instante não criam duas vezes
+    if (pl.points.length >= minVertices(pl.kind)) commitPolygon(pl.kind, page, pl.points)
   }, [page])
 
   /** Área por clique: contorno fechado pelas linhas do PDF ao redor do ponto. */

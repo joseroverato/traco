@@ -30,6 +30,7 @@ export function ViewerHints({ tool, busy, poly, symFound, aligning, fillGap }: V
           {POLY_LABEL[poly.kind]} · {poly.points.length} vértice(s) — <b>Enter</b>/duplo clique finaliza · <b>Backspace</b> desfaz vértice · <b>Shift</b> trava ângulo · <b>Esc</b> cancela
         </div>
       )}
+      {tool === 'solid' && !poly && <div className="hud">Sólido 3D — clique os vértices da base · <b>Enter</b> finaliza · depois ajuste a altura nas propriedades ou no modo <b>3D</b></div>}
       {tool === 'count' && <div className="hud">Contagem — clique para somar · <b>Esc</b> inicia novo grupo</div>}
       {tool === 'calibrate' && <div className="hud">Calibrar escala — trace sobre uma cota conhecida (dentro de um viewport, calibra só ele)</div>}
       {tool === 'viewport' && <div className="hud">Viewport — desenhe a região que tem escala própria (ex.: detalhe 1:20)</div>}

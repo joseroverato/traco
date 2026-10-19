@@ -16,14 +16,14 @@ export interface RecoveryInfo { savedAt: number; fileName: string; sheets: numbe
 async function write() {
   timer = null
   const { serializeProject } = await import('./project')
-  const json = serializeProject()
-  if (!json) return
+  const bytes = serializeProject()
+  if (!bytes) return
   const st = useStore.getState()
   const info: RecoveryInfo = { savedAt: Date.now(), fileName: st.fileName, sheets: st.sheets.length, markups: st.markups.length }
   try {
-    if (desktop?.recovery) await desktop.recovery.write(json, JSON.stringify(info))
+    if (desktop?.recovery) await desktop.recovery.write(bytes, JSON.stringify(info))
     else {
-      await kvSet(KEY, json)
+      await kvSet(KEY, bytes)
       await kvSet(KEY + ':info', info)
     }
   } catch (e) {
@@ -44,10 +44,11 @@ export async function readRecoveryInfo(): Promise<RecoveryInfo | null> {
 }
 
 export async function restoreRecovery() {
-  const json = desktop?.recovery ? await desktop.recovery.read() : ((await kvGet(KEY)) as string | undefined)
-  if (!json) throw new Error('Nada para recuperar')
+  // recuperações gravadas antes da 1.2.1 são texto (JSON v2); as novas são bytes (ZIP v3)
+  const saved = desktop?.recovery ? await desktop.recovery.read() : ((await kvGet(KEY)) as Uint8Array | string | undefined)
+  if (!saved) throw new Error('Nada para recuperar')
   const { loadProject } = await import('./project')
-  await loadProject(new TextEncoder().encode(json).buffer as ArrayBuffer)
+  await loadProject(typeof saved === 'string' ? new TextEncoder().encode(saved) : saved)
   useStore.setState({ dirty: true })
 }
 

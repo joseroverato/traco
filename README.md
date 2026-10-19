@@ -52,6 +52,10 @@ src/components  Viewer (render + desenho), painéis, barra
 src/geometry.ts cálculos (comprimento, área, escala)
 src/summary.ts  quantitativo e exportação Excel
 src/project.ts  salvar/abrir projeto .traco (PDF + marcações em um arquivo)
+src/projectFormat.ts  formato do .traco: v3 = ZIP (project.json + PDFs em binário); abre também o v2 (JSON/base64). Mudou o formato? suba PROJECT_VERSION e escreva a migração em MIGRATIONS
+
+## Testes
+    npm test           # Vitest: fórmulas, geometria, quantitativo, histórico, formato do projeto
 
 ## Roadmap
 - [x] Fase 1: layout, visualizador, marcações, escala, quantitativo, Excel, projeto

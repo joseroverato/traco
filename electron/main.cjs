@@ -92,14 +92,14 @@ function clearRecovery() {
     }
   }
 }
-ipcMain.handle('recovery:write', (_e, json, info) => {
+ipcMain.handle('recovery:write', (_e, data, info) => {
   fs.mkdirSync(USER, { recursive: true })
-  fs.writeFileSync(REC + '.tmp', json)
+  fs.writeFileSync(REC + '.tmp', typeof data === 'string' ? data : Buffer.from(data))
   fs.renameSync(REC + '.tmp', REC)
   fs.writeFileSync(REC_INFO, info)
 })
 ipcMain.handle('recovery:info', () => (fs.existsSync(REC) && fs.existsSync(REC_INFO) ? fs.readFileSync(REC_INFO, 'utf8') : null))
-ipcMain.handle('recovery:read', () => (fs.existsSync(REC) ? fs.readFileSync(REC, 'utf8') : null))
+ipcMain.handle('recovery:read', () => (fs.existsSync(REC) ? fs.readFileSync(REC) : null))
 ipcMain.handle('recovery:clear', () => clearRecovery())
 
 // ---------------- arquivos ----------------

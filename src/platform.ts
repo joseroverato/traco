@@ -31,9 +31,9 @@ export interface DesktopApi {
   closeNow?(): void
   onSaveAndClose?(h: () => void): void
   recovery?: {
-    write(json: string, info: string): Promise<void>
+    write(data: Uint8Array, info: string): Promise<void>
     info(): Promise<string | null>
-    read(): Promise<string | null>
+    read(): Promise<Uint8Array | string | null>
     clear(): Promise<void>
   }
   update?: {

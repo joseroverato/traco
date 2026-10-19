@@ -2,39 +2,11 @@ import { openSource, sheetsOf } from './pdf'
 import type { Source } from './pdf'
 import { useStore } from './store'
 import { desktop } from './platform'
-import type { CustomColumn, Markup, OcrResult, Overlay, PageScale, Preset, Sheet, StatusDef } from './types'
+import { decodeProject, encodeProject } from './projectFormat'
+import type { ProjectData } from './projectFormat'
+import type { Sheet } from './types'
 
-interface ProjectFileV2 {
-  app: 'traco'
-  version: 2
-  fileName: string
-  sources: { id: string; name: string; pdf: string }[]
-  sheets: Sheet[]
-  markups: Markup[]
-  presets: Preset[]
-  statuses: StatusDef[]
-  scales: Record<string, PageScale>
-  meta?: { title: string; author: string; subject: string; keywords: string }
-  ocr?: Record<string, OcrResult>
-  columns?: CustomColumn[]
-  bdi?: number
-  overlays?: Record<string, Overlay[]>
-  hiddenLayers?: Record<string, string[]>
-  levels?: never
-}
-
-export const toB64 = (buf: ArrayBuffer) => {
-  const bytes = new Uint8Array(buf)
-  let s = ''
-  for (let i = 0; i < bytes.length; i += 0x8000) s += String.fromCharCode(...bytes.subarray(i, i + 0x8000))
-  return btoa(s)
-}
-const fromB64 = (b64: string) => {
-  const s = atob(b64)
-  const out = new Uint8Array(s.length)
-  for (let i = 0; i < s.length; i++) out[i] = s.charCodeAt(i)
-  return out.buffer
-}
+const toBuffer = (u: Uint8Array) => u.buffer.slice(u.byteOffset, u.byteOffset + u.byteLength) as ArrayBuffer
 
 const FILTERS: Record<string, { name: string; extensions: string[] }> = {
   pdf: { name: 'PDF', extensions: ['pdf'] },
@@ -99,12 +71,11 @@ export async function addSourceOnly(file: File): Promise<{ src: Source; sheets: 
   return { src, sheets }
 }
 
-export async function loadProject(buf: ArrayBuffer) {
+export async function loadProject(buf: ArrayBuffer | Uint8Array) {
   const st = useStore.getState()
-  const pf = JSON.parse(new TextDecoder().decode(buf)) as ProjectFileV2
-  if (pf.app !== 'traco' || pf.version !== 2) throw new Error('Arquivo não é um projeto Traço compatível')
+  const { data: pf, sources: srcs } = decodeProject(buf)
   const sources: Record<string, Source> = {}
-  for (const s of pf.sources) sources[s.id] = await openSource(fromB64(s.pdf), s.name, s.id)
+  for (const s of srcs) sources[s.id] = await openSource(toBuffer(s.bytes), s.name, s.id)
   const known = new Set(st.presets.map((p) => p.id))
   st.setPresets([...st.presets, ...pf.presets.filter((p) => !known.has(p.id)).map((p) => ({ ...p, formula: p.formula ?? '' }))])
   if (pf.statuses?.length) st.setStatuses(pf.statuses)
@@ -117,24 +88,17 @@ export async function loadProject(buf: ArrayBuffer) {
   })
 }
 
-const b64Cache = new Map<string, string>()
-const srcB64 = (s: Source) => {
-  let v = b64Cache.get(s.id)
-  if (!v) { v = toB64(s.bytes); b64Cache.set(s.id, v) }
-  return v
-}
-
-/** Projeto completo em JSON (usado ao salvar e no salvamento automático). */
-export function serializeProject(): string | null {
+/** Projeto completo em bytes (.traco v3: ZIP). Usado ao salvar e no salvamento automático. */
+export function serializeProject(): Uint8Array | null {
   const st = useStore.getState()
   if (!st.sheets.length) return null
   const usedSrc = new Set([...st.sheets.map((s) => s.src), ...Object.values(st.overlays).flat().map((o) => o.src)])
   const usedPreset = new Set(st.markups.map((m) => m.presetId))
-  const pf: ProjectFileV2 = {
+  const data: ProjectData = {
     app: 'traco',
-    version: 2,
+    version: 0, // encodeProject grava a versão atual
     fileName: st.fileName,
-    sources: Object.values(st.sources).filter((s) => usedSrc.has(s.id)).map((s) => ({ id: s.id, name: s.name, pdf: srcB64(s) })),
+    sources: [],
     sheets: st.sheets,
     markups: st.markups,
     presets: st.presets.filter((p) => usedPreset.has(p.id)),
@@ -147,14 +111,15 @@ export function serializeProject(): string | null {
     overlays: st.overlays,
     hiddenLayers: st.hiddenLayers,
   }
-  return JSON.stringify(pf)
+  const sources = Object.values(st.sources).filter((s) => usedSrc.has(s.id)).map((s) => ({ id: s.id, name: s.name, bytes: new Uint8Array(s.bytes) }))
+  return encodeProject({ data, sources })
 }
 
 export async function saveProject(saveAs = false) {
   const st = useStore.getState()
-  const json = serializeProject()
-  if (!json) return false
-  const path = await download(json, `${st.fileName.replace(/\.pdf$/i, '')}.traco`, 'application/json', saveAs ? undefined : st.projectPath ?? undefined)
+  const bytes = serializeProject()
+  if (!bytes) return false
+  const path = await download(bytes, `${st.fileName.replace(/\.pdf$/i, '')}.traco`, 'application/zip', saveAs ? undefined : st.projectPath ?? undefined)
   if (desktop && !path) return false // cancelado
   useStore.setState({ dirty: false, ...(path ? { projectPath: path } : {}) })
   st.notify(path ? `Projeto salvo em ${path}` : 'Projeto salvo')

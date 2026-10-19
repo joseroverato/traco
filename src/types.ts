@@ -17,6 +17,7 @@ export type Tool =
   | 'viewport'
   | 'redact'
   | 'space'
+  | 'solid' // sólido 3D: base na planta + altura
   | 'legend'
   | 'calibrate'
   | 'fill' // área por clique (preenchimento dinâmico)
@@ -107,6 +108,9 @@ export interface Markup {
   priority?: Priority
   due?: string
   replies?: Reply[]
+  /** sólido 3D: cota da base e altura (m) */
+  base?: number
+  height?: number
   /** legenda de quantitativo */
   legend?: { scope: 'sheet' | 'all'; prices: boolean }
 }

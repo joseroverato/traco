@@ -1,6 +1,9 @@
 import type { Markup, PageScale, Preset, Pt } from './types'
 import { evalFormula } from './formula'
 
+/** Altura padrão de um sólido novo (pé-direito), em metros. */
+export const DEFAULT_SOLID_HEIGHT = 2.8
+
 export const dist = (a: Pt, b: Pt) => Math.hypot(b.x - a.x, b.y - a.y)
 
 export function polyLength(pts: Pt[], closed = false) {
@@ -122,20 +125,22 @@ export interface Qty {
   raw: number // medida geométrica principal em m / m² / un
   value: number // resultado (fórmula ou fator), com sinal de dedução
   unit: string
-  vars: { L: number; A: number; P: number; N: number; H: number; V: number; PV: number }
+  vars: { L: number; A: number; P: number; N: number; H: number; V: number; PV: number; VOL: number; AL: number; ALT: number }
   error?: string
 }
 
 export function measureOf(m: Markup, scale: PageScale | undefined, preset?: Preset): Qty | null {
   const k = scale?.metersPerUnit ?? 0
   const H = preset && preset.factor ? preset.factor : 1
-  let L = 0, A = 0, P = 0, N = 0, V = 0, PV = 0, raw: number, unit: string
+  let L = 0, A = 0, P = 0, N = 0, V = 0, PV = 0, VOL = 0, AL = 0, raw: number, unit: string
+  const ALT = m.kind === 'solid' ? m.height ?? DEFAULT_SOLID_HEIGHT : H // altura/espessura usada em VOL e AL
   if (m.kind === 'length') {
     if (!k) return null
     L = polyLength(m.points) * k
+    AL = L * ALT // área da parede
     raw = L
     unit = 'm'
-  } else if (m.kind === 'area' || m.kind === 'space') {
+  } else if (m.kind === 'area' || m.kind === 'space' || m.kind === 'solid') {
     if (!k) return null
     // vazios (fosso, shaft, pilar…) descontados da área; V = área dos vazios, PV = perímetro deles
     V = (m.holes ?? []).reduce((t, h) => t + polyArea(h), 0) * k * k
@@ -143,15 +148,18 @@ export function measureOf(m: Markup, scale: PageScale | undefined, preset?: Pres
     A = polyArea(m.points) * k * k - V
     P = polyLength(m.points, true) * k
     L = P
-    raw = A
-    unit = 'm²'
+    VOL = A * ALT
+    AL = (P + PV) * ALT
+    // sólido: a medida principal é o volume
+    raw = m.kind === 'solid' ? VOL : A
+    unit = m.kind === 'solid' ? 'm³' : 'm²'
   } else if (m.kind === 'count') {
     N = m.points.length
     raw = N
     unit = 'un'
   } else return null
-  const vars = { L, A, P, N, H, V, PV }
-  let value = raw * H
+  const vars = { L, A, P, N, H, V, PV, VOL, AL, ALT }
+  let value = m.kind === 'solid' ? raw : raw * H
   let error: string | undefined
   if (preset?.formula?.trim()) {
     try {

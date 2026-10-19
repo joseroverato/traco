@@ -1,5 +1,5 @@
 import type { Markup, PageScale, Preset, Pt } from '../types'
-import { arrowHead, bbox, centroid, cloudPath, fmt, measureOf, ringsPath, stampText } from '../geometry'
+import { DEFAULT_SOLID_HEIGHT, arrowHead, bbox, centroid, cloudPath, fmt, measureOf, ringsPath, stampText } from '../geometry'
 import type { Qty } from '../geometry'
 
 const derived = (p?: Preset) => !!p && (!!p.formula?.trim() || (p.factor !== 1 && !!p.factor))
@@ -274,6 +274,20 @@ export function MarkupShape({ m, preset, scale, zoom, selected, draft, stampCtx 
           <g style={{ pointerEvents: 'none' }}>
             <Label at={{ x: c.x, y: c.y - 7 / zoom }} color={color} zoom={zoom} text={m.text || 'Ambiente'} />
             {q && <Label at={{ x: c.x, y: c.y + 7 / zoom }} color={color} zoom={zoom} text={`${fmt(q.vars.A)} m²`} />}
+          </g>
+        )
+      }
+      break
+    }
+    case 'solid': {
+      const d = draft ? m.points.map((p, i) => `${i ? 'L' : 'M'} ${p.x} ${p.y}`).join(' ') : ringsPath(m.points, m.holes)
+      body = <path d={d} fillRule="evenodd" stroke={color} strokeWidth={1.8 / zoom} fill={color} fillOpacity={0.22} strokeLinejoin="round" />
+      if (m.points.length > 2 && !draft) {
+        const c = centroid(m.points)
+        label = (
+          <g style={{ pointerEvents: 'none' }}>
+            <Label at={{ x: c.x, y: c.y - 7 / zoom }} color={color} zoom={zoom} text={m.text || 'Sólido'} />
+            <Label at={{ x: c.x, y: c.y + 7 / zoom }} color={color} zoom={zoom} text={q ? `h = ${fmt(m.height ?? DEFAULT_SOLID_HEIGHT)} m · ${fmt(q.vars.VOL)} m³` : `h = ${fmt(m.height ?? DEFAULT_SOLID_HEIGHT)} m`} />
           </g>
         )
       }

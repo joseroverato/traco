@@ -48,7 +48,7 @@ export function Viewer({ onOpen }: { onOpen: () => void }) {
   const space = useRef(false)
   const countId = useRef<string | null>(null)
   const [draft, setDraft] = useState<Markup | null>(null)
-  const [poly, setPoly] = useState<{ kind: 'length' | 'area' | 'hole' | 'space'; points: Pt[]; hover: Pt | null } | null>(null)
+  const [poly, setPoly] = useState<{ kind: 'length' | 'area' | 'hole' | 'space' | 'solid'; points: Pt[]; hover: Pt | null } | null>(null)
   const [busy, setBusy] = useState<string | null>(null)
   const [symRect, setSymRect] = useState<{ a: Pt; b: Pt } | null>(null)
   const [symFound, setSymFound] = useState<{ rect: { x: number; y: number; w: number; h: number }; centers: Pt[] } | null>(null)
@@ -388,7 +388,7 @@ export function Viewer({ onOpen }: { onOpen: () => void }) {
       placeAt('text', page, p)
       return
     }
-    if (tool === 'length' || tool === 'area' || tool === 'hole' || tool === 'space') {
+    if (tool === 'length' || tool === 'area' || tool === 'hole' || tool === 'space' || tool === 'solid') {
       if (e.detail >= 2) return // duplo clique finaliza (onDoubleClick)
       const q = p
       if (poly && poly.kind === tool) {

@@ -24,7 +24,7 @@ export interface SummaryRow {
 
 export type GroupBy = 'preset' | 'space' | 'level' | 'sheet' | 'status'
 
-const KIND_UNIT = { length: 'm', area: 'm²', count: 'un' } as const
+const KIND_UNIT = { length: 'm', area: 'm²', count: 'un', solid: 'm³' } as const
 
 export function bucketOf(m: Markup, by: GroupBy, all: Markup[], pages: Sheet[]) {
   if (by === 'space') return spaceOf(m, all)?.text || 'Fora de ambiente'
@@ -37,14 +37,15 @@ export function bucketOf(m: Markup, by: GroupBy, all: Markup[], pages: Sheet[]) 
 export function summarize(markups: Markup[], presets: Preset[], scales: Record<string, PageScale>, pages: Sheet[], all: Markup[] = markups, by: GroupBy = 'preset', cols: CustomColumn[] = []): SummaryRow[] {
   const rows = new Map<string, SummaryRow & { _pages: Set<string> }>()
   for (const m of markups) {
-    if (m.kind !== 'length' && m.kind !== 'area' && m.kind !== 'count') continue
+    if (m.kind !== 'length' && m.kind !== 'area' && m.kind !== 'count' && m.kind !== 'solid') continue
     const p = presets.find((x) => x.id === m.presetId)
     const bucket = bucketOf(m, by, all, pages)
-    const key = `${bucket}|${p ? p.id : `__${m.kind}`}`
+    // cada sólido avulso é uma linha própria (pelo nome); os demais avulsos se juntam por tipo
+    const key = `${bucket}|${p ? p.id : `__${m.kind}${m.kind === 'solid' ? `:${m.text}` : ''}`}`
     let r = rows.get(key)
     if (!r) {
       r = {
-        key, group: p?.group ?? 'Sem marcador', code: p?.code ?? '', name: p?.name ?? `${m.kind === 'length' ? 'Comprimento' : m.kind === 'area' ? 'Área' : 'Contagem'} avulso`,
+        key, group: p?.group ?? (m.kind === 'solid' ? 'Sólidos 3D' : 'Sem marcador'), code: p?.code ?? '', name: p?.name ?? (m.kind === 'solid' ? m.text || 'Sólido' : `${m.kind === 'length' ? 'Comprimento' : m.kind === 'area' ? 'Área' : 'Contagem'} avulso`),
         color: p?.color ?? m.color, sheets: '', items: 0, raw: 0, rawUnit: KIND_UNIT[m.kind], factor: p?.factor || 1, qty: 0,
         unit: p?.resultUnit || KIND_UNIT[m.kind], price: p?.unitPrice ?? 0, total: 0, unscaled: 0, _pages: new Set(), bucket, fields: {},
       }

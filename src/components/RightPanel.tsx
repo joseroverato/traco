@@ -2,14 +2,14 @@ import { Suspense, lazy, useState } from 'react'
 import { ChevronsRight, Copy, Download, Pencil, Plus, RotateCcw, Send, Sparkles, SquareDashed, Trash2, Upload, X } from 'lucide-react'
 import { defaultPresets, uid, useStore } from '../store'
 import type { Markup, Preset } from '../types'
-import { fmt, measureOf, polyArea, scaleFor } from '../geometry'
+import { DEFAULT_SOLID_HEIGHT, fmt, measureOf, polyArea, scaleFor } from '../geometry'
 import { isIssue, issueList } from '../issues'
 import { spaceOf } from '../columns'
 import { IS_DESKTOP } from '../platform'
 
 export const KIND_LABEL: Record<Markup['kind'], string> = {
   rect: 'Retângulo', ellipse: 'Elipse', cloud: 'Nuvem', arrow: 'Seta', line: 'Linha', text: 'Texto',
-  length: 'Comprimento', area: 'Área', count: 'Contagem', stamp: 'Carimbo', image: 'Imagem', viewport: 'Viewport', redact: 'Tarja / correção', space: 'Ambiente', legend: 'Legenda',
+  length: 'Comprimento', area: 'Área', count: 'Contagem', stamp: 'Carimbo', image: 'Imagem', viewport: 'Viewport', redact: 'Tarja / correção', space: 'Ambiente', solid: 'Sólido 3D', legend: 'Legenda',
 }
 const MEASURE_LABEL = { length: 'Comprimento', area: 'Área', count: 'Contagem' }
 
@@ -160,7 +160,7 @@ function Props() {
           <Field label="Tamanho da fonte"><input type="number" min={6} max={72} value={m.fontSize} onChange={(e) => up({ fontSize: Number(e.target.value) })} /></Field>
         </>
       )}
-      {(m.kind === 'area' || m.kind === 'space') && (
+      {(m.kind === 'area' || m.kind === 'space' || m.kind === 'solid') && (
         <div className="card holes-card">
           <div className="kv"><span>Vazios (fosso, shaft, pilar)</span><b>{m.holes?.length ?? 0}</b></div>
           {(m.holes ?? []).map((h, i) => {
@@ -179,6 +179,27 @@ function Props() {
             <button className="btn sm ghost" onClick={() => s.set({ tool: 'fill', fillAs: m.kind === 'space' ? 'space' : 'area', holeTarget: m.id })} data-tip="Shift+clique dentro do vazio">Por clique</button>
           </div>
         </div>
+      )}
+      {m.kind === 'solid' && (
+        <>
+          <Field label="Nome do sólido"><input value={m.text} onChange={(e) => s.updateMarkup(m.id, { text: e.target.value }, false)} /></Field>
+          <div className="row">
+            <Field label="Base (m)"><input type="number" step={0.05} value={m.base ?? 0} onChange={(e) => up({ base: Number(e.target.value) })} /></Field>
+            <Field label="Altura (m)"><input type="number" min={0.05} step={0.05} value={m.height ?? DEFAULT_SOLID_HEIGHT} onChange={(e) => up({ height: Math.max(0.05, Number(e.target.value)) })} /></Field>
+            <Field label="Cor"><input type="color" value={m.color} onChange={(e) => up({ color: e.target.value, fill: e.target.value })} /></Field>
+          </div>
+          <div className="card">
+            {q ? (
+              <>
+                <div className="kv"><span>Volume</span><b>{fmt(q.vars.VOL)} m³</b></div>
+                <div className="kv"><span>Área da base</span><b>{fmt(q.vars.A)} m²</b></div>
+                <div className="kv"><span>Área lateral</span><b>{fmt(q.vars.AL)} m²</b></div>
+                <div className="kv"><span>Topo na cota</span><b>{fmt((m.base ?? 0) + (m.height ?? DEFAULT_SOLID_HEIGHT))} m</b></div>
+              </>
+            ) : <span className="muted small">Defina a escala da folha para medir.</span>}
+          </div>
+          <span className="muted small">Abra o modo <b>3D</b> para ver o sólido e puxar/empurrar a altura com o mouse.</span>
+        </>
       )}
       {m.kind === 'space' && (
         <>

@@ -78,7 +78,7 @@ export function fitStampBox(text: string, fontSize: number, points: Pt[]): [Pt, 
 export const redactFontSize = (a: Pt, b: Pt) => Math.max(6, Math.min(24, Math.round(Math.hypot(b.x - a.x, b.y - a.y) > 0 ? Math.abs(b.y - a.y) * 0.6 : 9)))
 
 /** Ferramentas em que o ponteiro desenha e, por isso, procura snap. */
-export const DRAWING_TOOLS: readonly string[] = ['length', 'area', 'count', 'calibrate', 'rect', 'ellipse', 'cloud', 'arrow', 'line', 'viewport', 'redact', 'hole', 'space', 'align']
+export const DRAWING_TOOLS: readonly string[] = ['length', 'area', 'count', 'calibrate', 'rect', 'ellipse', 'cloud', 'arrow', 'line', 'viewport', 'redact', 'hole', 'space', 'solid', 'align']
 
 /**
  * Se o ponteiro deve "grudar" na geometria do PDF. A tarja não gruda: ela precisa cobrir exatamente o que

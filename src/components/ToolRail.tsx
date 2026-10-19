@@ -1,4 +1,4 @@
-import { Building2, PaintBucket, ScanSearch, SquareDashed, Eraser, ArrowUpRight, Circle, Cloud, Frame, Hand, ImagePlus, Minus, MousePointer2, Pentagon, Ruler, Scaling, Square, Stamp, Target, Type } from 'lucide-react'
+import { Box, Building2, PaintBucket, ScanSearch, SquareDashed, Eraser, ArrowUpRight, Circle, Cloud, Frame, Hand, ImagePlus, Minus, MousePointer2, Pentagon, Ruler, Scaling, Square, Stamp, Target, Type } from 'lucide-react'
 import { useStore } from '../store'
 import type { Tool } from '../types'
 
@@ -22,6 +22,7 @@ export const TOOLS: { id: Tool; icon: typeof Square; label: string; key: string;
   { id: 'count', icon: Target, label: 'Contagem', key: 'N', group: 2 },
   { id: 'symbol', icon: ScanSearch, label: 'Contagem automática', key: 'Q', group: 2 },
   { id: 'space', icon: Building2, label: 'Ambiente', key: 'M', group: 2 },
+  { id: 'solid', icon: Box, label: 'Sólido 3D (base na planta)', key: 'U', group: 2 },
   { id: 'viewport', icon: Frame, label: 'Viewport (escala própria)', key: 'X', group: 2 },
 ]
 

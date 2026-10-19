@@ -70,7 +70,7 @@ export function evalFormula(src: string, vars: Vars): number {
 
 export function checkFormula(src: string): string | null {
   try {
-    evalFormula(src, { L: 1, A: 1, P: 1, N: 1, H: 1, V: 1, PV: 1, Q: 1 })
+    evalFormula(src, { L: 1, A: 1, P: 1, N: 1, H: 1, V: 1, PV: 1, VOL: 1, AL: 1, ALT: 1, Q: 1 })
     return null
   } catch (e) {
     return (e as Error).message

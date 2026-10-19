@@ -4,13 +4,13 @@ import type { Pt, Tool } from '../types'
 export interface ViewerHintsProps {
   tool: Tool
   busy: string | null
-  poly: { kind: 'length' | 'area' | 'hole' | 'space'; points: Pt[] } | null
+  poly: { kind: 'length' | 'area' | 'hole' | 'space' | 'solid'; points: Pt[] } | null
   symFound: boolean
   aligning: State['aligning']
   fillGap: number
 }
 
-const POLY_LABEL = { area: 'Área', hole: 'Vazio', space: 'Ambiente', length: 'Comprimento' } as const
+const POLY_LABEL = { area: 'Área', hole: 'Vazio', space: 'Ambiente', solid: 'Sólido (base)', length: 'Comprimento' } as const
 
 /** Faixas de ajuda (HUD) que aparecem sobre a folha conforme a ferramenta ativa. */
 export function ViewerHints({ tool, busy, poly, symFound, aligning, fillGap }: ViewerHintsProps) {

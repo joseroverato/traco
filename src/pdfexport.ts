@@ -5,7 +5,7 @@ import { useStore } from './store'
 import { layersOf, openSource, sheetRotation } from './pdf'
 import { legendLayout, legendRows } from './components/LegendBox'
 import type { Source } from './pdf'
-import { arrowHead, bbox, centroid, cloudPoints, fmt, measureOf, scaleFor, signedArea, stampText } from './geometry'
+import { DEFAULT_SOLID_HEIGHT, arrowHead, bbox, centroid, cloudPoints, fmt, measureOf, scaleFor, signedArea, stampText } from './geometry'
 import type { Markup, Preset, Pt, Sheet } from './types'
 
 export interface ExportOptions {
@@ -184,6 +184,15 @@ async function paintMarkup(P: Painter, m: Markup, preset: Preset | undefined, ct
         const c = centroid(m.points)
         P.text({ x: c.x, y: c.y - 2 }, m.text || 'Ambiente', 8, m.color, { bold: true, align: 'center', halo: true })
         if (q) P.text({ x: c.x, y: c.y + 8 }, `${fmt(q.vars.A)} m²`, 7, m.color, { align: 'center', halo: true })
+      }
+      break
+    }
+    case 'solid': {
+      P.path(m.points, { closed: true, holes: m.holes, stroke: m.color, width: m.width || 1.5, fill: m.color, fillOpacity: 0.22 })
+      if (m.points.length > 2) {
+        const c = centroid(m.points)
+        P.text({ x: c.x, y: c.y - 2 }, m.text || 'Sólido', 8, m.color, { bold: true, align: 'center', halo: true })
+        P.text({ x: c.x, y: c.y + 8 }, q ? `h = ${fmt(m.height ?? DEFAULT_SOLID_HEIGHT)} m · ${fmt(q.vars.VOL)} m³` : `h = ${fmt(m.height ?? DEFAULT_SOLID_HEIGHT)} m`, 7, m.color, { align: 'center', halo: true })
       }
       break
     }

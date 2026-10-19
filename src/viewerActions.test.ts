@@ -35,6 +35,16 @@ describe('commitPolygon / addHole', () => {
     expect(st().panels.right).toBe(true)
   })
 
+  it('sólido nasce com nome sequencial, base 0 e pé-direito, e abre as propriedades', () => {
+    commitPolygon('solid', 's1', square(10))
+    commitPolygon('solid', 's1', square(10, 50, 50))
+    const [a, b] = st().markups
+    expect([a.kind, a.text, a.base, a.height]).toEqual(['solid', 'Sólido 1', 0, 2.8])
+    expect(b.text).toBe('Sólido 2')
+    expect(st().selected).toEqual([b.id])
+    expect(st().rightTab).toBe('props')
+  })
+
   it('vazio entra na menor área que o contém e seleciona essa área', () => {
     const big = mk({ id: 'big', kind: 'area', points: square(1000) })
     const small = mk({ id: 'small', kind: 'area', points: square(200) })

@@ -4,9 +4,10 @@ import { curSheet, useStore } from '../store'
 import { detectScales, layerKey } from '../pdf'
 import type { Markup, MarkupKind, Pt } from '../types'
 import { MarkupShape, PatternDefs } from './MarkupShape'
-import { bbox, dist, inRect, scaleFor, snapAngle } from '../geometry'
-import { DRAWING_TOOLS, computeLayout, markupsInRect, pickHoleTarget, redactFontSize } from '../viewerLogic'
+import { bbox, dist, scaleFor, snapAngle } from '../geometry'
+import { DRAWING_TOOLS, computeLayout, markupsInRect } from '../viewerLogic'
 import { useElementSize, usePageRender, useZoomControls } from './viewerHooks'
+import { buildDraft, commitDraw, commitFill, commitPolygon, minVertices, placeAt } from '../viewerActions'
 import { FileUp, Magnet, Move } from 'lucide-react'
 import { fillAt, findSymbols } from '../geoWorker'
 import { OverlayCanvas, applyM, invertM, overlaySheet, similarity } from './OverlayCanvas'
@@ -141,28 +142,10 @@ export function Viewer({ onOpen }: { onOpen: () => void }) {
   const finishPoly = useCallback(() => {
     setPoly((pl) => {
       if (!pl) return null
-      const st = useStore.getState()
-      const need = pl.kind === 'length' ? 2 : 3
-      if (pl.points.length < need) return null
-      if (pl.kind === 'hole') addHole(pl.points)
-      else if (pl.kind === 'space') {
-        const n = st.markups.filter((m) => m.kind === 'space').length + 1
-        const m = st.addMarkup('space', page, pl.points, { text: `Ambiente ${n}`, color: '#8e4ec6' })
-        st.set({ selected: [m.id], rightTab: 'props', panels: { ...st.panels, right: true } })
-      } else st.addMarkup(pl.kind, page, pl.points)
+      if (pl.points.length >= minVertices(pl.kind)) commitPolygon(pl.kind, page, pl.points)
       return null
     })
-  }, [page]) // eslint-disable-line react-hooks/exhaustive-deps
-
-  /** Acrescenta um vazio à área/ambiente que contém o polígono (ou à selecionada). */
-  const addHole = (pts: Pt[]) => {
-    const st = useStore.getState()
-    const target = pickHoleTarget(st.markups, page, pts, st.holeTarget, st.selected)
-    if (!target) return st.notify('Desenhe o vazio dentro de uma área ou ambiente')
-    st.updateMarkup(target.id, { holes: [...(target.holes ?? []), pts] })
-    st.set({ selected: [target.id] })
-    st.notify('Vazio descontado da área')
-  }
+  }, [page])
 
   /** Área por clique: contorno fechado pelas linhas do PDF ao redor do ponto. */
   const doFill = async (p: Pt, asHole: boolean) => {
@@ -176,16 +159,7 @@ export function Viewer({ onOpen }: { onOpen: () => void }) {
       const outer = refine(r.outer!)
       const holes = filterHoles(page, r.holes!.map(refine).filter((h) => h.length >= 3))
       if (outer.length < 3) return st.notify('Contorno muito pequeno')
-      if (asHole) return addHole(outer)
-      if (st.fillAs === 'space') {
-        const n = st.markups.filter((m) => m.kind === 'space').length + 1
-        const m = st.addMarkup('space', page, outer, { text: `Ambiente ${n}`, color: '#8e4ec6', holes })
-        st.set({ selected: [m.id], rightTab: 'props', panels: { ...st.panels, right: true } })
-      } else {
-        const m = st.addMarkup('area', page, outer, holes.length ? { holes } : {})
-        st.set({ selected: [m.id] })
-        if (holes.length) st.notify(`Área criada com ${holes.length} vazio(s) descontado(s)`)
-      }
+      commitFill(page, outer, holes, asHole)
     } finally {
       setBusy(null)
     }
@@ -315,16 +289,7 @@ export function Viewer({ onOpen }: { onOpen: () => void }) {
   }
   const DRAWING = DRAWING_TOOLS
 
-  const mkDraft = (kind: MarkupKind | 'calibrate', pts: Pt[]): Markup => {
-    const st = useStore.getState()
-    const pr = st.presets.find((p) => p.id === st.activePreset && p.measure === kind)
-    const color = kind === 'calibrate' ? '#0090ff' : pr?.color ?? '#e5484d'
-    return {
-      id: '__draft', page, kind: kind === 'calibrate' ? 'line' : kind, points: pts, text: '', comment: '', status: 'aberto',
-      author: '', createdAt: 0, presetId: pr?.id ?? null, deduct: false, color, width: kind === 'calibrate' ? 1.5 / zoom : pr?.width ?? 1.5,
-      fill: color, fillOpacity: pr?.opacity ?? (kind === 'area' ? 0.2 : 0), fontSize: 12,
-    }
-  }
+  const mkDraft = (kind: MarkupKind | 'calibrate', pts: Pt[]): Markup => buildDraft(kind, pts, page, zoom)
 
   /** Alinhar disciplina: ponto no desenho sobreposto → mesmo ponto na base (2 pares). */
   const alignClick = (raw: Pt, e: React.PointerEvent) => {
@@ -364,8 +329,7 @@ export function Viewer({ onOpen }: { onOpen: () => void }) {
       return
     }
     if (tool === 'legend') {
-      const m = st.addMarkup('legend', page, [raw, { x: raw.x + 260, y: raw.y + 120 }], { legend: { scope: 'sheet', prices: false }, color: '#1f2937', fontSize: 8 })
-      st.set({ tool: 'select', selected: [m.id], rightTab: 'props', panels: { ...st.panels, right: true } })
+      placeAt('legend', page, raw)
       return
     }
     const target = e.target as Element
@@ -401,8 +365,7 @@ export function Viewer({ onOpen }: { onOpen: () => void }) {
     }
     if (tool === 'stamp') {
       e.preventDefault()
-      const m = st.addMarkup('stamp', page, [{ x: p.x - 90, y: p.y - 22 }, { x: p.x + 90, y: p.y + 22 }], { text: 'REVISADO\n{data}', color: '#e5484d', width: 2, fontSize: 14 })
-      st.set({ editingText: m.id, tool: 'select' })
+      placeAt('stamp', page, p)
       return
     }
     if (tool === 'image') {
@@ -422,8 +385,7 @@ export function Viewer({ onOpen }: { onOpen: () => void }) {
     }
     if (tool === 'text') {
       e.preventDefault() // mantém o foco no campo de texto que será criado
-      const m = st.addMarkup('text', page, [p, { x: p.x + 160, y: p.y + 42 }], { color: '#e5484d', width: 1 })
-      st.set({ editingText: m.id, tool: 'select' })
+      placeAt('text', page, p)
       return
     }
     if (tool === 'length' || tool === 'area' || tool === 'hole' || tool === 'space') {
@@ -503,23 +465,7 @@ export function Viewer({ onOpen }: { onOpen: () => void }) {
       const tiny = dist(a, b) * zoom < 4
       setDraft(null)
       if (tiny) return
-      if (d.kind === 'calibrate') {
-        // calibrar dentro de um viewport define a escala daquele viewport
-        const vp = st.markups.find((v) => v.kind === 'viewport' && v.page === page && inRect(a, v.points[0], v.points[1]))
-        st.set({ calibrating: { page, length: dist(a, b), viewport: vp?.id }, tool: 'select' })
-      } else if (d.kind === 'viewport') {
-        const n = st.markups.filter((v) => v.kind === 'viewport' && v.page === page).length + 1
-        const m = st.addMarkup('viewport', page, [a, b], { text: `Viewport ${n}`, color: '#0090ff' })
-        st.set({ calibrating: { page, length: 0, viewport: m.id }, tool: 'select' })
-      } else if (d.kind === 'redact') {
-        const m = st.addMarkup('redact', page, [a, b], { fill: st.redactFill, color: st.redactFill, fillOpacity: 1, fontSize: redactFontSize(a, b) })
-        if (st.redactFill === '#ffffff') st.set({ rightTab: 'props', selected: [m.id], panels: { ...st.panels, right: true } }) // já abre o campo de texto de substituição
-      }
-      else {
-        const m = st.addMarkup(d.kind, page, [a, b])
-        // itens de revisão (nuvem, retângulo, seta…) já abrem as propriedades: responsável, prazo, respostas
-        if (['cloud', 'rect', 'ellipse', 'arrow', 'line'].includes(d.kind)) st.set({ selected: [m.id], rightTab: 'props', panels: { ...st.panels, right: true } })
-      }
+      commitDraw(d.kind, page, a, b)
     }
     if (d.type === 'marquee' && marquee) {
       const r = bbox([marquee.a, marquee.b])

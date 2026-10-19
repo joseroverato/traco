@@ -5,7 +5,7 @@ import { detectScales, layerKey } from '../pdf'
 import type { Markup, MarkupKind, Pt } from '../types'
 import { MarkupShape, PatternDefs } from './MarkupShape'
 import { bbox, dist, scaleFor, snapAngle } from '../geometry'
-import { DRAWING_TOOLS, computeLayout, markupsInRect } from '../viewerLogic'
+import { DRAWING_TOOLS, computeLayout, markupsInRect, snapAllowed } from '../viewerLogic'
 import { useElementSize, usePageRender, useZoomControls } from './viewerHooks'
 import { buildDraft, commitDraw, commitFill, commitPolygon, minVertices, placeAt } from '../viewerActions'
 import { FileUp, Magnet, Move } from 'lucide-react'
@@ -268,7 +268,7 @@ export function Viewer({ onOpen }: { onOpen: () => void }) {
   const resolve = (raw: Pt, e: { shiftKey: boolean; altKey: boolean }, prev?: Pt, exclude?: string): Pt => {
     const st = useStore.getState()
     let hit: SnapHit | null = null
-    if (st.snap && !e.altKey) {
+    if (snapAllowed(tool, st.snap, e.altKey)) {
       const verts: Pt[] = []
       for (const m of st.markups)
         if (m.page === page && m.id !== exclude && m.kind !== 'viewport' && m.kind !== 'legend') {

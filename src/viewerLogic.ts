@@ -79,3 +79,9 @@ export const redactFontSize = (a: Pt, b: Pt) => Math.max(6, Math.min(24, Math.ro
 
 /** Ferramentas em que o ponteiro desenha e, por isso, procura snap. */
 export const DRAWING_TOOLS: readonly string[] = ['length', 'area', 'count', 'calibrate', 'rect', 'ellipse', 'cloud', 'arrow', 'line', 'viewport', 'redact', 'hole', 'space', 'align']
+
+/**
+ * Se o ponteiro deve "grudar" na geometria do PDF. A tarja não gruda: ela precisa cobrir exatamente o que
+ * o usuário traçou, e o raio do snap (em pontos da folha) fica enorme com o zoom afastado.
+ */
+export const snapAllowed = (tool: string, snapOn: boolean, altKey: boolean) => snapOn && !altKey && tool !== 'redact'

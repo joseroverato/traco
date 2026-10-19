@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { DRAWING_TOOLS, MAX_ZOOM, MIN_ZOOM, PAD, clampZoom, computeLayout, fitStampBox, fitZoom, markupsInRect, pickHoleTarget, redactFontSize, wheelFactor, zoomStep } from './viewerLogic'
+import { DRAWING_TOOLS, MAX_ZOOM, MIN_ZOOM, PAD, clampZoom, computeLayout, fitStampBox, fitZoom, markupsInRect, pickHoleTarget, redactFontSize, snapAllowed, wheelFactor, zoomStep } from './viewerLogic'
 import { mk, square } from './testUtils'
 
 describe('computeLayout', () => {
@@ -124,5 +124,19 @@ describe('caixas', () => {
     expect(DRAWING_TOOLS).toContain('length')
     expect(DRAWING_TOOLS).not.toContain('select')
     expect(DRAWING_TOOLS).not.toContain('pan')
+  })
+})
+
+describe('snapAllowed', () => {
+  it('gruda nas ferramentas de desenho quando o snap está ligado', () => {
+    expect(snapAllowed('length', true, false)).toBe(true)
+    expect(snapAllowed('rect', true, false)).toBe(true)
+  })
+  it('Alt e snap desligado impedem', () => {
+    expect(snapAllowed('length', true, true)).toBe(false)
+    expect(snapAllowed('length', false, false)).toBe(false)
+  })
+  it('a tarja nunca gruda, mesmo com snap ligado', () => {
+    expect(snapAllowed('redact', true, false)).toBe(false)
   })
 })

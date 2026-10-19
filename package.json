@@ -14,7 +14,9 @@
     "desktop": "npm run build:desktop && electron .",
     "dist:win": "npm run build:desktop && electron-builder --win dir --x64 && node scripts/set-exe-icon.mjs && cd deploy && makensis -DVERSION=%npm_package_version% installer.nsi",
     "dist:win-installer": "npm run build:desktop && electron-builder --win nsis --x64",
-    "dist:win-linux": "npm run build:desktop && electron-builder --win dir --x64 && node scripts/set-exe-icon.mjs && cd deploy && makensis -DVERSION=$npm_package_version installer.nsi"
+    "dist:win-linux": "npm run build:desktop && electron-builder --win dir --x64 && node scripts/set-exe-icon.mjs && cd deploy && makensis -DVERSION=$npm_package_version installer.nsi",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@embedpdf/pdfium": "^2.15.1",
@@ -48,6 +50,7 @@
     "typescript-eslint": "^8.30.1",
     "vite": "^6.3.5",
     "vite-plugin-singlefile": "^2.3.3",
+    "vitest": "^5.0.5",
     "xlsx": "^0.18.5",
     "zod": "^3.25.76",
     "zustand": "^5.0.15"

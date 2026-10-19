@@ -20,22 +20,23 @@ export function evalFormula(src: string, vars: Vars): number {
     return v
   }
   const term = (): number => {
-    let v = power()
-    while (peek() === '*' || peek() === '/') v = s[i++] === '*' ? v * power() : v / power()
+    let v = unary()
+    while (peek() === '*' || peek() === '/') v = s[i++] === '*' ? v * unary() : v / unary()
     return v
   }
-  const power = (): number => {
-    const b = unary()
-    if (peek() === '^') {
-      i++
-      return b ** power()
-    }
-    return b
-  }
+  // menos unário pesa menos que potência: -2^2 = -4; o expoente aceita sinal: 2^-1 = 0,5
   const unary = (): number => {
     if (peek() === '-') { i++; return -unary() }
     if (peek() === '+') { i++; return unary() }
-    return atom()
+    return power()
+  }
+  const power = (): number => {
+    const b = atom()
+    if (peek() === '^') {
+      i++
+      return b ** unary()
+    }
+    return b
   }
   const atom = (): number => {
     if (peek() === '(') { i++; const v = expr(); eat(')'); return v }

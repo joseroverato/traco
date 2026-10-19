@@ -61,6 +61,8 @@ export class Scene3D {
   private down: { x: number; y: number } | null = null
   private drag: { id: string; base: number; grabDy: number; plane: THREE.Plane; fine: boolean } | null = null
   private extent = 10
+  private touched = false // o usuário já mexeu na câmera: não enquadramos mais sozinhos
+  private lastKey = ''
 
   private host: HTMLElement
   private cb: SceneCallbacks
@@ -82,9 +84,15 @@ export class Scene3D {
     this.controls = new OrbitControls(this.camera, this.renderer.domElement)
     this.controls.enableDamping = false
     this.controls.screenSpacePanning = true
+    // navegação estilo Revit: botão do meio move, Shift + botão do meio gira (o OrbitControls troca pan/rotate com Shift),
+    // roda dá zoom na direção do cursor; o botão esquerdo fica livre para selecionar e puxar a altura
+    this.controls.mouseButtons = { LEFT: null, MIDDLE: THREE.MOUSE.PAN, RIGHT: null }
+    this.controls.zoomToCursor = true
     this.controls.addEventListener('change', () => this.invalidate())
+    this.controls.addEventListener('start', () => (this.touched = true))
     this.applyTheme()
     const el = this.renderer.domElement
+    el.addEventListener('mousedown', this.noAutoscroll)
     el.addEventListener('pointerdown', this.onDown)
     el.addEventListener('pointermove', this.onMove)
     el.addEventListener('pointerup', this.onUp)
@@ -223,8 +231,19 @@ export class Scene3D {
     this.handleOf = null
   }
 
-  /** Enquadra a câmera nos volumes: perspectiva diagonal ('iso') ou vista de cima ('top'). */
-  frame(view: 'iso' | 'top' = 'iso') {
+  /**
+   * Enquadra sozinho quando a planta dos volumes muda (novo sólido, vértice movido), mas só enquanto o usuário
+   * não mexeu na câmera. `key` identifica a planta atual; mudar a altura não muda a chave.
+   */
+  autoFrame(key: string) {
+    if (key === this.lastKey) return
+    this.lastKey = key
+    if (!this.touched) this.frame('iso')
+  }
+
+  /** Enquadra a câmera nos volumes: isométrica, de cima, frente ou lateral direita. */
+  frame(view: 'iso' | 'top' | 'front' | 'right' = 'iso') {
+    this.touched = false // pedido explícito: a câmera volta a ser automática
     const visible = [...this.items.values()].filter((i) => i.mesh.visible).map((i) => i.solid)
     const b = boundsOf(visible.length ? visible : [...this.items.values()].map((i) => i.solid))
     if (!b) return
@@ -233,6 +252,8 @@ export class Scene3D {
     const d = b.size * 1.6
     this.controls.target.set(b.cx, b.maxY / 2, b.cz)
     if (view === 'top') this.camera.position.set(b.cx, d * 1.4, b.cz + 0.001)
+    else if (view === 'front') this.camera.position.set(b.cx, b.maxY / 2, b.cz + d * 1.3)
+    else if (view === 'right') this.camera.position.set(b.cx + d * 1.3, b.maxY / 2, b.cz)
     else this.camera.position.set(b.cx + d * 0.8, b.maxY / 2 + d * 0.7, b.cz + d * 0.9)
     this.camera.near = Math.max(0.01, b.size / 500)
     this.camera.far = b.size * 60
@@ -253,6 +274,17 @@ export class Scene3D {
     const meshes = [...this.items.values()].filter((i) => i.mesh.visible).map((i) => i.mesh)
     const h = this.raycaster.intersectObjects(meshes, false)[0]
     return h ? this.items.get(h.object.userData.id as string) ?? null : null
+  }
+
+  /** O botão do meio abre o "autoscroll" do Windows; aqui ele é de navegação. */
+  private noAutoscroll = (e: MouseEvent) => {
+    if (e.button === 1) e.preventDefault()
+  }
+
+  /** Posição da câmera e alvo (para testes e diagnóstico). */
+  state() {
+    const p = this.camera.position, t = this.controls.target
+    return { position: [p.x, p.y, p.z], target: [t.x, t.y, t.z] }
   }
 
   private onDown = (e: PointerEvent) => {
@@ -338,6 +370,7 @@ export class Scene3D {
     cancelAnimationFrame(this.raf)
     this.ro.disconnect()
     const el = this.renderer.domElement
+    el.removeEventListener('mousedown', this.noAutoscroll)
     el.removeEventListener('pointerdown', this.onDown)
     el.removeEventListener('pointermove', this.onMove)
     el.removeEventListener('pointerup', this.onUp)

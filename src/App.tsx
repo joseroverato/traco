@@ -134,7 +134,10 @@ export default function App() {
           <div className={`slot ${showLeft ? '' : 'collapsed'}`}><LeftPanel /></div>
           <ToolRail />
           <main className="center" style={{ gridTemplateRows: showBottom ? '1fr 240px' : '1fr 0px' }}>
-            <Viewer onOpen={open} />
+            <div className={`split ${s.split3d && s.sheets.length ? 'on' : ''}`}>
+              <Viewer onOpen={open} />
+              {s.split3d && s.sheets.length > 0 && <Suspense fallback={<Loading />}><View3D compact /></Suspense>}
+            </div>
             {s.search.open && s.sheets.length > 0 && <SearchBar />}
             <div className={`slot ${showBottom ? '' : 'collapsed'}`}><BottomPanel /></div>
           </main>

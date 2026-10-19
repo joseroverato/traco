@@ -5,7 +5,7 @@ import { mk, preset, sheet, square } from './testUtils'
 
 const st = () => useStore.getState()
 const reset = (extra = {}) =>
-  useStore.setState({ markups: [], sheets: [sheet()], past: [], future: [], selected: [], tool: 'rect', calibrating: null, editingText: null, toast: null, rightTab: 'presets', redactFill: '#000000', fillAs: 'area', holeTarget: null, activePreset: null, presets: [], ...extra })
+  useStore.setState({ markups: [], sheets: [sheet()], past: [], future: [], selected: [], tool: 'rect', calibrating: null, editingText: null, toast: null, rightTab: 'presets', redactFill: '#000000', fillAs: 'area', holeTarget: null, activePreset: null, presets: [], solidDefaults: { color: '#2f9e8f', height: 2.8 }, ...extra })
 
 describe('minVertices', () => {
   it('linha precisa de 2 pontos; área, ambiente e vazio de 3', () => {
@@ -43,6 +43,23 @@ describe('commitPolygon / addHole', () => {
     expect(b.text).toBe('Sólido 2')
     expect(st().selected).toEqual([b.id])
     expect(st().rightTab).toBe('props')
+  })
+
+  it('o próximo sólido nasce com a cor e a altura do último ajustado', () => {
+    commitPolygon('solid', 's1', square(10))
+    expect(st().markups[0]).toMatchObject({ height: 2.8, color: '#2f9e8f' })
+    st().rememberSolid({ height: 4.2, color: '#aa3366' })
+    commitPolygon('solid', 's1', square(10, 50, 50))
+    expect(st().markups[1]).toMatchObject({ height: 4.2, color: '#aa3366', fill: '#aa3366' })
+    expect(st().markups[0].height).toBe(2.8) // os existentes não mudam
+  })
+
+  it('rememberSolid ignora valores inválidos', () => {
+    st().rememberSolid({ height: 3 })
+    st().rememberSolid({ height: -1, color: '' })
+    st().rememberSolid({ height: Number.NaN })
+    expect(st().solidDefaults.height).toBe(3)
+    expect(st().solidDefaults.color).toBe('#2f9e8f')
   })
 
   it('vazio entra na menor área que o contém e seleciona essa área', () => {

@@ -5,7 +5,6 @@
 import { useStore } from './store'
 import { dist, inRect } from './geometry'
 import { pickHoleTarget, redactFontSize } from './viewerLogic'
-import { DEFAULT_SOLID_HEIGHT } from './geometry'
 import type { Markup, MarkupKind, Pt } from './types'
 
 export type PolyKind = 'length' | 'area' | 'hole' | 'space' | 'solid'
@@ -41,7 +40,7 @@ export function commitPolygon(kind: PolyKind, page: string, points: Pt[]) {
   }
   if (kind === 'solid') {
     const n = st.markups.filter((m) => m.kind === 'solid').length + 1
-    const m = st.addMarkup('solid', page, points, { text: `Sólido ${n}`, color: '#2f9e8f', base: 0, height: DEFAULT_SOLID_HEIGHT })
+    const m = st.addMarkup('solid', page, points, { text: `Sólido ${n}`, color: st.solidDefaults.color, fill: st.solidDefaults.color, base: 0, height: st.solidDefaults.height })
     return openProps(m.id)
   }
   st.addMarkup(kind, page, points)

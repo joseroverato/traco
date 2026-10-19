@@ -8,16 +8,16 @@ import { Scene3D } from '../scene3d'
 import type { HoverInfo } from '../scene3d'
 
 const LAYERS = Object.keys(LAYER_LABEL) as LayerKind[]
+const VIEW_NAME = { top: 'Topo', front: 'Frente', right: 'Direita' } as const
 const KIND_NAME: Record<LayerKind, string> = { solid: 'Sólido', space: 'Ambiente', area: 'Área (laje)', length: 'Parede', count: 'Item' }
 
 /** Modo 3D: mostra os volumes das marcações da folha e deixa puxar/empurrar a altura dos sólidos. */
-export function View3D() {
+export function View3D({ compact = false }: { compact?: boolean }) {
   const s = useStore()
   const sheet = s.sheets[s.page]
   const scale = sheet ? s.scales[sheet.id] : undefined
   const host = useRef<HTMLDivElement>(null)
   const scene = useRef<Scene3D | null>(null)
-  const framedFor = useRef('')
   const [visible, setVisible] = useState<Record<LayerKind, boolean>>({ solid: true, space: true, area: true, length: true, count: true })
   const [hover, setHover] = useState<HoverInfo | null>(null)
 
@@ -26,6 +26,7 @@ export function View3D() {
     [sheet, s.markups, s.presets, s.scales],
   )
   const totals = useMemo(() => layerTotals(solids), [solids])
+  const ringKey = useMemo(() => JSON.stringify(solids.map((x) => [x.id, x.ring, x.base])), [solids])
   const sel = s.markups.find((m) => m.id === s.selected[0] && m.kind === 'solid')
 
   useEffect(() => {
@@ -43,16 +44,20 @@ export function View3D() {
           const st = useStore.getState()
           if (phase === 'start') st.checkpoint() // o arrasto inteiro vira um único passo de desfazer
           else if (phase === 'move') st.updateMarkup(id, { height: h }, false)
-          else st.notify(`Altura: ${fmt(st.markups.find((m) => m.id === id)?.height ?? h)} m`)
+          else {
+            const final = st.markups.find((m) => m.id === id)?.height ?? h
+            st.rememberSolid({ height: final })
+            st.notify(`Altura: ${fmt(final)} m (o próximo sólido já nasce assim)`)
+          }
         },
       },
       useStore.getState().theme === 'dark',
     )
     scene.current = sc
+    ;(window as unknown as { __traco?: Record<string, unknown> }).__traco = { ...((window as unknown as { __traco?: Record<string, unknown> }).__traco ?? {}), view3d: () => sc.state() }
     return () => {
       sc.dispose()
       scene.current = null
-      framedFor.current = '' // uma cena nova precisa ser enquadrada de novo (StrictMode recria a cena)
     }
   }, [])
 
@@ -62,12 +67,9 @@ export function View3D() {
     const sc = scene.current
     if (!sc) return
     sc.setSolids(solids, s.selected, visible)
-    // enquadra na primeira vez que a folha tem volumes (depois a câmera é do usuário)
-    if (sheet && solids.length && framedFor.current !== sheet.id) {
-      framedFor.current = sheet.id
-      sc.frame('iso')
-    }
-  }, [solids, s.selected, visible, sheet])
+    // acompanha a montagem: enquadra quando a planta dos volumes muda, enquanto a câmera não foi mexida
+    if (sheet && solids.length) sc.autoFrame(`${sheet.id}|${ringKey}`)
+  }, [solids, s.selected, visible, sheet, ringKey])
 
   const goPlan = (id?: string) => {
     const m = id ? s.markups.find((x) => x.id === id) : undefined
@@ -77,10 +79,10 @@ export function View3D() {
   const listed = solids.filter((x) => x.kind === 'solid')
 
   return (
-    <div className="view3d">
+    <div className={`view3d ${compact ? 'compact' : ''}`}>
       <div className="v3-host" ref={host} />
       <div className="v3-bar">
-        {s.sheets.length > 1 && (
+        {!compact && s.sheets.length > 1 && (
           <select value={s.page} onChange={(e) => s.set({ page: Number(e.target.value), selected: [] })} aria-label="Folha">
             {s.sheets.map((x, i) => <option key={x.id} value={i}>{x.label}{x.level ? ` · ${x.level}` : ''}</option>)}
           </select>
@@ -91,10 +93,14 @@ export function View3D() {
           </button>
         ))}
         <div className="tb-sep" />
-        <button className="btn sm" onClick={() => scene.current?.frame('iso')}><Maximize size={13} /> Enquadrar</button>
-        <button className="btn sm" onClick={() => scene.current?.frame('top')}><ArrowUpToLine size={13} /> De cima</button>
+        {compact && <span className="v3-total">{solids.length ? `${fmt(totals.solid.volume)} m³ em sólidos` : 'sem volumes ainda'}</span>}
+        <button className="btn sm" onClick={() => scene.current?.frame('iso')} data-tip="Enquadrar tudo (vista isométrica)"><Maximize size={13} /> Enquadrar</button>
+        {(['top', 'front', 'right'] as const).map((v) => (
+          <button key={v} className="btn sm" onClick={() => scene.current?.frame(v)}>{v === 'top' ? <ArrowUpToLine size={13} /> : null}{VIEW_NAME[v]}</button>
+        ))}
       </div>
 
+      {!compact && (
       <aside className="v3-panel">
         <h4>Resumo da folha</h4>
         <div className="card">
@@ -121,10 +127,10 @@ export function View3D() {
             <label className="field"><span>Nome</span><input value={sel.text} onChange={(e) => s.updateMarkup(sel.id, { text: e.target.value }, false)} /></label>
             <div className="row">
               <label className="field"><span>Base (m)</span><input type="number" step={0.05} value={sel.base ?? 0} onChange={(e) => up({ base: Number(e.target.value) })} /></label>
-              <label className="field"><span>Altura (m)</span><input type="number" min={0.05} step={0.05} value={sel.height ?? DEFAULT_SOLID_HEIGHT} onChange={(e) => up({ height: Math.max(0.05, Number(e.target.value)) })} /></label>
+              <label className="field"><span>Altura (m)</span><input type="number" min={0.05} step={0.05} value={sel.height ?? DEFAULT_SOLID_HEIGHT} onChange={(e) => { const h = Math.max(0.05, Number(e.target.value)); up({ height: h }); s.rememberSolid({ height: h }) }} /></label>
             </div>
             <div className="row">
-              <label className="field"><span>Cor</span><input type="color" value={sel.color} onChange={(e) => up({ color: e.target.value, fill: e.target.value })} /></label>
+              <label className="field"><span>Cor</span><input type="color" value={sel.color} onChange={(e) => { up({ color: e.target.value, fill: e.target.value }); s.rememberSolid({ color: e.target.value }) }} /></label>
               <button className="btn sm" onClick={() => goPlan(sel.id)}>Ver na planta</button>
               <button className="btn sm ghost danger" onClick={() => s.removeMarkups([sel.id])}><Trash2 size={13} /> Excluir</button>
             </div>
@@ -132,6 +138,7 @@ export function View3D() {
           </>
         )}
       </aside>
+      )}
 
       {hover && (
         <div className="v3-tip" style={{ left: hover.x + 14, top: hover.y + 14 }}>
@@ -141,11 +148,11 @@ export function View3D() {
         </div>
       )}
 
-      {!scale && <div className="v3-empty">Esta folha ainda não tem escala. Defina a escala na planta para ver o 3D em metros. <button className="btn sm primary" onClick={() => goPlan()}>Ir para a planta</button></div>}
+      {!scale && <div className="v3-empty">Esta folha ainda não tem escala. Defina a escala na planta para ver o 3D em metros.{!compact && <button className="btn sm primary" onClick={() => goPlan()}>Ir para a planta</button>}</div>}
       {scale && !solids.length && (
-        <div className="v3-empty">Nada para mostrar. Desenhe um <b>sólido</b> na planta (tecla <kbd>U</kbd>) ou meça áreas, ambientes e paredes: eles aparecem aqui. <button className="btn sm primary" onClick={() => goPlan()}>Ir para a planta</button></div>
+        <div className="v3-empty">Nada para mostrar. Desenhe um <b>sólido</b> na planta (tecla <kbd>U</kbd>) ou meça áreas, ambientes e paredes: eles aparecem aqui, ao vivo.{!compact && <button className="btn sm primary" onClick={() => goPlan()}>Ir para a planta</button>}</div>
       )}
-      <div className="hud v3-hint">Arraste: girar · Botão direito ou Shift+arrastar: mover · Roda: zoom · Clique: selecionar</div>
+      {!compact && <div className="hud v3-hint">Roda: zoom · Botão do meio: mover · Shift + botão do meio: girar · Clique: selecionar</div>}
     </div>
   )
 }

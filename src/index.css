@@ -571,3 +571,19 @@ a.btn { text-decoration: none; display: inline-flex; align-items: center; }
 .v3-tip { position: absolute; pointer-events: none; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 6px 9px; font-size: 12px; box-shadow: 0 6px 20px rgba(0,0,0,.3); max-width: 260px; z-index: 5; }
 .v3-empty { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); max-width: 420px; text-align: center; padding: 16px 20px; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; display: flex; flex-direction: column; gap: 10px; align-items: center; }
 .v3-hint { position: absolute; left: 50%; bottom: 10px; transform: translateX(-50%); white-space: nowrap; }
+
+/* Tela dividida: planta + 3D */
+.split { display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; min-width: 0; min-height: 0; }
+.split.on { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+.split > .view3d { border: 1px solid var(--line); border-radius: 10px; }
+.view3d.compact .v3-bar { max-width: calc(100% - 24px); }
+.v3-total { color: var(--text-2); font-size: 12px; padding: 0 4px; }
+
+/* Dica rica das ferramentas */
+.rich-tip { position: fixed; z-index: 200; background: var(--panel); color: var(--text); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px 12px; box-shadow: 0 14px 40px rgba(0,0,0,.4); pointer-events: none; animation: tip 0.15s both; }
+.rich-tip-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.rich-tip-head b { font-size: 13px; }
+.rich-tip-head kbd { background: var(--raise); border: 1px solid var(--line); border-radius: 5px; padding: 0 6px; font-size: 11px; color: var(--text-2); }
+.rich-tip p { margin: 6px 0 8px; font-size: 12px; line-height: 1.4; color: var(--text-2); }
+.rich-tip-demo { background: var(--bg); border: 1px solid var(--line-soft); border-radius: 8px; color: var(--text-2); overflow: hidden; }
+.tool-demo { display: block; width: 100%; height: auto; aspect-ratio: 200 / 120; object-fit: cover; }

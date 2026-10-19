@@ -120,6 +120,10 @@ export interface State {
   aligning: { overlay: string; step: number; pts: { x: number; y: number }[] } | null
   fillAs: 'area' | 'space'
   holeTarget: string | null
+  /** cor e altura do último sólido criado/ajustado: o próximo já nasce assim */
+  solidDefaults: { color: string; height: number }
+  /** tela dividida: planta + 3D ao vivo (modo Revisar) */
+  split3d: boolean
 
   set: (p: Partial<State>) => void
   setTool: (t: Tool) => void
@@ -131,6 +135,7 @@ export interface State {
   redo: () => void
   setPresets: (p: Preset[]) => void
   setStatuses: (s: StatusDef[]) => void
+  rememberSolid: (p: Partial<{ color: string; height: number }>) => void
   setStatus: (ids: string[], s: string) => void
   setSheets: (sheets: Sheet[], extra?: Partial<State>) => void
   notify: (msg: string) => void
@@ -188,6 +193,8 @@ export const useStore = create<State>((set, get) => ({
   aligning: null,
   fillAs: 'area',
   holeTarget: null,
+  solidDefaults: { color: '#2f9e8f', height: 2.8, ...ls.get<Partial<{ color: string; height: number }>>('traco.solid', {}) },
+  split3d: false,
 
   set: (p) => set(p),
   setTool: (t) => set({ tool: t, selected: t === 'select' ? get().selected : [] }),
@@ -254,6 +261,13 @@ export const useStore = create<State>((set, get) => ({
   setStatuses: (st) => {
     ls.set('traco.statuses', st)
     set({ statuses: st })
+  },
+  rememberSolid: (p) => {
+    const next = { ...get().solidDefaults }
+    if (typeof p.color === 'string' && p.color) next.color = p.color
+    if (typeof p.height === 'number' && Number.isFinite(p.height) && p.height > 0) next.height = p.height
+    ls.set('traco.solid', next)
+    set({ solidDefaults: next })
   },
   setStatus: (ids, st) => {
     const s = get()

@@ -185,8 +185,8 @@ function Props() {
           <Field label="Nome do sólido"><input value={m.text} onChange={(e) => s.updateMarkup(m.id, { text: e.target.value }, false)} /></Field>
           <div className="row">
             <Field label="Base (m)"><input type="number" step={0.05} value={m.base ?? 0} onChange={(e) => up({ base: Number(e.target.value) })} /></Field>
-            <Field label="Altura (m)"><input type="number" min={0.05} step={0.05} value={m.height ?? DEFAULT_SOLID_HEIGHT} onChange={(e) => up({ height: Math.max(0.05, Number(e.target.value)) })} /></Field>
-            <Field label="Cor"><input type="color" value={m.color} onChange={(e) => up({ color: e.target.value, fill: e.target.value })} /></Field>
+            <Field label="Altura (m)"><input type="number" min={0.05} step={0.05} value={m.height ?? DEFAULT_SOLID_HEIGHT} onChange={(e) => { const h = Math.max(0.05, Number(e.target.value)); up({ height: h }); s.rememberSolid({ height: h }) }} /></Field>
+            <Field label="Cor"><input type="color" value={m.color} onChange={(e) => { up({ color: e.target.value, fill: e.target.value }); s.rememberSolid({ color: e.target.value }) }} /></Field>
           </div>
           <div className="card">
             {q ? (

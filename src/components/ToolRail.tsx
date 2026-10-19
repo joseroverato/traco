@@ -1,6 +1,7 @@
 import { Box, Building2, PaintBucket, ScanSearch, SquareDashed, Eraser, ArrowUpRight, Circle, Cloud, Frame, Hand, ImagePlus, Minus, MousePointer2, Pentagon, Ruler, Scaling, Square, Stamp, Target, Type } from 'lucide-react'
 import { useStore } from '../store'
 import type { Tool } from '../types'
+import { RichTip } from './RichTip'
 
 export const TOOLS: { id: Tool; icon: typeof Square; label: string; key: string; group: number }[] = [
   { id: 'select', icon: MousePointer2, label: 'Selecionar', key: 'V', group: 0 },
@@ -39,15 +40,16 @@ export function ToolRail() {
         return (
           <div key={t.id} className="rail-item">
             {sep && <div className="rail-sep" />}
-            <button
-              className={`rail-btn ${tool === t.id ? 'active' : ''}`}
-              disabled={!doc && t.id !== 'select'}
-              onClick={() => setTool(t.id)}
-              data-tip={`${t.label}  ${t.key}`}
-              aria-label={t.label}
-            >
-              <I size={18} strokeWidth={1.7} />
-            </button>
+            <RichTip tool={t.id} shortcut={t.key}>
+              <button
+                className={`rail-btn ${tool === t.id ? 'active' : ''}`}
+                disabled={!doc && t.id !== 'select'}
+                onClick={() => setTool(t.id)}
+                aria-label={t.label}
+              >
+                <I size={18} strokeWidth={1.7} />
+              </button>
+            </RichTip>
           </div>
         )
       })}

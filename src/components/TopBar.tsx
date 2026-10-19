@@ -1,4 +1,4 @@
-import { Settings, Search, FileDown, FolderOpen, Maximize, MoveHorizontal, Moon, PanelBottom, PanelLeft, PanelRight, Redo2, Save, Stamp, Sun, Undo2, ZoomIn, ZoomOut } from 'lucide-react'
+import { Columns2, Settings, Search, FileDown, FolderOpen, Maximize, MoveHorizontal, Moon, PanelBottom, PanelLeft, PanelRight, Redo2, Save, Stamp, Sun, Undo2, ZoomIn, ZoomOut } from 'lucide-react'
 import { curSheet, useStore } from '../store'
 import type { Mode } from '../store'
 import { saveProject } from '../project'
@@ -71,6 +71,7 @@ export function TopBar({ onOpen }: { onOpen: () => void }) {
               {sc ? sc.label : 'Sem escala'}
             </button>
             <div className="tb-sep" />
+            <button className={`icon-btn ${s.split3d ? 'on' : ''}`} disabled={!has} data-tip={s.split3d ? 'Fechar o 3D ao lado' : 'Dividir a tela: planta e 3D ao vivo'} onClick={() => s.set({ split3d: !s.split3d })}><Columns2 size={17} /></button>
             <button className="icon-btn" disabled={!has} data-tip="Reduzir  −" onClick={() => zoomBy(1 / 1.25)}><ZoomOut size={17} /></button>
             <span className="zoom-val">{Math.round(s.zoom * 100)}%</span>
             <button className="icon-btn" disabled={!has} data-tip="Ampliar  +" onClick={() => zoomBy(1.25)}><ZoomIn size={17} /></button>

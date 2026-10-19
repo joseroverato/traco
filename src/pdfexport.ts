@@ -1,6 +1,6 @@
-import { PDFArray, PDFDict, PDFDocument, PDFHexString, PDFName, PDFNumber, PDFRef, PDFString, StandardFonts, degrees, rgb } from 'pdf-lib'
+import { PDFArray, PDFDict, PDFDocument, PDFHexString, PDFName, PDFNumber, PDFRawStream, PDFRef, PDFString, StandardFonts, degrees, rgb } from 'pdf-lib'
 import type { PDFFont, PDFPage } from 'pdf-lib'
-import { zipSync } from 'fflate'
+import { zipSync, zlibSync } from 'fflate'
 import { useStore } from './store'
 import { layersOf, openSource, sheetRotation } from './pdf'
 import { legendLayout, legendRows } from './components/LegendBox'
@@ -383,17 +383,33 @@ export const PAPER: Record<string, [number, number]> = {
   A0: [2383.94, 3370.39],
 }
 
+/** Otimização de tamanho: comprime fluxos sem filtro e agrupa objetos em object streams. Nunca devolve um arquivo maior que o original. */
+export async function optimizePdf(bytes: Uint8Array): Promise<Uint8Array> {
+  const doc = await PDFDocument.load(bytes, { updateMetadata: false })
+  const FILTER = PDFName.of('Filter')
+  for (const [ref, obj] of doc.context.enumerateIndirectObjects()) {
+    if (!(obj instanceof PDFRawStream) || obj.dict.has(FILTER)) continue
+    if (obj.dict.get(PDFName.of('Type')) === PDFName.of('Metadata')) continue // XMP deve ficar legível
+    const z = zlibSync(obj.contents, { level: 9 })
+    if (z.length >= obj.contents.length) continue
+    obj.dict.set(FILTER, PDFName.of('FlateDecode'))
+    doc.context.assign(ref, PDFRawStream.of(obj.dict, z))
+  }
+  const out = await doc.save({ useObjectStreams: true })
+  return out.length < bytes.length ? out : bytes
+}
+
 /**
  * Exporta com o melhor motor disponível.
- * App de PC: tarja definitiva (MuPDF remove texto/imagens sob a tarja) e otimização.
- * Navegador: tarja visual e PDF sem otimização extra.
+ * App de PC: tarja definitiva (PDFium remove texto, pixels de imagem e traços cobertos, preservando o vetor).
+ * Navegador: tarja visual. A otimização de tamanho vale nos dois.
  */
 export async function exportPdf(opts: ExportOptions & { optimize?: boolean }): Promise<Uint8Array> {
   const { desktop } = await import('./platform')
   const st = useStore.getState()
   const ids = opts.sheetIds ?? st.sheets.map((s) => s.id)
   const redacts = opts.flatten ? st.markups.filter((m) => m.kind === 'redact' && ids.includes(m.page)) : []
-  if (!desktop) return buildPdf(opts)
+  if (!desktop) return opts.optimize ? optimizePdf(await buildPdf(opts)) : buildPdf(opts)
   let bytes = await buildPdf({ ...opts, skipRedacts: redacts.length > 0 })
   if (redacts.length) {
     const items = redacts.map((m) => {
@@ -403,7 +419,7 @@ export async function exportPdf(opts: ExportOptions & { optimize?: boolean }): P
     bytes = await desktop.engine.redact(bytes, items)
     bytes = await overlayRedacts(bytes, ids)
   }
-  if (opts.optimize) bytes = await desktop.engine.optimize(bytes)
+  if (opts.optimize) bytes = await optimizePdf(bytes)
   return bytes
 }
 

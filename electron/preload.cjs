@@ -28,7 +28,6 @@ contextBridge.exposeInMainWorld('traco', {
     onState: (h) => ipcRenderer.on('traco:update', (_e, s) => h(s)),
   },
   engine: {
-    optimize: (pdf) => ipcRenderer.invoke('engine:optimize', pdf),
     redact: (pdf, items) => ipcRenderer.invoke('engine:redact', pdf, items),
     ocr: (png) => ipcRenderer.invoke('engine:ocr', png),
   },

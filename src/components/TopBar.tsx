@@ -34,7 +34,7 @@ export function TopBar({ onOpen }: { onOpen: () => void }) {
           <path d="M7 16.5 L17 7.5 M7 7.5 h5" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" />
         </svg>
         <span>Traço</span>
-        {IS_DESKTOP && <span className="edition" title="App de PC com motor completo (tarja definitiva, OCR, otimização, Claude Desktop)">PC</span>}
+        {IS_DESKTOP && <span className="edition" title="App de PC com motor completo (tarja definitiva, OCR, Claude Desktop)">PC</span>}
       </div>
       <div className="tb-group">
         <button className="icon-btn" data-tip="Abrir  Ctrl+O" onClick={onOpen}><FolderOpen size={17} /></button>

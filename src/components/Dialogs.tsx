@@ -95,7 +95,7 @@ export function ExportDialog() {
           <label className="check"><input type="checkbox" checked={pageLabels} onChange={(e) => setPageLabels(e.target.checked)} /> Numerar páginas com o nome da folha</label>
           <label className="check"><input type="checkbox" checked={removeAnnots} onChange={(e) => setRemoveAnnots(e.target.checked)} /> Remover anotações que vieram no PDF original</label>
           {IS_DESKTOP ? (
-            <label className="check"><input type="checkbox" checked={optimize} onChange={(e) => setOptimize(e.target.checked)} /> Otimizar tamanho do arquivo (motor completo)</label>
+            <label className="check"><input type="checkbox" checked={optimize} onChange={(e) => setOptimize(e.target.checked)} /> Otimizar tamanho do arquivo</label>
           ) : (
             <span className="muted small">Tarjas definitivas e otimização de tamanho estão disponíveis no app de PC.</span>
           )}

@@ -29,7 +29,7 @@ VIAddVersionKey "LegalCopyright" "Lottos Engenharia"
 !define MUI_UNICON "..\electron\icon.ico"
 !define MUI_ABORTWARNING
 !define MUI_WELCOMEPAGE_TITLE "Instalar o Traço ${VERSION}"
-!define MUI_WELCOMEPAGE_TEXT "Revisão de pranchas, quantitativos e edição de PDF com o motor completo (tarja definitiva, OCR, otimização) e integração com o Claude.$\r$\n$\r$\nA instalação é só para o seu usuário e não precisa de administrador."
+!define MUI_WELCOMEPAGE_TEXT "Revisão de pranchas, quantitativos e edição de PDF com o motor completo (tarja definitiva, OCR) e integração com o Claude.$\r$\n$\r$\nA instalação é só para o seu usuário e não precisa de administrador."
 !define MUI_FINISHPAGE_RUN "$INSTDIR\${EXE}"
 !define MUI_FINISHPAGE_RUN_TEXT "Abrir o Traço agora"
 

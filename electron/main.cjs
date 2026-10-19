@@ -213,7 +213,6 @@ ipcMain.handle('update:install', () => {
 // ---------------- motor completo ----------------
 let engineP = null
 const engine = () => (engineP ??= import(pathToFileURL(path.join(__dirname, 'engine.mjs')).href))
-ipcMain.handle('engine:optimize', async (_e, pdf) => (await engine()).optimize(pdf))
 ipcMain.handle('engine:redact', async (_e, pdf, items) => (await engine()).redact(pdf, items))
 ipcMain.handle('engine:ocr', async (_e, png) => (await engine()).ocr(png, path.join(USER, 'ocr-cache')))
 

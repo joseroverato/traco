@@ -20,7 +20,7 @@ Requer Node.js 22 ou superior.
 - src/commands.ts + src/tools.json — ferramentas do Claude (painel e MCP usam as mesmas)
 - src/ai.ts — conversa com a API da Anthropic (tool use, imagens das folhas)
 - electron/main.cjs — app de PC: arquivos nativos, chave criptografada, ponte local p/ MCP
-- electron/engine.mjs — motor completo: MuPDF (tarja definitiva, otimização) + Tesseract (OCR pt)
+- electron/engine.mjs — motor do PC: PDFium/WASM (tarja definitiva que preserva o vetor) + Tesseract (OCR pt). Otimização de tamanho fica em src/pdfexport.ts (pdf-lib), igual na web
 - electron/mcp-server.mjs — servidor MCP (stdio) para o Claude Desktop; abre o Traço se estiver fechado
 - deploy/ — Dockerfile + nginx + compose da versão web e scripts de instalação do PC
 

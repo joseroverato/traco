@@ -1,7 +1,7 @@
 {
   "name": "traco",
   "private": true,
-  "version": "1.2.0",
+  "version": "1.2.1",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -17,9 +17,9 @@
     "dist:win-linux": "npm run build:desktop && electron-builder --win dir --x64 && node scripts/set-exe-icon.mjs && cd deploy && makensis -DVERSION=$npm_package_version installer.nsi"
   },
   "dependencies": {
+    "@embedpdf/pdfium": "^2.15.1",
     "@tesseract.js-data/por": "^1.0.0",
     "electron-updater": "^6.8.9",
-    "mupdf": "^1.28.1",
     "tesseract.js": "^7.0.0"
   },
   "devDependencies": {

@@ -44,7 +44,6 @@ export interface DesktopApi {
     onState(h: (s: UpdateState) => void): void
   }
   engine: {
-    optimize(pdf: Uint8Array): Promise<Uint8Array>
     redact(pdf: Uint8Array, items: { page: number; rect: [number, number, number, number]; fill: [number, number, number] }[]): Promise<Uint8Array>
     ocr(png: Uint8Array): Promise<{ text: string; words: { text: string; x: number; y: number; w: number; h: number; conf: number }[] }>
   }

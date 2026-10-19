@@ -1,10 +1,13 @@
-# Publica uma versão nova do Traço ao enviar uma tag "v1.2.3".
+# Publica uma versão nova do Traço quando o número em package.json muda na branch main
+# (ou ao enviar uma tag "v1.2.3"). Se a Release dessa versão já existe, não faz nada.
 # Gera o instalador do Windows (NSIS), o latest.yml usado pela atualização automática
 # e o pacote da versão web (Docker), e anexa tudo a uma Release do GitHub.
 name: Release
 
 on:
   push:
+    branches: [main]
+    paths: ['package.json', '.github/workflows/release.yml']
     tags: ['v*']
   workflow_dispatch:
 
@@ -17,27 +20,41 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Versão já publicada?
+        id: check
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          V=$(node -p "require('./package.json').version")
+          echo "version=$V" >> "$GITHUB_OUTPUT"
+          if gh release view "v$V" >/dev/null 2>&1; then echo "skip=true" >> "$GITHUB_OUTPUT"; echo "Release v$V já existe."; else echo "skip=false" >> "$GITHUB_OUTPUT"; fi
+
       - uses: actions/setup-node@v4
+        if: steps.check.outputs.skip != 'true'
         with:
           node-version: 22
           cache: npm
 
       - name: Ferramentas (NSIS)
+        if: steps.check.outputs.skip != 'true'
         run: sudo apt-get update && sudo apt-get install -y nsis zip
 
       - name: Dependências
+        if: steps.check.outputs.skip != 'true'
         run: npm ci
 
       - name: Conferir versão da tag
-        if: startsWith(github.ref, 'refs/tags/v')
+        if: steps.check.outputs.skip != 'true' && startsWith(github.ref, 'refs/tags/v')
         run: |
           V=$(node -p "require('./package.json').version")
           [ "v$V" = "${GITHUB_REF_NAME}" ] || { echo "package.json ($V) diferente da tag (${GITHUB_REF_NAME})"; exit 1; }
 
       - name: App de PC (instalador)
+        if: steps.check.outputs.skip != 'true'
         run: npm run dist:win-linux && node scripts/make-latest.mjs
 
       - name: Versão web (Docker)
+        if: steps.check.outputs.skip != 'true'
         run: |
           V=$(node -p "require('./package.json').version")
           npm run build:web
@@ -45,11 +62,12 @@ jobs:
           (cd pkg && zip -qr ../release/Traco-Web-$V.zip traco-web)
 
       - name: Publicar release
+        if: steps.check.outputs.skip != 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           V=$(node -p "require('./package.json').version")
           NOTES="docs/notas/v$V.md"; [ -f "$NOTES" ] || NOTES=/dev/null
-          gh release create "v$V" --title "Traço $V" --notes-file "$NOTES" \
+          gh release create "v$V" --target "$GITHUB_SHA" --title "Traço $V" --notes-file "$NOTES" \
             "release/Traco-Setup-$V.exe" release/latest.yml "release/Traco-Web-$V.zip" \
             || gh release upload "v$V" --clobber "release/Traco-Setup-$V.exe" release/latest.yml "release/Traco-Web-$V.zip"

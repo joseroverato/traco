@@ -587,3 +587,38 @@ a.btn { text-decoration: none; display: inline-flex; align-items: center; }
 .rich-tip p { margin: 6px 0 8px; font-size: 12px; line-height: 1.4; color: var(--text-2); }
 .rich-tip-demo { background: var(--bg); border: 1px solid var(--line-soft); border-radius: 8px; color: var(--text-2); overflow: hidden; }
 .tool-demo { display: block; width: 100%; height: auto; aspect-ratio: 200 / 120; object-fit: cover; }
+/* ================================================================ 1.2.1 — painéis e conector */
+.slot { position: relative; }
+.resizer { position: absolute; z-index: 6; background: transparent; transition: background 0.15s; }
+.resizer.h { left: 0; right: 0; top: 0; height: 9px; cursor: ns-resize; }
+.resizer.v { top: 0; bottom: 0; left: 0; width: 9px; cursor: ew-resize; }
+.resizer:hover, body.resizing .resizer { background: color-mix(in srgb, var(--accent) 35%, transparent); background-clip: content-box; padding: 3px 0; }
+.resizer.v:hover, body.resizing .resizer.v { padding: 0 3px; }
+body.resizing { user-select: none; }
+body.resizing-h { cursor: ns-resize; }
+body.resizing-v { cursor: ew-resize; }
+body.resizing .workspace, body.resizing .center { transition: none !important; }
+.edge-tab {
+  position: absolute; z-index: 12; display: flex; align-items: center; gap: 4px; border: 1px solid var(--line); background: var(--panel);
+  color: var(--text-2); font: inherit; font-size: 11.5px; font-weight: 550; cursor: pointer; box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25); animation: fade 0.2s ease;
+}
+.edge-tab:hover { color: var(--text); border-color: color-mix(in srgb, var(--accent) 60%, var(--line)); }
+.edge-tab.bottom { left: 50%; bottom: 0; transform: translateX(-50%); padding: 4px 12px 5px; border-bottom: 0; border-radius: 9px 9px 0 0; }
+.edge-tab.right { right: 0; top: 50%; transform: translateY(-50%); flex-direction: column; padding: 10px 4px; border-right: 0; border-radius: 9px 0 0 9px; }
+.edge-tab.right span { writing-mode: vertical-rl; transform: rotate(180deg); }
+.mcp-status { font-size: 12px; padding: 7px 9px; border-radius: 8px; border: 1px solid var(--line-soft); }
+.mcp-status.ok { border-color: color-mix(in srgb, #30a46c 50%, transparent); background: color-mix(in srgb, #30a46c 10%, transparent); }
+.mcp-status.warn { border-color: color-mix(in srgb, #ffb224 50%, transparent); background: color-mix(in srgb, #ffb224 10%, transparent); }
+.mcp-steps { margin: 0; padding-left: 18px; color: var(--text-2); display: flex; flex-direction: column; gap: 3px; line-height: 1.45; }
+.mcp-log { margin: 0; max-height: 180px; overflow: auto; font-size: 10.5px; background: var(--panel); border: 1px solid var(--line-soft); border-radius: 7px; padding: 7px; white-space: pre-wrap; word-break: break-all; color: var(--text-2); }
+.tabs { min-width: 0; }
+.tabs > button { white-space: nowrap; flex-shrink: 0; }
+.tabs-tools { flex: 1; min-width: 0; display: flex; align-items: center; justify-content: flex-end; gap: 8px; overflow-x: auto; scrollbar-width: none; }
+.tabs-tools::-webkit-scrollbar { display: none; }
+.tabs-tools > * { flex-shrink: 0; white-space: nowrap; }
+.tabs-tools .seg button { white-space: nowrap; }
+.panel.right .tabs > button:not(.panel-hide) { flex-shrink: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.panel-hide { flex-shrink: 0 !important; margin-left: auto; }
+.tabs > .icon-btn { padding: 0; display: inline-grid; place-items: center; }
+.tabs > button svg, .icon-btn svg { flex-shrink: 0; }
+.panel.right .tabs > button:not(.panel-hide) { padding: 6px 8px; }

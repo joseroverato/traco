@@ -80,7 +80,7 @@ src/projectFormat.ts  formato do .traco: v3 = ZIP (project.json + PDFs em binár
 O código fica no repositório privado `joseroverato/traco`. Para lançar:
 
 1. Suba o número em `package.json` (ex.: `1.2.1`) e, se quiser, escreva `docs/notas/v1.2.1.md`.
-2. `git commit -am "1.2.1" && git tag v1.2.1 && git push --follow-tags`
-3. O GitHub Actions (`.github/workflows/release.yml`) gera `Traco-Setup-1.2.1.exe`, `latest.yml` e `Traco-Web-1.2.1.zip` e cria a Release.
+2. `git commit -am "1.2.1" && git push` (na branch `main`).
+3. Ao ver o número novo em `package.json`, o GitHub Actions (`.github/workflows/release.yml`) gera `Traco-Setup-1.2.1.exe`, `latest.yml` e `Traco-Web-1.2.1.zip` e cria a Release `v1.2.1`. Se a versão já foi publicada, ele não faz nada.
 
 Em cada PC, uma vez: Traço › Configurações (engrenagem) › Atualizações › colar um token *fine-grained* do GitHub com acesso só a este repositório e **Contents: Read-only**. O token fica criptografado no PC (Windows DPAPI). Depois disso o Traço verifica ao abrir, baixa e instala com um clique.

@@ -5,6 +5,12 @@ export interface ToolContent {
   data?: string
   mimeType?: string
 }
+export interface ClaudeStatus {
+  exe: string
+  server: string
+  serverExists: boolean
+  configs: { path: string; exists: boolean; hasTraco: boolean; current: boolean; error?: string }[]
+}
 export interface UpdateState {
   status: 'idle' | 'checking' | 'available' | 'latest' | 'downloading' | 'ready' | 'error'
   version?: string
@@ -24,6 +30,12 @@ export interface DesktopApi {
   getSecret(key: string): Promise<string | null>
   setSecret(key: string, value: string): Promise<void>
   connectClaudeDesktop(): Promise<{ ok: boolean; message: string; paths: string[] }>
+  claudeStatus?(): Promise<ClaudeStatus>
+  claudeTest?(): Promise<{ ok: boolean; message: string; stderr?: string }>
+  claudeLog?(): Promise<string>
+  openExternal?(url: string): Promise<void>
+  quit?(): void
+  toggleFullScreen?(): void
   onCommand(handler: (req: { id: string; name: string; args: Record<string, unknown> }) => void): void
   replyCommand(id: string, result: { content: ToolContent[]; isError?: boolean }): void
   onOpenPath(handler: (path: string) => void): void

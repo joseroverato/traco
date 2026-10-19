@@ -6,3 +6,4 @@ release
 electron/build
 *.log
 .DS_Store
+public/_smoke

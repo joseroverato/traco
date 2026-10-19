@@ -4,13 +4,17 @@ import { curSheet, useStore } from '../store'
 import { detectScales, layerKey, ocConfig, viewportOf } from '../pdf'
 import type { Markup, MarkupKind, Pt } from '../types'
 import { MarkupShape, PatternDefs } from './MarkupShape'
-import { bbox, dist, inPoly, inRect, paperScale, polyArea, scaleFor, snapAngle } from '../geometry'
+import { bbox, dist, inPoly, inRect, polyArea, scaleFor, snapAngle } from '../geometry'
 import { FileUp, Magnet, Move } from 'lucide-react'
 import { fillAt, findSymbols } from '../geoWorker'
 import { OverlayCanvas, applyM, invertM, overlaySheet, similarity } from './OverlayCanvas'
 import { LegendBox } from './LegendBox'
 import { SymbolResult } from './SymbolResult'
-import { SNAP_LABEL, findSnap, snapIndexFor } from '../snap'
+import { findSnap, snapIndexFor } from '../snap'
+import { SnapMarker } from './SnapMarker'
+import { ViewerHints } from './ViewerHints'
+import { ScaleBanner } from './ScaleBanner'
+import { TextEditor } from './TextEditor'
 import { filterHoles, refineRing } from '../regions'
 import type { SnapHit, SnapIndex } from '../snap'
 
@@ -902,53 +906,10 @@ export function Viewer({ onOpen }: { onOpen: () => void }) {
               return <rect x={r.x} y={r.y} width={r.w} height={r.h} fill="var(--accent)" fillOpacity={0.08} stroke="var(--accent)" strokeWidth={1 / zoom} strokeDasharray={`${4 / zoom} ${3 / zoom}`} />
             })()}
           </svg>
-          {editing && editing.page === page && (() => {
-            const b = bbox(editing.points)
-            return (
-              <textarea
-                className="text-edit"
-                ref={(el) => {
-                  if (el && document.activeElement !== el) {
-                    el.focus()
-                    if (editing.kind === 'stamp') el.select() // digitar substitui o texto padrão
-                  }
-                }}
-                defaultValue={editing.text}
-                style={{ left: L.left + b.x * zoom, top: L.top + b.y * zoom, width: b.w * zoom, height: b.h * zoom, fontSize: editing.fontSize * zoom, color: editing.color, textAlign: editing.kind === 'stamp' ? 'center' : 'left', fontWeight: editing.kind === 'stamp' ? 700 : 400 }}
-                onBlur={(e) => {
-                  const text = e.target.value
-                  if (editing.kind === 'stamp') {
-                    // ajusta a caixa do carimbo ao texto
-                    const lines = text.split('\n')
-                    const longest = Math.max(...lines.map((l) => l.replace(/\{data\}/g, '00/00/0000').replace(/\{(n|total)\}/g, '00').length))
-                    const b0 = bbox(editing.points)
-                    const w = Math.max(60, longest * editing.fontSize * 0.62 + 16), h = lines.length * editing.fontSize * 1.25 + 12
-                    const cx = b0.x + b0.w / 2, cy = b0.y + b0.h / 2
-                    s.updateMarkup(editing.id, { text, points: [{ x: cx - w / 2, y: cy - h / 2 }, { x: cx + w / 2, y: cy + h / 2 }] })
-                  } else s.updateMarkup(editing.id, { text })
-                  s.set({ editingText: null })
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === 'Escape') (e.target as HTMLTextAreaElement).blur()
-                }}
-              />
-            )
-          })()}
+          {editing && editing.page === page && <TextEditor m={editing} zoom={zoom} left={L.left} top={L.top} />}
         </div>
       </div>
-        {sheet && !s.scales[sheet.id] && found?.sheet === sheet.id && !found.hidden && (
-          <div className="scale-banner" onPointerDown={(e) => e.stopPropagation()}>
-            <span className="dot-warn" /> Folha sem escala
-            {found.n && (
-              <button className="btn sm primary" onClick={() => { s.set({ scales: { ...s.scales, [sheet.id]: { metersPerUnit: paperScale(found.n!), label: `1:${found.n}` } } }); s.notify(`Escala 1:${found.n} aplicada (lida do carimbo)`) }}>
-                Usar 1:{found.n} do carimbo
-              </button>
-            )}
-            <button className="btn sm" onClick={() => s.set({ tool: 'calibrate' })}>Calibrar por cota</button>
-            <button className="btn sm ghost" onClick={() => s.set({ calibrating: { page: sheet.id, length: 0 } })}>Escolher escala</button>
-            <button className="icon-btn xs" onClick={() => setFound({ ...found, hidden: true })} aria-label="Fechar">✕</button>
-          </div>
-        )}
+        {sheet && !s.scales[sheet.id] && found?.sheet === sheet.id && !found.hidden && <ScaleBanner sheetId={sheet.id} detected={found.n} onHide={() => setFound({ ...found, hidden: true })} />}
         <div className="view-tools" onPointerDown={(e) => e.stopPropagation()}>
           <button className={s.snap ? 'on' : ''} onClick={() => { const v = !s.snap; s.set({ snap: v }); try { localStorage.setItem('traco.snap', JSON.stringify(v)) } catch { /* */ } }} data-tip="Snap na geometria do PDF  F3 (Alt desliga ao segurar)">
             <Magnet size={14} /> Snap{s.snap && snapState === 'loading' ? '…' : ''}
@@ -958,60 +919,7 @@ export function Viewer({ onOpen }: { onOpen: () => void }) {
           </button>
         </div>
         {symFound && <SymbolResult found={symFound} sheetId={page} onClose={() => setSymFound(null)} />}
-        {busy && <div className="hud busy-hud"><span className="spinner" /> {busy}</div>}
-        {s.aligning && (
-          <div className="hud">
-            Alinhar · par {Math.floor(s.aligning.step / 2) + 1} de 2 — clique num ponto do <b>{s.aligning.step % 2 === 0 ? 'desenho colorido (sobreposto)' : 'desenho base'}</b> · <b>Esc</b> cancela
-          </div>
-        )}
-        {tool === 'fill' && !busy && <div className="hud">Área por clique — clique dentro do ambiente · <b>Shift+clique</b> desconta como vazio · aberturas até {s.fillGap} pt são fechadas</div>}
-        {tool === 'symbol' && !symFound && !busy && <div className="hud">Contagem automática — arraste um retângulo em volta de <b>um</b> símbolo (tomada, luminária, ponto…)</div>}
-        {tool === 'legend' && <div className="hud">Legenda — clique onde a tabela de quantitativo deve ficar</div>}
-        {poly && (
-          <div className="hud">
-            {poly.kind === 'area' ? 'Área' : poly.kind === 'hole' ? 'Vazio' : poly.kind === 'space' ? 'Ambiente' : 'Comprimento'} · {poly.points.length} vértice(s) — <b>Enter</b>/duplo clique finaliza · <b>Backspace</b> desfaz vértice · <b>Shift</b> trava ângulo · <b>Esc</b> cancela
-          </div>
-        )}
-        {tool === 'count' && <div className="hud">Contagem — clique para somar · <b>Esc</b> inicia novo grupo</div>}
-        {tool === 'calibrate' && <div className="hud">Calibrar escala — trace sobre uma cota conhecida (dentro de um viewport, calibra só ele)</div>}
-        {tool === 'viewport' && <div className="hud">Viewport — desenhe a região que tem escala própria (ex.: detalhe 1:20)</div>}
-        {tool === 'stamp' && <div className="hud">Carimbo — clique para posicionar · variáveis: {'{data} {folha} {n} {total} {autor}'}</div>}
-        {tool === 'redact' && <div className="hud">Tarja — cubra o trecho a remover; nas propriedades escolha preta/branca e um texto de substituição</div>}
-        {tool === 'image' && <div className="hud">Imagem — clique onde a imagem deve ficar (logo, assinatura, foto)</div>}
+        <ViewerHints tool={tool} busy={busy} poly={poly} symFound={!!symFound} aligning={s.aligning} fillGap={s.fillGap} />
     </div>
-  )
-}
-
-function SnapMarker({ hit, zoom }: { hit: SnapHit; zoom: number }) {
-  const r = 6 / zoom
-  const { x, y } = hit.pt
-  const sw = 1.6 / zoom
-  const c = '#00e07a'
-  let shape: React.ReactNode
-  switch (hit.kind) {
-    case 'endpoint':
-      shape = <rect x={x - r} y={y - r} width={r * 2} height={r * 2} />
-      break
-    case 'intersection':
-      shape = <path d={`M ${x - r} ${y - r} L ${x + r} ${y + r} M ${x + r} ${y - r} L ${x - r} ${y + r}`} />
-      break
-    case 'midpoint':
-      shape = <path d={`M ${x} ${y - r * 1.2} L ${x + r * 1.1} ${y + r * 0.8} L ${x - r * 1.1} ${y + r * 0.8} Z`} />
-      break
-    case 'markup':
-      shape = <path d={`M ${x} ${y - r * 1.2} L ${x + r * 1.2} ${y} L ${x} ${y + r * 1.2} L ${x - r * 1.2} ${y} Z`} />
-      break
-    default:
-      shape = <path d={`M ${x - r} ${y - r} L ${x + r} ${y - r} L ${x - r} ${y + r} L ${x + r} ${y + r} Z`} />
-  }
-  return (
-    <g style={{ pointerEvents: 'none' }}>
-      {hit.seg && <line x1={hit.seg[0]} y1={hit.seg[1]} x2={hit.seg[2]} y2={hit.seg[3]} stroke={c} strokeWidth={2 / zoom} strokeOpacity={0.55} />}
-      <g fill="none" stroke="#0b0b0c" strokeWidth={sw * 2.6} strokeOpacity={0.55}>{shape}</g>
-      <g fill="none" stroke={c} strokeWidth={sw}>{shape}</g>
-      <text x={x + r * 1.6} y={y - r * 1.4} fontSize={10 / zoom} fontWeight={600} fill={c} stroke="#0b0b0c" strokeWidth={2.5 / zoom} paintOrder="stroke" style={{ fontFamily: 'var(--font)' }}>
-        {SNAP_LABEL[hit.kind]}
-      </text>
-    </g>
   )
 }

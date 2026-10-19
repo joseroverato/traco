@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import type { CustomColumn, Markup, MarkupKind, OcrResult, Overlay, PageScale, Preset, Sheet, StatusDef, Tool } from './types'
 import type { Source } from './pdf'
+import { pushHistory } from './history'
 
 export const uid = () => Math.random().toString(36).slice(2, 10)
 
@@ -216,23 +217,23 @@ export const useStore = create<State>((set, get) => ({
       ...extra,
     }
     const sel = kind === 'text' || kind === 'stamp' || kind === 'image' || kind === 'viewport' ? [m.id] : []
-    set({ past: [...s.past, { markups: s.markups, sheets: s.sheets }], future: [], markups: [...s.markups, m], selected: sel })
+    set({ past: pushHistory(s.past, { markups: s.markups, sheets: s.sheets }), future: [], markups: [...s.markups, m], selected: sel })
     return m
   },
   updateMarkup: (id, patch, record = true) => {
     const s = get()
     set({
-      ...(record ? { past: [...s.past, { markups: s.markups, sheets: s.sheets }], future: [] } : {}),
+      ...(record ? { past: pushHistory(s.past, { markups: s.markups, sheets: s.sheets }), future: [] } : {}),
       markups: s.markups.map((m) => (m.id === id ? { ...m, ...patch } : m)),
     })
   },
   removeMarkups: (ids) => {
     const s = get()
-    set({ past: [...s.past, { markups: s.markups, sheets: s.sheets }], future: [], markups: s.markups.filter((m) => !ids.includes(m.id)), selected: [] })
+    set({ past: pushHistory(s.past, { markups: s.markups, sheets: s.sheets }), future: [], markups: s.markups.filter((m) => !ids.includes(m.id)), selected: [] })
   },
   checkpoint: () => {
     const s = get()
-    set({ past: [...s.past.slice(-80), { markups: s.markups, sheets: s.sheets }], future: [] })
+    set({ past: pushHistory(s.past, { markups: s.markups, sheets: s.sheets }), future: [] })
   },
   undo: () => {
     const s = get()
@@ -244,7 +245,7 @@ export const useStore = create<State>((set, get) => ({
     const s = get()
     const next = s.future[0]
     if (!next) return
-    set({ ...next, future: s.future.slice(1), past: [...s.past, { markups: s.markups, sheets: s.sheets }], selected: [], page: Math.min(s.page, Math.max(0, next.sheets.length - 1)) })
+    set({ ...next, future: s.future.slice(1), past: pushHistory(s.past, { markups: s.markups, sheets: s.sheets }), selected: [], page: Math.min(s.page, Math.max(0, next.sheets.length - 1)) })
   },
   setPresets: (p) => {
     ls.set('traco.presets', p)
@@ -256,13 +257,13 @@ export const useStore = create<State>((set, get) => ({
   },
   setStatus: (ids, st) => {
     const s = get()
-    set({ past: [...s.past, { markups: s.markups, sheets: s.sheets }], future: [], markups: s.markups.map((m) => (ids.includes(m.id) ? { ...m, status: st } : m)) })
+    set({ past: pushHistory(s.past, { markups: s.markups, sheets: s.sheets }), future: [], markups: s.markups.map((m) => (ids.includes(m.id) ? { ...m, status: st } : m)) })
   },
   setSheets: (sheets, extra = {}) => {
     const s = get()
     const alive = new Set(sheets.map((x) => x.id))
     set({
-      past: [...s.past, { markups: s.markups, sheets: s.sheets }],
+      past: pushHistory(s.past, { markups: s.markups, sheets: s.sheets }),
       future: [],
       sheets,
       markups: s.markups.filter((m) => alive.has(m.page)),

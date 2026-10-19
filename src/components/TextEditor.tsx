@@ -1,5 +1,6 @@
 import { useStore } from '../store'
 import { bbox } from '../geometry'
+import { fitStampBox } from '../viewerLogic'
 import type { Markup } from '../types'
 
 /** Caixa de texto flutuante para editar texto/carimbo direto sobre a folha. */
@@ -21,12 +22,7 @@ export function TextEditor({ m, zoom, left, top }: { m: Markup; zoom: number; le
         const text = e.target.value
         if (m.kind === 'stamp') {
           // ajusta a caixa do carimbo ao texto
-          const lines = text.split('\n')
-          const longest = Math.max(...lines.map((l) => l.replace(/\{data\}/g, '00/00/0000').replace(/\{(n|total)\}/g, '00').length))
-          const b0 = bbox(m.points)
-          const w = Math.max(60, longest * m.fontSize * 0.62 + 16), h = lines.length * m.fontSize * 1.25 + 12
-          const cx = b0.x + b0.w / 2, cy = b0.y + b0.h / 2
-          s.updateMarkup(m.id, { text, points: [{ x: cx - w / 2, y: cy - h / 2 }, { x: cx + w / 2, y: cy + h / 2 }] })
+          s.updateMarkup(m.id, { text, points: fitStampBox(text, m.fontSize, m.points) })
         } else s.updateMarkup(m.id, { text })
         s.set({ editingText: null })
       }}

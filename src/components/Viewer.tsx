@@ -4,7 +4,8 @@ import { curSheet, useStore } from '../store'
 import { detectScales, layerKey, ocConfig, viewportOf } from '../pdf'
 import type { Markup, MarkupKind, Pt } from '../types'
 import { MarkupShape, PatternDefs } from './MarkupShape'
-import { bbox, dist, inPoly, inRect, polyArea, scaleFor, snapAngle } from '../geometry'
+import { bbox, dist, inRect, scaleFor, snapAngle } from '../geometry'
+import { DRAWING_TOOLS, clampZoom, computeLayout, fitZoom, markupsInRect, pickHoleTarget, redactFontSize, wheelFactor, zoomStep } from '../viewerLogic'
 import { FileUp, Magnet, Move } from 'lucide-react'
 import { fillAt, findSymbols } from '../geoWorker'
 import { OverlayCanvas, applyM, invertM, overlaySheet, similarity } from './OverlayCanvas'
@@ -18,7 +19,6 @@ import { TextEditor } from './TextEditor'
 import { filterHoles, refineRing } from '../regions'
 import type { SnapHit, SnapIndex } from '../snap'
 
-const PAD = 48
 const MAX_BASE_PIXELS = 14e6
 
 type Drag =
@@ -70,13 +70,7 @@ export function Viewer({ onOpen }: { onOpen: () => void }) {
 
   // ---------- layout ----------
   const layoutFor = useCallback(
-    (z: number) => {
-      const pw = (info?.width ?? 0) * z
-      const ph = (info?.height ?? 0) * z
-      const sw = Math.max(size.w, pw + PAD * 2)
-      const sh = Math.max(size.h, ph + PAD * 2)
-      return { pw, ph, sw, sh, left: (sw - pw) / 2, top: (sh - ph) / 2 }
-    },
+    (z: number) => computeLayout(info, size, z),
     [info, size],
   )
   const L = layoutFor(zoom)
@@ -121,9 +115,7 @@ export function Viewer({ onOpen }: { onOpen: () => void }) {
     lastFit.current = f.n
     // offsetWidth inclui a área das barras de rolagem: medida estável
     const W = el.offsetWidth, Hh = el.offsetHeight
-    const zw = (W - PAD * 2 - 16) / info.width
-    const zh = (Hh - PAD * 2 - 16) / info.height
-    const z = Math.max(0.05, f.mode === 'width' ? zw : Math.min(zw, zh))
+    const z = fitZoom(f.mode, { w: W, h: Hh }, info)
     anchor.current = null
     useStore.setState({ zoom: z })
     requestAnimationFrame(() => {
@@ -281,7 +273,7 @@ export function Viewer({ onOpen }: { onOpen: () => void }) {
     const cur = useStore.getState().zoom
     const a = zoomAnim.current
     const base = a ? a.target : cur
-    const target = Math.min(40, Math.max(0.05, base * factor))
+    const target = clampZoom(base * factor)
     const l = layoutRef.current(cur)
     const px = (el.scrollLeft + cx - l.left) / cur
     const py = (el.scrollTop + cy - l.top) / cur
@@ -289,10 +281,7 @@ export function Viewer({ onOpen }: { onOpen: () => void }) {
     const anim = { target, px, py, cx, cy, raf: 0 }
     zoomAnim.current = anim
     const step = () => {
-      const z = useStore.getState().zoom
-      const lz = Math.log(z), lt = Math.log(anim.target)
-      const done = Math.abs(lt - lz) < 0.004
-      const nz = done ? anim.target : Math.exp(lz + (lt - lz) * 0.32)
+      const { zoom: nz, done } = zoomStep(useStore.getState().zoom, anim.target)
       anchor.current = { px: anim.px, py: anim.py, cx: anim.cx, cy: anim.cy }
       useStore.setState({ zoom: nz })
       if (done) zoomAnim.current = null
@@ -319,9 +308,7 @@ export function Viewer({ onOpen }: { onOpen: () => void }) {
       if (e.shiftKey && !e.ctrlKey) return // rolagem horizontal nativa
       e.preventDefault()
       const r = el.getBoundingClientRect()
-      // mouse: ~100 por "clique" da roda; touchpad: valores pequenos e contínuos
-      const dy = e.deltaMode === 1 ? e.deltaY * 33 : e.deltaY
-      const f = Math.exp(-Math.max(-300, Math.min(300, dy)) * (e.ctrlKey ? 0.012 : 0.0016))
+      const f = wheelFactor(e.deltaY, e.deltaMode, e.ctrlKey)
       smoothZoom(f, e.clientX - r.left, e.clientY - r.top)
     }
     el.addEventListener('wheel', onWheel, { passive: false })
@@ -371,9 +358,7 @@ export function Viewer({ onOpen }: { onOpen: () => void }) {
   /** Acrescenta um vazio à área/ambiente que contém o polígono (ou à selecionada). */
   const addHole = (pts: Pt[]) => {
     const st = useStore.getState()
-    const c = { x: pts.reduce((t, p) => t + p.x, 0) / pts.length, y: pts.reduce((t, p) => t + p.y, 0) / pts.length }
-    const cands = st.markups.filter((m) => m.page === page && (m.kind === 'area' || m.kind === 'space') && inPoly(c, m.points))
-    const target = cands.find((m) => m.id === st.holeTarget) ?? cands.find((m) => st.selected.includes(m.id)) ?? cands.sort((a, b) => polyArea(a.points) - polyArea(b.points))[0]
+    const target = pickHoleTarget(st.markups, page, pts, st.holeTarget, st.selected)
     if (!target) return st.notify('Desenhe o vazio dentro de uma área ou ambiente')
     st.updateMarkup(target.id, { holes: [...(target.holes ?? []), pts] })
     st.set({ selected: [target.id] })
@@ -529,7 +514,7 @@ export function Viewer({ onOpen }: { onOpen: () => void }) {
     setSnapHit(hit ? { ...hit, pt: q } : null)
     return q
   }
-  const DRAWING = ['length', 'area', 'count', 'calibrate', 'rect', 'ellipse', 'cloud', 'arrow', 'line', 'viewport', 'redact', 'hole', 'space', 'align']
+  const DRAWING = DRAWING_TOOLS
 
   const mkDraft = (kind: MarkupKind | 'calibrate', pts: Pt[]): Markup => {
     const st = useStore.getState()
@@ -728,7 +713,7 @@ export function Viewer({ onOpen }: { onOpen: () => void }) {
         const m = st.addMarkup('viewport', page, [a, b], { text: `Viewport ${n}`, color: '#0090ff' })
         st.set({ calibrating: { page, length: 0, viewport: m.id }, tool: 'select' })
       } else if (d.kind === 'redact') {
-        const m = st.addMarkup('redact', page, [a, b], { fill: st.redactFill, color: st.redactFill, fillOpacity: 1, fontSize: Math.max(6, Math.min(24, Math.round(dist(a, b) > 0 ? Math.abs(b.y - a.y) * 0.6 : 9))) })
+        const m = st.addMarkup('redact', page, [a, b], { fill: st.redactFill, color: st.redactFill, fillOpacity: 1, fontSize: redactFontSize(a, b) })
         if (st.redactFill === '#ffffff') st.set({ rightTab: 'props', selected: [m.id], panels: { ...st.panels, right: true } }) // já abre o campo de texto de substituição
       }
       else {
@@ -741,13 +726,7 @@ export function Viewer({ onOpen }: { onOpen: () => void }) {
       const r = bbox([marquee.a, marquee.b])
       setMarquee(null)
       if (r.w * zoom < 3 && r.h * zoom < 3) return
-      const hits = st.markups
-        .filter((m) => m.page === page)
-        .filter((m) => {
-          const b = bbox(m.points)
-          return b.x <= r.x + r.w && b.x + b.w >= r.x && b.y <= r.y + r.h && b.y + b.h >= r.y
-        })
-        .map((m) => m.id)
+      const hits = markupsInRect(st.markups, page, r)
       st.set({ selected: Array.from(new Set([...st.selected, ...hits])) })
     }
   }

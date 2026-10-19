@@ -76,9 +76,9 @@ export function TopBar({ onOpen }: { onOpen: () => void }) {
             <button className="icon-btn" disabled={!has} data-tip="Folha inteira  0" onClick={() => s.set({ fitReq: { mode: 'page', n: Date.now() } })}><Maximize size={16} /></button>
             <button className="icon-btn" disabled={!has} data-tip="Largura  W" onClick={() => s.set({ fitReq: { mode: 'width', n: Date.now() } })}><MoveHorizontal size={17} /></button>
             <div className="tb-sep" />
-            <button className={`icon-btn ${s.nav && !s.focus ? 'on' : ''}`} data-tip="Painel lateral" onClick={() => s.set({ nav: s.nav && !s.focus ? null : 'pages', focus: false })}><PanelLeft size={17} /></button>
-            <button className={`icon-btn ${s.panels.bottom ? 'on' : ''}`} data-tip="Quantitativo" onClick={() => s.set({ panels: { ...s.panels, bottom: !s.panels.bottom || s.focus }, focus: false })}><PanelBottom size={17} /></button>
-            <button className={`icon-btn ${s.panels.right ? 'on' : ''}`} data-tip="Propriedades" onClick={() => s.set({ panels: { ...s.panels, right: !s.panels.right || s.focus }, focus: false })}><PanelRight size={17} /></button>
+            <button className={`icon-btn ${s.nav && !s.focus ? 'on' : ''}`} data-tip="Painel lateral  Ctrl+1" onClick={() => s.set({ nav: s.nav && !s.focus ? null : 'pages', focus: false })}><PanelLeft size={17} /></button>
+            <button className={`icon-btn ${s.panels.bottom ? 'on' : ''}`} data-tip="Quantitativo  Ctrl+2" onClick={() => s.set({ panels: { ...s.panels, bottom: !s.panels.bottom || s.focus }, focus: false })}><PanelBottom size={17} /></button>
+            <button className={`icon-btn ${s.panels.right ? 'on' : ''}`} data-tip="Marcadores, propriedades e Claude  Ctrl+3" onClick={() => s.set({ panels: { ...s.panels, right: !s.panels.right || s.focus }, focus: false })}><PanelRight size={17} /></button>
             <div className="tb-sep" />
           </>
         )}

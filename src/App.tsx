@@ -23,6 +23,8 @@ const Loading = () => <div className="loading-mod">Carregando…</div>
 import { loadFile, saveProject } from './project'
 import { desktop } from './platform'
 import { SearchBar } from './components/SearchBar'
+import { Resizer, togglePanel } from './components/Resizer'
+import { ChevronLeft, ChevronUp } from 'lucide-react'
 import { readRecoveryInfo, startAutosave } from './autosave'
 
 export default function App() {
@@ -89,6 +91,7 @@ export default function App() {
       const st = useStore.getState()
       const mod = e.ctrlKey || e.metaKey
       const k = e.key.toLowerCase()
+      if (mod && !e.shiftKey && ['1', '2', '3'].includes(e.key)) { e.preventDefault(); togglePanel(e.key === '1' ? 'left' : e.key === '2' ? 'bottom' : 'right'); return }
       if (mod && k === 'f' && st.sheets.length) { e.preventDefault(); st.set({ search: { ...st.search, open: true }, mode: 'review' }); setTimeout(() => (document.querySelector('.searchbar input') as HTMLInputElement | null)?.select(), 0); return }
       if (t.closest('input,textarea,select,[contenteditable]')) return
       if (mod && k === 'o') { e.preventDefault(); open(); return }
@@ -122,7 +125,8 @@ export default function App() {
   const showLeft = !!s.nav && !s.focus
   const showRight = s.panels.right && !s.focus
   const showBottom = s.panels.bottom && !s.focus
-  const cols = `${showLeft ? '240px' : '0px'} 48px 1fr ${showRight ? (s.rightTab === 'claude' ? '390px' : '300px') : '0px'}`
+  const rightW = s.rightTab === 'claude' ? Math.max(390, s.rightW) : s.rightW
+  const cols = `${showLeft ? '240px' : '0px'} 48px 1fr ${showRight ? `${rightW}px` : '0px'}`
   return (
     <div className="app">
       <TopBar onOpen={open} />
@@ -132,12 +136,24 @@ export default function App() {
         <div key="review" className="workspace mode-in" style={{ gridTemplateColumns: cols }}>
           <div className={`slot ${showLeft ? '' : 'collapsed'}`}><LeftPanel /></div>
           <ToolRail />
-          <main className="center" style={{ gridTemplateRows: showBottom ? '1fr 240px' : '1fr 0px' }}>
+          <main className="center" style={{ gridTemplateRows: showBottom ? `1fr ${s.bottomH}px` : '1fr 0px' }}>
             <Viewer onOpen={open} />
             {s.search.open && s.sheets.length > 0 && <SearchBar />}
-            <div className={`slot ${showBottom ? '' : 'collapsed'}`}><BottomPanel /></div>
+            {!showBottom && !s.focus && s.sheets.length > 0 && (
+              <button className="edge-tab bottom" data-tip="Mostrar quantitativo  Ctrl+2" onClick={() => togglePanel('bottom')}><ChevronUp size={13} /> Quantitativo</button>
+            )}
+            {!showRight && !s.focus && (
+              <button className="edge-tab right" data-tip="Mostrar marcadores, propriedades e Claude  Ctrl+3" onClick={() => togglePanel('right')}><ChevronLeft size={13} /><span>Painel</span></button>
+            )}
+            <div className={`slot ${showBottom ? '' : 'collapsed'}`}>
+              {showBottom && <Resizer dir="h" />}
+              <BottomPanel />
+            </div>
           </main>
-          <div className={`slot ${showRight ? '' : 'collapsed'}`}><RightPanel /></div>
+          <div className={`slot ${showRight ? '' : 'collapsed'}`}>
+            {showRight && <Resizer dir="v" />}
+            <RightPanel />
+          </div>
         </div>
       ) : s.mode === 'pages' ? (
         <div key="pages" className="workspace single mode-in"><Suspense fallback={<Loading />}><PagesView /></Suspense></div>

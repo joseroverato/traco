@@ -365,7 +365,7 @@ export function RightPanel() {
         <button className={t === 'props' ? 'active' : ''} onClick={() => set({ rightTab: 'props' })}>Propriedades</button>
         <button className={`claude-tab ${t === 'claude' ? 'active' : ''}`} onClick={() => set({ rightTab: 'claude' })}><Sparkles size={13} /> Claude</button>
         <div className="spacer" />
-        <button className="icon-btn xs" data-tip="Recolher" onClick={() => set({ panels: { ...useStore.getState().panels, right: false } })}><ChevronsRight size={15} /></button>
+        <button className="icon-btn xs panel-hide" data-tip="Ocultar painel  Ctrl+3" onClick={() => set({ panels: { ...useStore.getState().panels, right: false } })}><ChevronsRight size={15} /></button>
       </header>
       <div className="panel-body">
         {t === 'claude' ? (

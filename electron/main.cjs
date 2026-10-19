@@ -152,6 +152,11 @@ ipcMain.handle('secret:set', (_e, k, v) => {
 })
 
 ipcMain.handle('app:info', () => ({ version: app.getVersion(), platform: process.platform, userData: USER }))
+ipcMain.handle('app:open-external', (_e, url) => {
+  if (/^https:\/\//.test(String(url))) return shell.openExternal(String(url))
+})
+ipcMain.on('app:quit', () => win?.close())
+ipcMain.on('app:fullscreen', () => win?.setFullScreen(!win.isFullScreen()))
 
 // ---------------- atualização automática (GitHub privado) ----------------
 const UPDATE_REPO = { owner: 'joseroverato', repo: 'traco' }
@@ -287,9 +292,13 @@ function claudeConfigPaths() {
   }
   return out
 }
+const mcpServerPath = () => (app.isPackaged ? path.join(process.resourcesPath, 'mcp-server.cjs') : path.join(__dirname, 'build', 'mcp-server.cjs'))
+const readJson = (p) => {
+  const raw = fs.readFileSync(p, 'utf8').replace(/^\uFEFF/, '') // o Bloco de Notas grava com BOM
+  return raw.trim() ? JSON.parse(raw) : {}
+}
 ipcMain.handle('claude:connect', () => {
-  const server = app.isPackaged ? path.join(process.resourcesPath, 'mcp-server.cjs') : path.join(__dirname, 'build', 'mcp-server.cjs')
-  const entry = { command: process.execPath, args: [server], env: { ELECTRON_RUN_AS_NODE: '1' } }
+  const entry = { command: process.execPath, args: [mcpServerPath()], env: { ELECTRON_RUN_AS_NODE: '1' } }
   const written = []
   for (const p of claudeConfigPaths()) {
     const dir = path.dirname(p)
@@ -298,9 +307,8 @@ ipcMain.handle('claude:connect', () => {
       fs.mkdirSync(dir, { recursive: true })
       let cfg = {}
       if (fs.existsSync(p)) {
-        const raw = fs.readFileSync(p, 'utf8')
-        fs.writeFileSync(p + '.bak', raw)
-        cfg = raw.trim() ? JSON.parse(raw) : {}
+        fs.copyFileSync(p, p + '.bak')
+        cfg = readJson(p)
       }
       cfg.mcpServers = { ...(cfg.mcpServers || {}), traco: entry }
       fs.writeFileSync(p, JSON.stringify(cfg, null, 2))
@@ -309,8 +317,74 @@ ipcMain.handle('claude:connect', () => {
       return { ok: false, message: `Não foi possível escrever ${p}: ${e.message}`, paths: written }
     }
   }
-  return { ok: true, message: 'Pronto! Feche e abra o Claude Desktop. O Traço aparece em Conectores como "traco".', paths: written }
+  return { ok: true, message: 'Configuração gravada.', paths: written }
 })
+
+// situação da configuração do Claude Desktop (o Claude regrava esse arquivo ao sair — a entrada pode sumir)
+ipcMain.handle('claude:status', () => {
+  const server = mcpServerPath()
+  return {
+    exe: process.execPath,
+    server,
+    serverExists: fs.existsSync(server),
+    configs: claudeConfigPaths().map((p) => {
+      try {
+        if (!fs.existsSync(p)) return { path: p, exists: false, hasTraco: false, current: false }
+        const e = readJson(p).mcpServers?.traco
+        return { path: p, exists: true, hasTraco: !!e, current: !!e && e.command === process.execPath && e.args?.[0] === server }
+      } catch (err) {
+        return { path: p, exists: true, hasTraco: false, current: false, error: String(err.message) }
+      }
+    }),
+  }
+})
+
+ipcMain.handle('claude:log', () => {
+  try {
+    return fs.readFileSync(path.join(USER, 'mcp.log'), 'utf8').split('\n').slice(-40).join('\n')
+  } catch {
+    return ''
+  }
+})
+
+// inicia o servidor MCP exatamente como o Claude Desktop faria e pede a lista de ferramentas
+ipcMain.handle('claude:test', () => new Promise((resolve) => {
+  const { spawn } = require('node:child_process')
+  let out = ''
+  let err = ''
+  let done = false
+  const finish = (r) => {
+    if (done) return
+    done = true
+    try { child.kill() } catch { /* ok */ }
+    resolve(r)
+  }
+  const child = spawn(process.execPath, [mcpServerPath()], { env: { ...process.env, ELECTRON_RUN_AS_NODE: '1' }, stdio: ['pipe', 'pipe', 'pipe'], windowsHide: true })
+  const timer = setTimeout(() => finish({ ok: false, message: 'O servidor não respondeu em 15 s.', stderr: err.slice(-2000) }), 15000)
+  child.on('error', (e) => { clearTimeout(timer); finish({ ok: false, message: `Não foi possível iniciar: ${e.message}`, stderr: err }) })
+  child.on('exit', (code) => { clearTimeout(timer); finish({ ok: false, message: `O servidor fechou (código ${code}).`, stderr: err.slice(-2000) }) })
+  child.stderr.on('data', (d) => (err += d))
+  child.stdout.on('data', (d) => {
+    out += d
+    let i
+    while ((i = out.indexOf('\n')) >= 0) {
+      const line = out.slice(0, i).trim()
+      out = out.slice(i + 1)
+      if (!line) continue
+      let msg
+      try { msg = JSON.parse(line) } catch { continue }
+      if (msg.id === 1) {
+        child.stdin.write(JSON.stringify({ jsonrpc: '2.0', method: 'notifications/initialized' }) + '\n')
+        child.stdin.write(JSON.stringify({ jsonrpc: '2.0', id: 2, method: 'tools/list', params: {} }) + '\n')
+      } else if (msg.id === 2) {
+        clearTimeout(timer)
+        const n = msg.result?.tools?.length ?? 0
+        finish({ ok: n > 0, message: n ? `Servidor MCP funcionando: ${n} ferramentas.` : 'O servidor respondeu sem ferramentas.', stderr: err.slice(-2000) })
+      }
+    }
+  })
+  child.stdin.write(JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'initialize', params: { protocolVersion: '2025-06-18', capabilities: {}, clientInfo: { name: 'traco-teste', version: '1' } } }) + '\n')
+}))
 
 app.whenReady().then(() => {
   protocol.handle('app', (req) => {

@@ -5,6 +5,7 @@ import { MODELS, chat, getApiKey, setApiKey } from '../ai'
 import type { ApiMessage } from '../ai'
 import { TOOL_LABEL } from '../commands'
 import { desktop } from '../platform'
+import type { ClaudeStatus } from '../platform'
 
 interface Item {
   role: 'user' | 'assistant' | 'tool' | 'error'
@@ -37,7 +38,6 @@ function Settings({ onClose }: { onClose: () => void }) {
   const s = useStore()
   const [key, setKey] = useState('')
   const [has, setHas] = useState(false)
-  const [mcp, setMcp] = useState<string | null>(null)
   useEffect(() => {
     getApiKey().then((k) => setHas(!!k))
   }, [])
@@ -64,14 +64,55 @@ function Settings({ onClose }: { onClose: () => void }) {
           {MODELS.map((m) => <option key={m.id} value={m.id}>{m.label}</option>)}
         </select>
       </label>
-      {desktop && (
-        <div className="card">
-          <b>Claude Desktop (MCP)</b>
-          <span className="muted small">Permite usar o Claude Desktop — com sua assinatura, sem chave de API — para ler e editar o projeto aberto no Traço.</span>
-          <button className="btn sm" onClick={async () => { const r = await desktop!.connectClaudeDesktop(); setMcp(r.message) }}><Link2 size={14} /> Conectar ao Claude Desktop</button>
-          {mcp && <span className="small">{mcp}</span>}
+      {desktop && <ClaudeDesktopCard />}
+    </div>
+  )
+}
+
+/** Conexão com o Claude Desktop (MCP): grava a configuração, confere e testa o servidor. */
+function ClaudeDesktopCard() {
+  const [st, setSt] = useState<ClaudeStatus | null>(null)
+  const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null)
+  const [busy, setBusy] = useState(false)
+  const [log, setLog] = useState<string | null>(null)
+  const refresh = async () => setSt((await desktop!.claudeStatus?.()) ?? null)
+  useEffect(() => {
+    refresh()
+  }, [])
+  const found = st?.configs.filter((c) => c.exists) ?? []
+  const ok = found.some((c) => c.current)
+  const run = async (fn: () => Promise<void>) => {
+    setBusy(true)
+    try {
+      await fn()
+    } finally {
+      setBusy(false)
+      refresh()
+    }
+  }
+  return (
+    <div className="card">
+      <b>Claude Desktop (MCP)</b>
+      <span className="muted small">Permite usar o Claude Desktop — com a sua assinatura, sem chave de API — para ler e editar o projeto aberto no Traço.</span>
+      {st && (
+        <div className={`mcp-status ${ok ? 'ok' : 'warn'}`}>
+          {ok ? 'Configuração do Claude Desktop aponta para este Traço.' : found.some((c) => c.hasTraco) ? 'A configuração existe, mas aponta para outra instalação do Traço. Clique em Conectar.' : 'O Traço ainda não está na configuração do Claude Desktop.'}
+          {found.find((c) => c.error) && <span className="warn small"> Arquivo de configuração com erro: {found.find((c) => c.error)!.error}</span>}
+          {!st.serverExists && <span className="warn small"> Servidor MCP não encontrado em {st.server}.</span>}
         </div>
       )}
+      <ol className="mcp-steps small">
+        <li>Feche o Claude Desktop pelo ícone da bandeja do Windows (botão direito › <b>Sair</b>). Fechar só a janela não basta: ele regrava a configuração ao sair e apaga a do Traço.</li>
+        <li>Clique em <b>Conectar</b>.</li>
+        <li>Abra o Claude Desktop. O Traço aparece nas ferramentas como <b>traco</b>.</li>
+      </ol>
+      <div className="row">
+        <button className="btn sm primary" disabled={busy} onClick={() => run(async () => { const r = await desktop!.connectClaudeDesktop(); setMsg({ ok: r.ok, text: r.ok ? `Configuração gravada em ${r.paths.length} arquivo(s).` : r.message }) })}><Link2 size={14} /> Conectar</button>
+        <button className="btn sm" disabled={busy || !desktop!.claudeTest} onClick={() => run(async () => { setMsg({ ok: true, text: 'Testando…' }); const r = await desktop!.claudeTest!(); setMsg({ ok: r.ok, text: r.ok ? r.message : `${r.message}${r.stderr ? ` — ${r.stderr.split('\n').filter(Boolean).slice(-2).join(' ')}` : ''}` }) })}>Testar servidor</button>
+        <button className="btn sm ghost" disabled={!desktop!.claudeLog} onClick={async () => setLog(log === null ? (await desktop!.claudeLog!()) || '(sem registros ainda — o Claude Desktop não iniciou o servidor)' : null)}>{log === null ? 'Ver registro' : 'Ocultar registro'}</button>
+      </div>
+      {msg && <span className={`small ${msg.ok ? '' : 'warn'}`}>{msg.text}</span>}
+      {log !== null && <pre className="mcp-log">{log}</pre>}
     </div>
   )
 }

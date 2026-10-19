@@ -35,17 +35,17 @@ export function BottomPanel() {
       <header className="tabs">
         <button className={tab === 'qty' ? 'active' : ''} onClick={() => setTab('qty')}>Quantitativo</button>
         <button className={tab === 'list' ? 'active' : ''} onClick={() => setTab('list')}>Marcações <span className="count">{s.markups.length}</span></button>
-        <div className="spacer" />
+        <div className="tabs-tools">
         {tab === 'qty' && (
-          <label className="inline-label">Agrupar por
+          <label className="inline-label">Agrupar
             <select className="sm-select" value={by} onChange={(e) => s.set({ groupBy: e.target.value as GroupBy })}>
               {GROUPS.map((g) => <option key={g.id} value={g.id}>{g.label}</option>)}
             </select>
           </label>
         )}
         <div className="seg">
-          <button className={scope === 'all' ? 'active' : ''} onClick={() => setScope('all')}>Todas as folhas</button>
-          <button className={scope === 'page' ? 'active' : ''} onClick={() => setScope('page')}>Folha atual</button>
+          <button className={scope === 'all' ? 'active' : ''} onClick={() => setScope('all')}>Todas</button>
+          <button className={scope === 'page' ? 'active' : ''} onClick={() => setScope('page')}>Esta folha</button>
         </div>
         {tab === 'list' && (
           <select className="sm-select" value={filter} onChange={(e) => setFilter(e.target.value)}>
@@ -54,9 +54,10 @@ export function BottomPanel() {
           </select>
         )}
         <button className="btn sm" disabled={!s.markups.length} onClick={async () => (await import('../xlsxExport')).exportXlsx(s.fileName, s.markups.filter((m) => m.kind !== 'viewport'), s.presets, s.scales, s.sheets)}>
-          <FileSpreadsheet size={14} /> Exportar Excel
+          <FileSpreadsheet size={14} /> Planilha
         </button>
-        <button className="icon-btn xs" data-tip="Recolher" onClick={() => s.set({ panels: { ...s.panels, bottom: false } })}><ChevronsDown size={15} /></button>
+        </div>
+        <button className="icon-btn xs panel-hide" data-tip="Ocultar quantitativo  Ctrl+2" onClick={() => s.set({ panels: { ...s.panels, bottom: false } })}><ChevronsDown size={15} /></button>
       </header>
       <div className="table-wrap">
         {tab === 'qty' ? (

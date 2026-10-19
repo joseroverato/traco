@@ -91,7 +91,9 @@ export interface State {
   resumeTool: Tool | null
   editingText: string | null
   panels: { left: boolean; right: boolean; bottom: boolean }
-  dialog: null | 'export' | 'stamp' | 'statuses' | 'meta' | 'claude-settings' | 'prices' | 'columns' | 'updates' | 'recover'
+  dialog: null | 'export' | 'stamp' | 'statuses' | 'meta' | 'claude-settings' | 'prices' | 'columns' | 'updates' | 'recover' | 'claude-desktop'
+  bottomH: number
+  rightW: number
   toast: string | null
   fitReq: { mode: 'page' | 'width'; n: number } | null
   pendingImage: string | null
@@ -160,6 +162,8 @@ export const useStore = create<State>((set, get) => ({
   editingText: null,
   panels: { left: true, right: true, bottom: true },
   dialog: null,
+  bottomH: ls.get('traco.bottomH', 240),
+  rightW: ls.get('traco.rightW', 300),
   toast: null,
   fitReq: null,
   pendingImage: null,

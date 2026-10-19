@@ -16,7 +16,7 @@ const StampDialog = lazy(() => import('./components/Dialogs').then((m) => ({ def
 const StatusDialog = lazy(() => import('./components/Dialogs').then((m) => ({ default: m.StatusDialog })))
 const PricesDialog = lazy(() => import('./components/Dialogs').then((m) => ({ default: m.PricesDialog })))
 const ColumnsDialog = lazy(() => import('./components/Dialogs').then((m) => ({ default: m.ColumnsDialog })))
-const UpdatesDialog = lazy(() => import('./components/Dialogs').then((m) => ({ default: m.UpdatesDialog })))
+const SettingsDialog = lazy(() => import('./components/Dialogs').then((m) => ({ default: m.SettingsDialog })))
 const RecoverDialog = lazy(() => import('./components/Dialogs').then((m) => ({ default: m.RecoverDialog })))
 const PresetDialog = lazy(() => import('./components/PresetDialog').then((m) => ({ default: m.PresetDialog })))
 const Loading = () => <div className="loading-mod">Carregando…</div>
@@ -152,7 +152,7 @@ export default function App() {
         {s.dialog === 'statuses' && <StatusDialog />}
         {s.dialog === 'prices' && <PricesDialog />}
         {s.dialog === 'columns' && <ColumnsDialog />}
-        {s.dialog === 'updates' && <UpdatesDialog />}
+        {s.dialog === 'updates' && <SettingsDialog />}
         {s.dialog === 'recover' && <RecoverDialog />}
         {s.presetDialog && <PresetDialog />}
       </Suspense>

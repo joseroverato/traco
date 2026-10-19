@@ -549,3 +549,7 @@ tfoot tr + tr td { border-top: 0; }
 .progress > div { height: 100%; background: var(--accent); transition: width 0.3s; }
 .icon-btn.badge { position: relative; }
 .icon-btn.badge::after { content: ''; position: absolute; top: 5px; right: 5px; width: 7px; height: 7px; border-radius: 50%; background: #30a46c; box-shadow: 0 0 0 2px var(--panel); }
+
+/* Configurações › Sobre */
+.notes { margin: 6px 0 0; padding: 8px 10px; max-height: 160px; overflow: auto; white-space: pre-wrap; font: inherit; font-size: 12px; color: var(--text-2); background: var(--raise); border-radius: 7px; }
+a.btn { text-decoration: none; display: inline-flex; align-items: center; }

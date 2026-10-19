@@ -12,6 +12,7 @@ import type { CustomColumn, Markup, StatusDef } from '../types'
 import { clearBase, importPriceFile, loadBase } from '../sinapi'
 import type { PriceBase } from '../sinapi'
 import { checkFormula } from '../formula'
+import { APP_VERSION, REPO_URL, THIRD_PARTY, releaseUrl, releasesUrl } from '../about'
 
 function Modal({ title, children, onClose, actions, wide }: { title: string; children: React.ReactNode; onClose: () => void; actions: React.ReactNode; wide?: boolean }) {
   return (
@@ -391,16 +392,10 @@ const UPDATE_TEXT: Record<UpdateState['status'], string> = {
   ready: 'Atualização baixada — reinicie para instalar.',
   error: 'Não foi possível verificar.',
 }
-export function UpdatesDialog() {
-  const [st, setSt] = useState<UpdateState>({ status: 'idle' })
+function UpdatesPanel({ st, setSt }: { st: UpdateState; setSt: React.Dispatch<React.SetStateAction<UpdateState>> }) {
   const [token, setToken] = useState('')
   const [saved, setSaved] = useState(false)
   const up = desktop?.update
-  useEffect(() => {
-    if (!up) return
-    up.state().then(setSt)
-    up.onState((x) => setSt((o) => ({ ...o, ...x })))
-  }, [up])
   const saveToken = async () => {
     await desktop!.setSecret('github-token', token.trim())
     setToken('')
@@ -409,7 +404,7 @@ export function UpdatesDialog() {
     if (token.trim()) up?.check()
   }
   return (
-    <Modal title="Atualizações" onClose={close} actions={<><div className="spacer" /><button className="btn ghost" onClick={close}>Fechar</button></>}>
+    <>
       {!up ? (
         <p className="muted">A versão web é atualizada no servidor (docker compose pull / up). As atualizações automáticas são do app de PC.</p>
       ) : (
@@ -436,6 +431,73 @@ export function UpdatesDialog() {
           <p className="muted small">O repositório é privado (joseroverato/traco). Use um token “fine-grained” só com <b>Contents: Read-only</b> nesse repositório. Ele fica guardado criptografado neste computador e nunca vai para o código nem para o projeto. O Traço verifica sozinho ao abrir e avisa quando houver versão nova.</p>
         </div>
       )}
+    </>
+  )
+}
+
+function AboutPanel({ st, goUpdates }: { st: UpdateState; goUpdates: () => void }) {
+  const up = desktop?.update
+  const version = st.current ?? APP_VERSION
+  const busy = st.status === 'checking' || st.status === 'downloading'
+  const newer = st.status === 'available' || st.status === 'ready'
+  return (
+    <div className="stack">
+      <div className="card">
+        <div className="kv"><span>Traço</span><b>{IS_DESKTOP ? 'App de PC' : 'Versão web'}</b></div>
+        <div className="kv"><span>Versão instalada</span><b>{version}</b></div>
+        {up ? (
+          <>
+            <div className="kv"><span>Atualização</span><b>{UPDATE_TEXT[st.status]}{newer ? ` (${st.version})` : ''}</b></div>
+            {st.status === 'downloading' && <div className="progress"><div style={{ width: `${st.percent ?? 0}%` }} /></div>}
+            {st.status === 'error' && st.error && <span className="warn small">{st.error}</span>}
+            {!st.configured ? (
+              <div className="row">
+                <span className="muted small">Para atualizar pelo GitHub, cole o token de leitura.</span>
+                <button className="btn sm" onClick={goUpdates}>Configurar token</button>
+              </div>
+            ) : (
+              <div className="row">
+                <button className="btn sm" disabled={busy} onClick={() => up.check()}>Verificar atualização</button>
+                {st.status === 'available' && <button className="btn sm primary" onClick={() => up.download()}>Baixar {st.version}</button>}
+                {st.status === 'ready' && <button className="btn sm primary" onClick={() => up.install()}>Reiniciar e instalar</button>}
+              </div>
+            )}
+          </>
+        ) : (
+          <p className="muted small">A versão web é atualizada no servidor (docker compose pull / up). A atualização automática é do app de PC.</p>
+        )}
+        {st.notes && newer && <pre className="notes">{st.notes}</pre>}
+      </div>
+      <div className="row">
+        <a className="btn sm" href={REPO_URL} target="_blank" rel="noreferrer">Repositório no GitHub</a>
+        <a className="btn sm" href={newer && st.version ? releaseUrl(st.version) : releasesUrl()} target="_blank" rel="noreferrer">Versões e notas</a>
+      </div>
+      <p className="muted small">Traço — Lottos Engenharia. Usa {THIRD_PARTY.map(([n, l]) => `${n} (${l})`).join(', ')}.</p>
+    </div>
+  )
+}
+
+/** Configurações: aba Sobre (versão e atualização) e aba Atualizações (token do GitHub). */
+export function SettingsDialog() {
+  const [tab, setTab] = useState<'about' | 'updates'>('about')
+  const [st, setSt] = useState<UpdateState>({ status: 'idle', current: APP_VERSION })
+  const up = desktop?.update
+  useEffect(() => {
+    if (!up) return
+    up.state().then((x) => {
+      setSt(x)
+      // ao abrir, já procura atualização se o token estiver configurado
+      if (x.configured && x.status === 'idle') up.check()
+    })
+    up.onState((x) => setSt((o) => ({ ...o, ...x })))
+  }, [up])
+  return (
+    <Modal title="Configurações" onClose={close} actions={<><div className="spacer" /><button className="btn ghost" onClick={close}>Fechar</button></>}>
+      <div className="tabs">
+        <button className={tab === 'about' ? 'active' : ''} onClick={() => setTab('about')}>Sobre</button>
+        <button className={tab === 'updates' ? 'active' : ''} onClick={() => setTab('updates')}>Atualizações</button>
+      </div>
+      {tab === 'about' ? <AboutPanel st={st} goUpdates={() => setTab('updates')} /> : <UpdatesPanel st={st} setSt={setSt} />}
     </Modal>
   )
 }

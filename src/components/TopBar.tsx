@@ -83,7 +83,7 @@ export function TopBar({ onOpen }: { onOpen: () => void }) {
           </>
         )}
         <button className="icon-btn" data-tip="Buscar texto  Ctrl+F" disabled={!has} onClick={() => s.set({ search: { ...s.search, open: !s.search.open }, mode: 'review' })}><Search size={17} /></button>
-        <button className={`icon-btn ${s.updateReady ? 'badge' : ''}`} data-tip={s.updateReady ? `Atualização ${s.updateReady} pronta` : 'Atualizações'} onClick={() => s.set({ dialog: 'updates' })}><Settings size={17} /></button>
+        <button className={`icon-btn ${s.updateReady ? 'badge' : ''}`} data-tip={s.updateReady ? `Atualização ${s.updateReady} pronta` : 'Configurações e atualizações'} onClick={() => s.set({ dialog: 'updates' })}><Settings size={17} /></button>
         <button className="icon-btn" data-tip={s.theme === 'dark' ? 'Tema claro' : 'Tema escuro'} onClick={toggleTheme}>{s.theme === 'dark' ? <Sun size={17} /> : <Moon size={17} />}</button>
       </div>
     </header>

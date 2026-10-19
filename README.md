@@ -37,6 +37,11 @@ Requer Node.js 22 ou superior.
   (Alt = passo de 1 cm). Volume (m³) entra no quantitativo; variáveis de fórmula: `VOL`, `AL` (área lateral
   / da parede) e `ALT`. Código: `src/solids.ts` (puro, testado), `src/scene3d.ts` (three.js) e `src/components/View3D.tsx`.
 
+- **Navegação no 3D (estilo Revit)**: roda = zoom no cursor · botão do meio = mover · Shift + botão do meio = girar.
+  **Dividir a tela** (barra superior): planta e 3D lado a lado, ao vivo.
+- **Dicas das ferramentas**: texto e animação em `src/toolInfo.ts` (desenho em `components/ToolDemo.tsx`).
+  Para usar um vídeo gravado no lugar da animação, coloque `src/assets/tools/<id>.mp4` (ou `.webm`).
+
 ## Exportar PDF (Ctrl+E)
 Grava marcações/carimbos/imagens no PDF, cria índice de folhas (marcadores), rótulos de página
 com o nome da folha, metadados, e pode remover anotações que vieram no original.

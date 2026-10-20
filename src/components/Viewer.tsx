@@ -8,9 +8,10 @@ import { bbox, dist, scaleFor, snapAngle } from '../geometry'
 import { DRAWING_TOOLS, computeLayout, markupsInRect, snapAllowed } from '../viewerLogic'
 import { useElementSize, usePageRender, useZoomControls } from './viewerHooks'
 import { buildDraft, commitDraw, commitFill, commitPolygon, minVertices, placeAt } from '../viewerActions'
-import { FileUp, Magnet, Move } from 'lucide-react'
+import { Magnet, Move } from 'lucide-react'
 import { fillAt, findSymbols } from '../geoWorker'
-import { OverlayCanvas, applyM, invertM, overlaySheet, similarity } from './OverlayCanvas'
+import { OverlayCanvas } from './OverlayCanvas'
+import { applyM, invertM, overlaySheet, similarity } from '../overlayMath'
 import { LegendBox } from './LegendBox'
 import { SymbolResult } from './SymbolResult'
 import { findSnap, snapIndexFor } from '../snap'
@@ -18,6 +19,8 @@ import { SnapMarker } from './SnapMarker'
 import { ViewerHints } from './ViewerHints'
 import { ScaleBanner } from './ScaleBanner'
 import { openSample } from '../tour'
+import { ViewerEmpty } from './ViewerEmpty'
+import { AlignPoints, DashedRect, SearchHighlights, SelectionHandles, SymbolMatches } from './ViewerOverlays'
 import { TextEditor } from './TextEditor'
 import { filterHoles, refineRing } from '../regions'
 import type { SnapHit, SnapIndex } from '../snap'
@@ -508,27 +511,7 @@ export function Viewer({ onOpen }: { onOpen: () => void }) {
   }
 
   if (!doc || !info) {
-    return (
-      <div
-        className={`viewer empty ${dragOver ? 'drag' : ''}`}
-        ref={box}
-        onDragOver={(e) => {
-          e.preventDefault()
-          setDragOver(true)
-        }}
-        onDragLeave={() => setDragOver(false)}
-        onDrop={onDrop}
-      >
-        <div className="empty-card">
-          <div className="empty-icon"><FileUp size={28} strokeWidth={1.6} /></div>
-          <h2>Abra uma prancha para começar</h2>
-          <p>Arraste um PDF aqui ou</p>
-          <button className="btn primary" onClick={onOpen}>Abrir PDF</button>
-          <button className="btn ghost" onClick={() => openSample()} data-tip="Uma planta pronta para testar, com um passo a passo">Experimentar com uma planta de exemplo</button>
-          <div className="kbd-hint"><kbd>Ctrl</kbd>+<kbd>O</kbd></div>
-        </div>
-      </div>
-    )
+    return <ViewerEmpty boxRef={box} dragOver={dragOver} setDragOver={setDragOver} onDrop={onDrop} onOpen={onOpen} onSample={() => openSample()} />
   }
 
   const pageMarkups = s.markups.filter((m) => m.page === page)
@@ -587,54 +570,18 @@ export function Viewer({ onOpen }: { onOpen: () => void }) {
                 <MarkupShape key={m.id} m={m} preset={m.presetId ? presetById[m.presetId] : undefined} scale={scaleFor(m, pageMarkups, sheetScale)} zoom={zoom} selected={s.selected.includes(m.id)} stampCtx={stampCtx} />
               ),
             )}
-            {s.search.hits.map((h, i) =>
-              h.sheet === page ? (
-                <rect key={`sh${i}`} x={h.x - 1} y={h.y - 1} width={h.w + 2} height={h.h + 2} rx={1} fill="#ffd60a" fillOpacity={i === s.search.index ? 0.55 : 0.28} stroke={i === s.search.index ? '#ff9f0a' : 'none'} strokeWidth={1.5 / zoom} style={{ pointerEvents: 'none' }} />
-              ) : null,
-            )}
-            {symRect && (() => {
-              const r = bbox([symRect.a, symRect.b])
-              return <rect x={r.x} y={r.y} width={r.w} height={r.h} fill="#f76b15" fillOpacity={0.08} stroke="#f76b15" strokeWidth={1.2 / zoom} strokeDasharray={`${4 / zoom} ${3 / zoom}`} />
-            })()}
-            {symFound && (
-              <g style={{ pointerEvents: 'none' }}>
-                {symFound.centers.map((c, i) => (
-                  <rect key={i} x={c.x - symFound.rect.w / 2 - 2} y={c.y - symFound.rect.h / 2 - 2} width={symFound.rect.w + 4} height={symFound.rect.h + 4} rx={2} fill="#f76b15" fillOpacity={0.12} stroke="#f76b15" strokeWidth={1.4 / zoom} />
-                ))}
-              </g>
-            )}
-            {s.aligning && s.aligning.pts.map((q, i) => {
-              const ov = overlays.find((o) => o.id === s.aligning!.overlay)
-              const pt = i % 2 === 0 && ov ? applyM(ov.matrix, q) : q
-              return <circle key={`al${i}`} cx={pt.x} cy={pt.y} r={5 / zoom} fill={i % 2 === 0 ? ov?.color ?? '#f00' : 'var(--accent)'} stroke="#fff" strokeWidth={1.5 / zoom} style={{ pointerEvents: 'none' }} />
-            })}
+            <SearchHighlights hits={s.search.hits} page={page} index={s.search.index} zoom={zoom} />
+            {symRect && <DashedRect a={symRect.a} b={symRect.b} zoom={zoom} color="#f76b15" fillOpacity={0.08} width={1.2} />}
+            {symFound && <SymbolMatches found={symFound} zoom={zoom} />}
+            {s.aligning && <AlignPoints pts={s.aligning.pts} overlay={overlays.find((o) => o.id === s.aligning!.overlay)} zoom={zoom} />}
             {draft && <MarkupShape m={draft} preset={draft.presetId ? presetById[draft.presetId] : undefined} scale={scaleFor(draft, pageMarkups, sheetScale)} zoom={zoom} selected={false} draft />}
             {polyDraft && <MarkupShape m={polyDraft} preset={polyDraft.presetId ? presetById[polyDraft.presetId] : undefined} scale={scaleFor(polyDraft, pageMarkups, sheetScale)} zoom={zoom} selected={false} draft />}
             {poly && poly.kind !== 'length' && poly.points.length >= 3 && (
               <circle cx={poly.points[0].x} cy={poly.points[0].y} r={6 / zoom} fill="none" stroke="var(--accent)" strokeWidth={1.5 / zoom} />
             )}
-            {sel && tool === 'select' && sel.kind !== 'legend' &&
-              sel.points.map((p, i) => (
-                <rect
-                  key={i}
-                  data-handle={i}
-                  data-mid={sel.id}
-                  x={p.x - 4 / zoom}
-                  y={p.y - 4 / zoom}
-                  width={8 / zoom}
-                  height={8 / zoom}
-                  rx={1.5 / zoom}
-                  fill="var(--handle-fill)"
-                  stroke="var(--accent)"
-                  strokeWidth={1.5 / zoom}
-                  style={{ cursor: 'crosshair' }}
-                />
-              ))}
+            {sel && tool === 'select' && sel.kind !== 'legend' && <SelectionHandles sel={sel} zoom={zoom} />}
             {snapHit && DRAWING.includes(tool) && <SnapMarker hit={snapHit} zoom={zoom} />}
-            {marquee && (() => {
-              const r = bbox([marquee.a, marquee.b])
-              return <rect x={r.x} y={r.y} width={r.w} height={r.h} fill="var(--accent)" fillOpacity={0.08} stroke="var(--accent)" strokeWidth={1 / zoom} strokeDasharray={`${4 / zoom} ${3 / zoom}`} />
-            })()}
+            {marquee && <DashedRect a={marquee.a} b={marquee.b} zoom={zoom} color="var(--accent)" fillOpacity={0.08} />}
           </svg>
           {editing && editing.page === page && <TextEditor m={editing} zoom={zoom} left={L.left} top={L.top} />}
         </div>

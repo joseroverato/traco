@@ -213,7 +213,7 @@ export const TOOL_INFO: Record<Tool, ToolInfo> = {
   },
   redact: {
     title: 'Tarja / corrigir texto',
-    desc: 'Cubra o que deve ser removido. No app de PC, ao exportar o texto e a imagem sob a tarja somem de verdade; o desenho vetorial é preservado.',
+    desc: 'Cubra o que deve ser removido. Ao exportar, o texto e a imagem sob a tarja somem de verdade; o desenho vetorial é preservado.',
     demo: {
       scene: 'titleblock',
       cursor: [[108, 22], [184, 22], [108, 36], [160, 36]],

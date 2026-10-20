@@ -1,0 +1,25 @@
+# Confere cada envio e cada pull request: tipos, lint, testes e vulnerabilidades conhecidas.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  verificar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Tipos, lint e testes
+        run: npx tsc -b && npm run lint && npm test
+      - name: Vulnerabilidades (dependências do app)
+        run: npm audit --omit=dev --audit-level=high

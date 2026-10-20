@@ -1,11 +1,11 @@
-import { Fragment, useMemo, useState } from 'react'
+import { Fragment, useDeferredValue, useMemo, useState } from 'react'
 import { ChevronsDown, FileSpreadsheet } from 'lucide-react'
 import { curSheet, useStore } from '../store'
 import { fmt, measureOf, scaleFor } from '../geometry'
 import { summarize } from '../summary'
 import type { GroupBy } from '../summary'
 import { spaceOf } from '../columns'
-import { KIND_LABEL } from './RightPanel'
+import { KIND_LABEL } from '../kinds'
 
 const GROUPS: { id: GroupBy; label: string }[] = [
   { id: 'preset', label: 'Serviço' },
@@ -22,8 +22,10 @@ export function BottomPanel() {
   const [scope, setScope] = useState<'all' | 'page'>('all')
   const cur = curSheet(s)
   const by = s.groupBy
-  const source = useMemo(() => (scope === 'page' ? s.markups.filter((m) => m.page === cur?.id) : s.markups).filter((m) => m.kind !== 'viewport'), [scope, s.markups, cur?.id])
-  const sum = useMemo(() => summarize(source, s.presets, s.scales, s.sheets, s.markups, by, s.columns), [source, s.presets, s.scales, s.sheets, s.markups, by, s.columns])
+  // com milhares de marcações o resumo leva centenas de ms: calcula em segundo plano para não travar o desenho
+  const markups = useDeferredValue(s.markups)
+  const source = useMemo(() => (scope === 'page' ? markups.filter((m) => m.page === cur?.id) : markups).filter((m) => m.kind !== 'viewport'), [scope, markups, cur?.id])
+  const sum = useMemo(() => summarize(source, s.presets, s.scales, s.sheets, markups, by, s.columns), [source, s.presets, s.scales, s.sheets, markups, by, s.columns])
   const total = sum.reduce((a, r) => a + r.total, 0)
   const list = source.filter((m) => !filter || m.status === filter)
   const buckets = by === 'preset' ? [''] : Array.from(new Set(sum.map((r) => r.bucket)))

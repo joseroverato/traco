@@ -1,7 +1,8 @@
 import { Suspense, lazy, useCallback, useEffect, useRef } from 'react'
 import { curSheet, useStore } from './store'
 import { TopBar } from './components/TopBar'
-import { ToolRail, TOOLS } from './components/ToolRail'
+import { ToolRail } from './components/ToolRail'
+import { TOOLS } from './railTools'
 import { LeftPanel } from './components/LeftPanel'
 import { NavBar } from './components/NavBar'
 import { RightPanel } from './components/RightPanel'
@@ -25,7 +26,8 @@ const Loading = () => <div className="loading-mod">Carregando…</div>
 import { loadFile, saveProject } from './project'
 import { desktop } from './platform'
 import { SearchBar } from './components/SearchBar'
-import { Resizer, togglePanel } from './components/Resizer'
+import { Resizer } from './components/Resizer'
+import { togglePanel } from './panels'
 import { ChevronLeft, ChevronUp } from 'lucide-react'
 import { readRecoveryInfo, startAutosave } from './autosave'
 
@@ -42,8 +44,7 @@ export default function App() {
 
   const handleFile = useCallback(async (f: File | { name: string; data: ArrayBuffer; path?: string }) => {
     try {
-      await loadFile(f)
-      useStore.getState().notify(`${f.name} aberto`)
+      if (await loadFile(f)) useStore.getState().notify(`${f.name} aberto`)
     } catch (e) {
       console.error(e)
       useStore.getState().notify('Não foi possível abrir o arquivo')

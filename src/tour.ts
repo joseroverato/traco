@@ -36,8 +36,7 @@ export async function openSample() {
     const res = await fetch(`${import.meta.env.BASE_URL}exemplo/planta-exemplo.pdf`)
     if (!res.ok) throw new Error(String(res.status))
     const file = new File([await res.blob()], 'Planta de exemplo.pdf', { type: 'application/pdf' })
-    await loadFile(file)
-    startTour()
+    if (await loadFile(file)) startTour()
   } catch (e) {
     console.error(e)
     st.notify('Não foi possível abrir a planta de exemplo')

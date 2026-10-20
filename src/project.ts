@@ -33,22 +33,35 @@ export async function download(data: Uint8Array | ArrayBuffer | string, name: st
 
 const destroyAll = () => Object.values(useStore.getState().sources).forEach((s) => s.doc.destroy())
 
-export async function loadFile(file: File | { name: string; data: ArrayBuffer; path?: string }) {
+/** Antes de trocar o projeto aberto por outro arquivo: pede confirmação se há alterações não salvas. */
+export function confirmReplace(): boolean {
+  const st = useStore.getState()
+  if (!st.dirty || !st.sheets.length || typeof window === 'undefined') return true
+  return window.confirm('Há alterações não salvas neste projeto. Abrir outro arquivo e descartá-las?')
+}
+
+/**
+ * Abre um PDF ou .traco no lugar do que está aberto. O arquivo é lido por inteiro antes de tocar no projeto atual:
+ * se estiver corrompido, lança erro e o trabalho aberto continua intacto. Devolve false se o usuário desistiu.
+ */
+export async function loadFile(file: File | { name: string; data: ArrayBuffer; path?: string }): Promise<boolean> {
   const buf = 'data' in file ? file.data : await file.arrayBuffer()
   const path = 'path' in file ? file.path : undefined
   if (file.name.toLowerCase().endsWith('.traco')) {
-    await loadProject(buf)
-    useStore.setState({ projectPath: path ?? null })
-    return
+    const opened = await loadProject(buf, true)
+    if (opened) useStore.setState({ projectPath: path ?? null })
+    return opened
   }
   const src = await openSource(buf, file.name)
   const sheets = await sheetsOf(src)
+  if (!confirmReplace()) return false
   destroyAll()
   useStore.setState({
     sources: { [src.id]: src }, sheets, page: 0, fileName: file.name, markups: [], scales: {}, selected: [], past: [], future: [], mode: 'review', projectPath: null, ocr: {},
     overlays: {}, hiddenLayers: {}, dirty: false, search: { open: false, query: '', hits: [], index: 0 },
     meta: { title: file.name.replace(/\.pdf$/i, ''), author: '', subject: '', keywords: '' },
   })
+  return true
 }
 
 /** Acrescenta as páginas de outro PDF ao conjunto (após a posição indicada). */
@@ -71,11 +84,12 @@ export async function addSourceOnly(file: File): Promise<{ src: Source; sheets: 
   return { src, sheets }
 }
 
-export async function loadProject(buf: ArrayBuffer | Uint8Array) {
+export async function loadProject(buf: ArrayBuffer | Uint8Array, askBeforeReplace = false): Promise<boolean> {
   const st = useStore.getState()
   const { data: pf, sources: srcs } = decodeProject(buf)
   const sources: Record<string, Source> = {}
   for (const s of srcs) sources[s.id] = await openSource(toBuffer(s.bytes), s.name, s.id)
+  if (askBeforeReplace && !confirmReplace()) return false
   const known = new Set(st.presets.map((p) => p.id))
   st.setPresets([...st.presets, ...pf.presets.filter((p) => !known.has(p.id)).map((p) => ({ ...p, formula: p.formula ?? '' }))])
   if (pf.statuses?.length) st.setStatuses(pf.statuses)
@@ -86,6 +100,7 @@ export async function loadProject(buf: ArrayBuffer | Uint8Array) {
     search: { open: false, query: '', hits: [], index: 0 },
     meta: pf.meta ?? { title: pf.fileName, author: '', subject: '', keywords: '' },
   })
+  return true
 }
 
 /** Projeto completo em bytes (.traco v3: ZIP). Usado ao salvar e no salvamento automático. */

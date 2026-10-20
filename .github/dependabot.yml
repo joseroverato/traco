@@ -1,0 +1,16 @@
+# Avisa (com pull request) quando há versão nova ou correção de segurança nas dependências.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      desenvolvimento:
+        dependency-type: development
+        update-types: [minor, patch]
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly

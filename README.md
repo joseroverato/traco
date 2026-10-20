@@ -14,7 +14,7 @@ O Traço abre a prancha em PDF e deixa você medir em cima dela: comprimento, á
 - **3D:** desenhe a base de um sólido na planta e puxe a altura com o mouse. Paredes, ambientes e lajes medidos aparecem em volume. Tela dividida (planta e 3D ao vivo) e navegação estilo Revit.
 - **Revisão e compatibilização:** nuvens, itens numerados com responsável, prioridade e prazo, relatório em PDF e Excel, comparação entre revisões e sobreposição de disciplinas.
 - **Gestão de pranchas:** reordenar, girar, duplicar, extrair, dividir, renomear pelo carimbo, carimbos em lote e OCR em português.
-- **Tarja definitiva:** o texto e a imagem sob a tarja somem do PDF de verdade, e o desenho vetorial é preservado para as medições (app de PC).
+- **Tarja definitiva:** o texto e a imagem sob a tarja somem do PDF de verdade, e o desenho vetorial é preservado para as medições (no app de PC e na versão web).
 - **Claude (opcional):** painel com a sua chave da API e servidor MCP para usar com o Claude Desktop.
 
 ## Instalar
@@ -62,7 +62,8 @@ Requer Node.js 22 ou superior.
 - src/commands.ts + src/tools.json — ferramentas do Claude (painel e MCP usam as mesmas)
 - src/ai.ts — conversa com a API da Anthropic (tool use, imagens das folhas)
 - electron/main.cjs — app de PC: arquivos nativos, chave criptografada, ponte local p/ MCP
-- electron/engine.mjs — motor do PC: PDFium/WASM (tarja definitiva que preserva o vetor) + Tesseract (OCR pt). Otimização de tamanho fica em src/pdfexport.ts (pdf-lib), igual na web
+- shared/redact-core.mjs — tarja definitiva com PDFium/WASM (preserva o vetor), usada pelo app de PC e pela versão web (src/redactWeb.ts).
+- electron/engine.mjs — motor do PC: carrega o PDFium para o código compartilhado + Tesseract (OCR pt). Otimização de tamanho fica em src/pdfexport.ts (pdf-lib), igual na web
 - electron/mcp-server.mjs — servidor MCP (stdio) para o Claude Desktop; abre o Traço se estiver fechado
 - deploy/ — Dockerfile + nginx + compose da versão web e scripts de instalação do PC
 

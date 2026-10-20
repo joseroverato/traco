@@ -3,7 +3,7 @@ import type { PDFFont, PDFPage } from 'pdf-lib'
 import { zipSync, zlibSync } from 'fflate'
 import { useStore } from './store'
 import { layersOf, openSource, sheetRotation } from './pdf'
-import { legendLayout, legendRows } from './components/LegendBox'
+import { legendLayout, legendRows } from './legend'
 import type { Source } from './pdf'
 import { DEFAULT_SOLID_HEIGHT, arrowHead, bbox, centroid, cloudPoints, fmt, measureOf, scaleFor, signedArea, stampText } from './geometry'
 import type { Markup, Preset, Pt, Sheet } from './types'
@@ -409,23 +409,23 @@ export async function optimizePdf(bytes: Uint8Array): Promise<Uint8Array> {
 }
 
 /**
- * Exporta com o melhor motor disponível.
- * App de PC: tarja definitiva (PDFium remove texto, pixels de imagem e traços cobertos, preservando o vetor).
- * Navegador: tarja visual. A otimização de tamanho vale nos dois.
+ * Exporta com tarja definitiva nos dois ambientes: o PDFium remove texto, pixels de imagem e traços cobertos,
+ * preservando o vetor. No app de PC ele roda no processo principal; no navegador, carregado sob demanda.
+ * Se o motor não carregar, a exportação falha em vez de entregar uma tarja só visual (texto ainda copiável).
+ * A otimização de tamanho vale nos dois.
  */
 export async function exportPdf(opts: ExportOptions & { optimize?: boolean }): Promise<Uint8Array> {
   const { desktop } = await import('./platform')
   const st = useStore.getState()
   const ids = opts.sheetIds ?? st.sheets.map((s) => s.id)
   const redacts = opts.flatten ? st.markups.filter((m) => m.kind === 'redact' && ids.includes(m.page)) : []
-  if (!desktop) return opts.optimize ? optimizePdf(await buildPdf(opts)) : buildPdf(opts)
   let bytes = await buildPdf({ ...opts, skipRedacts: redacts.length > 0 })
   if (redacts.length) {
     const items = redacts.map((m) => {
       const b = bbox(m.points)
       return { page: ids.indexOf(m.page), rect: [b.x, b.y, b.x + b.w, b.y + b.h] as [number, number, number, number], fill: [0, 0, 0] as [number, number, number] }
     })
-    bytes = await desktop.engine.redact(bytes, items)
+    bytes = desktop ? await desktop.engine.redact(bytes, items) : await (await import('./redactWeb')).redactInBrowser(bytes, items)
     bytes = await overlayRedacts(bytes, ids)
   }
   if (opts.optimize) bytes = await optimizePdf(bytes)

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { DEMO_H, DEMO_W, TOOL_INFO } from './toolInfo'
 import type { DemoShape, Pt2 } from './toolInfo'
-import { TOOLS } from './components/ToolRail'
+import { TOOLS } from './railTools'
 import { DRAW_FROM, DRAW_TO, appearKeys, cursorTimes } from './demoTiming'
 
 const points = (s: DemoShape): Pt2[] => {

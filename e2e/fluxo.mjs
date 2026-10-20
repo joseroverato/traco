@@ -145,6 +145,52 @@ if (xlsxOut) {
   ok(marc.length >= 3, `Excel: aba Marcações com ${marc.length} linhas`)
 }
 
+
+// ---------- arquivos defeituosos e proteção do trabalho aberto ----------
+console.log('Arquivos corrompidos e confirmação antes de descartar alterações')
+const { zipSync, strFromU8 } = await import('fflate')
+const fileInput = page.locator('input[type=file][accept=".pdf,.traco"]')
+const contarMarcacoes = async () => (await cmd(page, 'list_markups')).data?.count ?? -1
+const antesN = await contarMarcacoes()
+ok(antesN === 4, 'projeto aberto tem 4 marcações antes dos testes', String(antesN))
+const original = readFileSync(pdf)
+const casos = [
+  ['PDF vazio (0 bytes)', { name: 'vazio.pdf', mimeType: 'application/pdf', buffer: Buffer.alloc(0) }],
+  ['PDF que é só texto', { name: 'texto.pdf', mimeType: 'application/pdf', buffer: Buffer.from('isto não é um pdf, é só uma frase qualquer') }],
+  ['PDF com bytes aleatórios', { name: 'lixo.pdf', mimeType: 'application/pdf', buffer: Buffer.from(Array.from({ length: 4000 }, (_, i) => (i * 131 + 7) % 256)) }],
+  ['PDF truncado na metade', { name: 'cortado.pdf', mimeType: 'application/pdf', buffer: original.subarray(0, Math.floor(original.length / 2)) }],
+  ['.traco com bytes aleatórios', { name: 'lixo.traco', mimeType: 'application/octet-stream', buffer: Buffer.from(Array.from({ length: 3000 }, (_, i) => (i * 37 + 11) % 256)) }],
+  ['.traco ZIP com project.json quebrado', { name: 'quebrado.traco', mimeType: 'application/octet-stream', buffer: Buffer.from(zipSync({ 'project.json': new TextEncoder().encode('{"version":3,"sheets":') })) }],
+  ['.traco ZIP sem project.json', { name: 'sem-json.traco', mimeType: 'application/octet-stream', buffer: Buffer.from(zipSync({ 'qualquer.txt': new TextEncoder().encode('oi') })) }],
+]
+const dialogos = []
+page.on('dialog', (d) => { dialogos.push(d.message()); d.dismiss() }) // "Cancelar" em qualquer confirmação
+for (const [nome, f] of casos) {
+  dialogos.length = 0
+  await page.locator('.toast').waitFor({ state: 'detached', timeout: 10000 }).catch(() => {}) // sem aviso velho na tela
+  await fileInput.setInputFiles(f)
+  const t0 = Date.now()
+  while (Date.now() - t0 < 10000 && !(await page.locator('.toast').count()) && !dialogos.length) await page.waitForTimeout(200)
+  const demorou = Date.now() - t0
+  await page.waitForTimeout(300)
+  const vivo = await cmd(page, 'list_sheets').then((r) => !r.error, () => false)
+  const n = await contarMarcacoes()
+  const toast = await page.locator('.toast').first().innerText().catch(() => '')
+  ok(vivo && n === antesN, `${nome}: app segue vivo e as ${antesN} marcações continuam (${toast || (dialogos.length ? 'pediu confirmação' : 'sem aviso')}, ${demorou} ms)`, `vivo=${vivo} marcações=${n}`)
+  if (!f.name.endsWith('cortado.pdf')) ok(/Não foi possível abrir/.test(toast) && !dialogos.length, `${nome}: recusado com aviso claro, sem perguntar nada`, `${toast} | ${dialogos.join(';')}`)
+}
+// arquivo válido com alterações não salvas: pergunta antes de descartar
+dialogos.length = 0
+await fileInput.setInputFiles(pdf)
+await page.waitForTimeout(1800)
+ok(dialogos.some((m) => /não salvas/.test(m)), 'abrir outro arquivo com alterações pede confirmação', dialogos.join(';'))
+ok((await contarMarcacoes()) === antesN, 'ao cancelar a confirmação, o trabalho continua')
+page.removeAllListeners('dialog')
+page.on('dialog', (d) => d.accept())
+await fileInput.setInputFiles(pdf)
+await page.waitForTimeout(2500)
+ok((await contarMarcacoes()) === 0, 'ao confirmar, o novo arquivo abre limpo')
+
 ok(errors.length === 0, 'sem erros de JavaScript na sessão 2', errors.join(' | '))
 await app.close()
 

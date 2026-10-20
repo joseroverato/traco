@@ -5,12 +5,8 @@ import type { Markup, Preset } from '../types'
 import { DEFAULT_SOLID_HEIGHT, fmt, measureOf, polyArea, scaleFor } from '../geometry'
 import { isIssue, issueList } from '../issues'
 import { spaceOf } from '../columns'
-import { IS_DESKTOP } from '../platform'
+import { KIND_LABEL } from '../kinds'
 
-export const KIND_LABEL: Record<Markup['kind'], string> = {
-  rect: 'Retângulo', ellipse: 'Elipse', cloud: 'Nuvem', arrow: 'Seta', line: 'Linha', text: 'Texto',
-  length: 'Comprimento', area: 'Área', count: 'Contagem', stamp: 'Carimbo', image: 'Imagem', viewport: 'Viewport', redact: 'Tarja / correção', space: 'Ambiente', solid: 'Sólido 3D', legend: 'Legenda',
-}
 const MEASURE_LABEL = { length: 'Comprimento', area: 'Área', count: 'Contagem' }
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
@@ -148,7 +144,7 @@ function Props() {
           </div>
           <Field label="Texto de substituição (opcional — corrige o texto do PDF)"><textarea rows={2} value={m.text} onChange={(e) => s.updateMarkup(m.id, { text: e.target.value }, false)} /></Field>
           <Field label="Tamanho da fonte"><input type="number" min={4} max={72} value={m.fontSize} onChange={(e) => up({ fontSize: Number(e.target.value) })} /></Field>
-          <span className="muted small">{IS_DESKTOP ? 'No app de PC o conteúdo sob a tarja é removido de verdade ao exportar.' : 'Na versão web a tarja é só visual (cobre o conteúdo). Para remoção definitiva, exporte pelo app de PC.'}</span>
+          <span className="muted small">O conteúdo sob a tarja (texto e imagem) é removido de verdade ao exportar; o desenho vetorial é preservado.</span>
         </>
       )}
       {m.kind === 'image' && (

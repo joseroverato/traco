@@ -20,7 +20,7 @@ O Traço abre a prancha em PDF e deixa você medir em cima dela: comprimento, á
 ## Instalar
 
 1. Baixe o instalador `Traco-Setup-…exe` na página de [**Releases**](https://github.com/joseroverato/traco/releases/latest).
-2. Execute. No Windows pode aparecer um aviso de **"editor desconhecido"**, porque o app ainda não tem assinatura digital: clique em *Mais informações* e *Executar assim mesmo*.
+2. Execute. No Windows pode aparecer a tela azul do **SmartScreen** ("O Windows protegeu o computador"), porque o app ainda não tem assinatura digital e é novo para o Windows. Clique em *Mais informações* e depois em *Executar assim mesmo*. Para conferir que o arquivo é o original, compare o hash com o do arquivo `SHA256SUMS.txt` da mesma release (`certutil -hashfile Traco-Setup-….exe SHA256` no Prompt de Comando).
 3. Abra um PDF ou um projeto `.traco`.
 
 Também há uma **versão web** (`Traco-Web-…zip`, com Docker) para rodar num servidor. As atualizações do app de PC são verificadas ao abrir (Configurações › Sobre).
@@ -32,6 +32,13 @@ Tudo roda no seu computador: os PDFs não são enviados a lugar nenhum. As únic
 ## Feito com IA
 
 O Traço foi construído com ajuda de inteligência artificial (Claude). A visão do que um engenheiro precisa, os testes em planta real e as decisões são humanos; a IA ajudou a escrever, testar e corrigir o código. Os testes automatizados cobrem os cálculos (medições, fórmulas, quantitativo, formato do projeto e regras do 3D).
+
+## Política de assinatura de código
+
+O instalador do Windows ainda **não é assinado**. A assinatura gratuita para projetos de código aberto está sendo solicitada ao [SignPath Foundation](https://signpath.org); enquanto a resposta não vem, valem o aviso e a conferência de hash descritos em *Instalar*. Quando for aprovada, só serão assinados instaladores gerados pelo fluxo automático deste repositório (GitHub Actions), a partir do código público, e cada versão exigirá aprovação manual.
+
+- **Autor, revisor e aprovador:** José Roverato ([@joseroverato](https://github.com/joseroverato)), com autenticação em dois fatores no GitHub.
+- **Privacidade:** o programa não coleta nem envia dados. As únicas conexões são a consulta de atualização às releases do GitHub e, só se você usar o painel do Claude, o envio das folhas que você pedir à API da Anthropic (veja *Privacidade*).
 
 ## Contribuir
 

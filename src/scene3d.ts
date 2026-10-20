@@ -281,10 +281,16 @@ export class Scene3D {
     if (e.button === 1) e.preventDefault()
   }
 
-  /** Posição da câmera e alvo (para testes e diagnóstico). */
+  /** Posição da câmera e alvo, e onde está a seta de puxar na tela (para testes e diagnóstico). */
   state() {
     const p = this.camera.position, t = this.controls.target
-    return { position: [p.x, p.y, p.z], target: [t.x, t.y, t.z] }
+    let handle: [number, number] | null = null
+    if (this.handle) {
+      const v = this.handle.position.clone().project(this.camera)
+      const r = this.renderer.domElement.getBoundingClientRect()
+      handle = [r.left + ((v.x + 1) / 2) * r.width, r.top + ((1 - v.y) / 2) * r.height]
+    }
+    return { position: [p.x, p.y, p.z], target: [t.x, t.y, t.z], handle }
   }
 
   private onDown = (e: PointerEvent) => {

@@ -29,7 +29,7 @@ jobs:
           echo "version=$V" >> "$GITHUB_OUTPUT"
           if gh release view "v$V" >/dev/null 2>&1; then echo "skip=true" >> "$GITHUB_OUTPUT"; echo "Release v$V já existe."; else echo "skip=false" >> "$GITHUB_OUTPUT"; fi
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         if: steps.check.outputs.skip != 'true'
         with:
           node-version: 22

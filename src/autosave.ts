@@ -5,6 +5,7 @@
 import { useStore } from './store'
 import { desktop } from './platform'
 import { kvDel, kvGet, kvSet } from './sinapi'
+import { t } from './i18n'
 
 const KEY = 'recovery'
 const DELAY = 20_000
@@ -46,7 +47,7 @@ export async function readRecoveryInfo(): Promise<RecoveryInfo | null> {
 export async function restoreRecovery() {
   // recuperações gravadas antes da 1.2.1 são texto (JSON v2); as novas são bytes (ZIP v3)
   const saved = desktop?.recovery ? await desktop.recovery.read() : ((await kvGet(KEY)) as Uint8Array | string | undefined)
-  if (!saved) throw new Error('Nada para recuperar')
+  if (!saved) throw new Error(t('autosave.nada_para_recuperar'))
   const { loadProject } = await import('./project')
   await loadProject(typeof saved === 'string' ? new TextEncoder().encode(saved) : saved)
   useStore.setState({ dirty: true })

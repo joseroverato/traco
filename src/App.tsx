@@ -22,7 +22,7 @@ const ColumnsDialog = lazy(() => import('./components/Dialogs').then((m) => ({ d
 const SettingsDialog = lazy(() => import('./components/Dialogs').then((m) => ({ default: m.SettingsDialog })))
 const RecoverDialog = lazy(() => import('./components/Dialogs').then((m) => ({ default: m.RecoverDialog })))
 const PresetDialog = lazy(() => import('./components/PresetDialog').then((m) => ({ default: m.PresetDialog })))
-const Loading = () => <div className="loading-mod">Carregando…</div>
+const Loading = () => <div className="loading-mod">{t('app.carregando')}</div>
 import { loadFile, saveProject } from './project'
 import { desktop } from './platform'
 import { SearchBar } from './components/SearchBar'
@@ -30,9 +30,11 @@ import { Resizer } from './components/Resizer'
 import { togglePanel } from './panels'
 import { ChevronLeft, ChevronUp } from 'lucide-react'
 import { readRecoveryInfo, startAutosave } from './autosave'
+import { t, useLang } from './i18n'
 
 export default function App() {
   const s = useStore()
+  const lang = useLang() // trocar o idioma refaz a tela inteira (textos que ficaram em cache dentro de componentes)
   const input = useRef<HTMLInputElement>(null)
   const imgInput = useRef<HTMLInputElement>(null)
   const open = useCallback(async () => {
@@ -44,10 +46,10 @@ export default function App() {
 
   const handleFile = useCallback(async (f: File | { name: string; data: ArrayBuffer; path?: string }) => {
     try {
-      if (await loadFile(f)) useStore.getState().notify(`${f.name} aberto`)
+      if (await loadFile(f)) useStore.getState().notify(t('app.aberto', { name: f.name }))
     } catch (e) {
       console.error(e)
-      useStore.getState().notify('Não foi possível abrir o arquivo')
+      useStore.getState().notify(t('app.nao_foi_possivel_abrir_o'))
     }
   }, [])
 
@@ -66,7 +68,7 @@ export default function App() {
       if (await saveProject()) desktop?.closeNow?.()
     })
     desktop?.update?.onState((u) => {
-      if (u.status === 'available') useStore.getState().notify(`Nova versão ${u.version} disponível — Configurações › Atualizações`)
+      if (u.status === 'available') useStore.getState().notify(t('app.nova_versao_disponivel_configuracoes_atualizacoes', { version: u.version }))
       if (u.status === 'ready') useStore.setState({ updateReady: u.version ?? '' })
     })
   }, [])
@@ -90,21 +92,21 @@ export default function App() {
   // atalhos globais
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      const t = e.target as HTMLElement
+      const target = e.target as HTMLElement
       const st = useStore.getState()
       const mod = e.ctrlKey || e.metaKey
       const k = e.key.toLowerCase()
       if (mod && !e.shiftKey && ['1', '2', '3'].includes(e.key)) { e.preventDefault(); togglePanel(e.key === '1' ? 'left' : e.key === '2' ? 'bottom' : 'right'); return }
       if (mod && k === 'f' && st.sheets.length) { e.preventDefault(); st.set({ search: { ...st.search, open: true }, mode: 'review' }); setTimeout(() => (document.querySelector('.searchbar input') as HTMLInputElement | null)?.select(), 0); return }
-      if (t.closest('input,textarea,select,[contenteditable]')) return
+      if (target.closest('input,textarea,select,[contenteditable]')) return
       if (mod && k === 'o') { e.preventDefault(); open(); return }
       if (mod && k === 's') { e.preventDefault(); saveProject(e.shiftKey); return }
       if (mod && k === 'e') { e.preventDefault(); if (st.sheets.length) st.set({ dialog: 'export' }); return }
       if (mod && k === 'z') { e.preventDefault(); if (e.shiftKey) st.redo(); else st.undo(); return }
       if (mod && k === 'y') { e.preventDefault(); st.redo(); return }
       if (e.key === 'Tab' && !mod) { e.preventDefault(); (document.activeElement as HTMLElement | null)?.blur(); st.set({ focus: !st.focus }); return }
-      if (e.key === 'F3') { e.preventDefault(); st.set({ snap: !st.snap }); st.notify(st.snap ? 'Snap desligado' : 'Snap ligado'); return }
-      if (e.key === 'F8') { e.preventDefault(); st.set({ ortho: !st.ortho }); st.notify(st.ortho ? 'Ortogonal desligado' : 'Ortogonal ligado'); return }
+      if (e.key === 'F3') { e.preventDefault(); st.set({ snap: !st.snap }); st.notify(st.snap ? t('app.snap_desligado') : t('app.snap_ligado')); return }
+      if (e.key === 'F8') { e.preventDefault(); st.set({ ortho: !st.ortho }); st.notify(st.ortho ? t('app.ortogonal_desligado') : t('app.ortogonal_ligado')); return }
       if (st.mode !== 'review' || st.dialog) return
       const sh = curSheet(st)
       if (mod && k === 'a') { e.preventDefault(); st.set({ selected: st.markups.filter((m) => m.page === sh?.id).map((m) => m.id) }); return }
@@ -131,7 +133,7 @@ export default function App() {
   const rightW = s.rightTab === 'claude' ? Math.max(390, s.rightW) : s.rightW
   const cols = `${showLeft ? '240px' : '0px'} 48px 1fr ${showRight ? `${rightW}px` : '0px'}`
   return (
-    <div className="app">
+    <div className="app" key={lang}>
       <TopBar onOpen={open} />
       <div className="shell">
         <NavBar />
@@ -146,10 +148,10 @@ export default function App() {
             </div>
             {s.search.open && s.sheets.length > 0 && <SearchBar />}
             {!showBottom && !s.focus && s.sheets.length > 0 && (
-              <button className="edge-tab bottom" data-tip="Mostrar quantitativo  Ctrl+2" onClick={() => togglePanel('bottom')}><ChevronUp size={13} /> Quantitativo</button>
+              <button className="edge-tab bottom" data-tip={t('app.mostrar_quantitativo_ctrl_2')} onClick={() => togglePanel('bottom')}><ChevronUp size={13} /> {t('app.quantitativo')}</button>
             )}
             {!showRight && !s.focus && (
-              <button className="edge-tab right" data-tip="Mostrar marcadores, propriedades e Claude  Ctrl+3" onClick={() => togglePanel('right')}><ChevronLeft size={13} /><span>Painel</span></button>
+              <button className="edge-tab right" data-tip={t('app.mostrar_marcadores_propriedades_e_claude')} onClick={() => togglePanel('right')}><ChevronLeft size={13} /><span>{t('app.painel')}</span></button>
             )}
             <div className={`slot ${showBottom ? '' : 'collapsed'}`}>
               {showBottom && <Resizer dir="h" />}
@@ -205,7 +207,7 @@ export default function App() {
           const r = new FileReader()
           r.onload = () => {
             useStore.setState({ pendingImage: String(r.result), tool: 'image' })
-            useStore.getState().notify('Clique na folha para posicionar a imagem')
+            useStore.getState().notify(t('app.clique_na_folha_para_posicionar'))
           }
           r.readAsDataURL(f)
         }}

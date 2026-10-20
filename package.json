@@ -18,7 +18,9 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "licenses": "node scripts/third-party.mjs",
-    "test:e2e": "node e2e/fluxo.mjs"
+    "test:e2e": "node e2e/fluxo.mjs",
+    "i18n:check": "node scripts/i18n-check.mjs",
+    "i18n:amostras": "node scripts/make-sample-plans.mjs"
   },
   "dependencies": {
     "@embedpdf/pdfium": "^2.15.1",

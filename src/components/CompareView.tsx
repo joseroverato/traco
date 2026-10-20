@@ -4,6 +4,7 @@ import { uid, useStore } from '../store'
 import { addSourceOnly } from '../project'
 import { renderSheet } from '../pdf'
 import type { Sheet } from '../types'
+import { t } from '../i18n'
 
 interface Region { x: number; y: number; w: number; h: number; px: number }
 type View = 'overlay' | 'side' | 'diff'
@@ -140,13 +141,13 @@ export function CompareView() {
       markups: [
         ...useStore.getState().markups,
         ...ms.map((m, i) => ({
-          id: uid(), page: B.id, kind: 'cloud' as const, points: [m.a, m.b], text: '', comment: `Alteração ${i + 1} detectada na comparação com ${A?.label}`,
+          id: uid(), page: B.id, kind: 'cloud' as const, points: [m.a, m.b], text: '', comment: t('compareview.alteracao_detectada', { n: i + 1, label: A?.label }),
           status: s.statuses[0]?.name ?? 'aberto', author: s.author, createdAt: now, presetId: null, deduct: false, color: '#e5484d', width: 1.5, fill: '#e5484d', fillOpacity: 0, fontSize: 12,
         })),
       ],
     })
     useStore.setState({ mode: 'review', page: s.sheets.findIndex((x) => x.id === B.id), tool: 'select', selected: [] })
-    s.notify(`${ms.length} nuvens criadas em ${B.label}`)
+    s.notify(t('compareview.nuvens_criadas_em', { length: ms.length, label: B.label }))
   }
 
   const onFile = async (f: File) => {
@@ -154,7 +155,7 @@ export function CompareView() {
     const named = sheets.map((x) => ({ ...x, label: `${f.name.replace(/\.pdf$/i, '')} · ${x.label}` }))
     setExtra([...extra, ...named])
     setA(named[0].id)
-    s.notify(`${f.name} carregado para comparação`)
+    s.notify(t('compareview.carregado_para_comparacao', { name: f.name }))
   }
 
   const goTo = (r: Region) => {
@@ -163,12 +164,12 @@ export function CompareView() {
     el.scrollTo({ left: (r.x + r.w / 2) * zoom - el.clientWidth / 2, top: (r.y + r.h / 2) * zoom - el.clientHeight / 2, behavior: 'smooth' })
   }
 
-  if (!s.sheets.length) return <div className="pages-view empty"><p className="muted">Abra um PDF para comparar revisões.</p></div>
+  if (!s.sheets.length) return <div className="pages-view empty"><p className="muted">{t('compareview.abra_um_pdf_para_comparar')}</p></div>
 
   const Select = ({ value, onChange }: { value: string; onChange: (v: string) => void }) => (
     <select value={value} onChange={(e) => onChange(e.target.value)}>
-      <optgroup label="Conjunto atual">{options.filter((o) => !o.ext).map((o, i) => <option key={o.sh.id} value={o.sh.id}>{i + 1}. {o.sh.label}</option>)}</optgroup>
-      {extra.length > 0 && <optgroup label="Outro PDF">{options.filter((o) => o.ext).map((o) => <option key={o.sh.id} value={o.sh.id}>{o.sh.label}</option>)}</optgroup>}
+      <optgroup label={t('compareview.conjunto_atual')}>{options.filter((o) => !o.ext).map((o, i) => <option key={o.sh.id} value={o.sh.id}>{i + 1}. {o.sh.label}</option>)}</optgroup>
+      {extra.length > 0 && <optgroup label={t('compareview.outro_pdf')}>{options.filter((o) => o.ext).map((o) => <option key={o.sh.id} value={o.sh.id}>{o.sh.label}</option>)}</optgroup>}
     </select>
   )
 
@@ -176,24 +177,24 @@ export function CompareView() {
     <div className="compare">
       <aside className="panel compare-side">
         <div className="pad stack">
-          <label className="field"><span><i className="sw red" /> Revisão antiga (A)</span><Select value={aId} onChange={setA} /></label>
-          <label className="field"><span><i className="sw blue" /> Revisão nova (B)</span><Select value={bId} onChange={setB} /></label>
-          <button className="btn sm" onClick={() => input.current?.click()}><FileUp size={14} /> Carregar outro PDF…</button>
+          <label className="field"><span><i className="sw red" /> {t('compareview.revisao_antiga_a')}</span><Select value={aId} onChange={setA} /></label>
+          <label className="field"><span><i className="sw blue" /> {t('compareview.revisao_nova_b')}</span><Select value={bId} onChange={setB} /></label>
+          <button className="btn sm" onClick={() => input.current?.click()}><FileUp size={14} /> {t('compareview.carregar_outro_pdf')}</button>
           <div className="seg wide">
-            <button className={view === 'overlay' ? 'active' : ''} onClick={() => setView('overlay')}>Sobrepor</button>
-            <button className={view === 'diff' ? 'active' : ''} onClick={() => setView('diff')}>Só diferenças</button>
-            <button className={view === 'side' ? 'active' : ''} onClick={() => setView('side')}>Lado a lado</button>
+            <button className={view === 'overlay' ? 'active' : ''} onClick={() => setView('overlay')}>{t('compareview.sobrepor')}</button>
+            <button className={view === 'diff' ? 'active' : ''} onClick={() => setView('diff')}>{t('compareview.so_diferencas')}</button>
+            <button className={view === 'side' ? 'active' : ''} onClick={() => setView('side')}>{t('compareview.lado_a_lado')}</button>
           </div>
           <div className="legend small">
-            <span><i className="sw red" /> só na antiga (removido)</span>
-            <span><i className="sw blue" /> só na nova (acrescentado)</span>
-            <span><i className="sw black" /> igual nas duas</span>
+            <span><i className="sw red" /> {t('compareview.so_na_antiga_removido')}</span>
+            <span><i className="sw blue" /> {t('compareview.so_na_nova_acrescentado')}</span>
+            <span><i className="sw black" /> {t('compareview.igual_nas_duas')}</span>
           </div>
-          {dims.mismatch && <span className="warn">As folhas têm tamanhos diferentes — a sobreposição pode ficar desalinhada.</span>}
+          {dims.mismatch && <span className="warn">{t('compareview.as_folhas_tem_tamanhos_diferentes')}</span>}
         </div>
         <div className="region-head">
-          <span>{busy ? 'Analisando…' : `${regions.length} região(ões) alterada(s)`}</span>
-          <button className="btn sm primary" disabled={!regions.length || !bIsLocal} onClick={toClouds} title={bIsLocal ? '' : 'A revisão nova precisa estar no conjunto atual'}><Cloud size={14} /> Nuvens em B</button>
+          <span>{busy ? t('compareview.analisando') : t('compareview.regiao_oes_alterada_s', { length: regions.length })}</span>
+          <button className="btn sm primary" disabled={!regions.length || !bIsLocal} onClick={toClouds} title={bIsLocal ? '' : t('compareview.a_revisao_nova_precisa_estar')}><Cloud size={14} /> {t('compareview.nuvens_em_b')}</button>
         </div>
         <div className="regions">
           {regions.map((r, i) => (

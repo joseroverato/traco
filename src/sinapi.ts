@@ -3,6 +3,7 @@
  * Importa as planilhas da Caixa (.xlsx/.csv) detectando as colunas automaticamente.
  */
 import type { SinapiItem } from './types'
+import { t } from './i18n'
 
 const DB = 'traco'
 const STORE = 'kv'
@@ -113,7 +114,7 @@ export async function importPriceFile(file: File, label: string, merge: boolean)
       items.set(code, { code, desc, unit: unitToTraco(String(row[col.unit] ?? '').trim()), price, kind })
     }
   }
-  if (!items.size) throw new Error('Não encontrei as colunas Código, Descrição, Unidade e Custo/Preço na planilha.')
+  if (!items.size) throw new Error(t('sinapi.nao_encontrei_as_colunas_codigo'))
   const base: PriceBase = { label, importedAt: Date.now(), items: [...items.values()] }
   await kvSet('price-base', base)
   cache = base

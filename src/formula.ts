@@ -1,3 +1,4 @@
+import { t } from './i18n'
 /** Avaliador seguro de fórmulas (sem eval). Ex.: "A + P*H", "max(L, 1) * 1.05", "ceil(N/10)". */
 type Vars = Record<string, number>
 
@@ -11,7 +12,7 @@ export function evalFormula(src: string, vars: Vars): number {
   let i = 0
   const peek = () => s[i]
   const eat = (c: string) => {
-    if (s[i] !== c) throw new Error(`esperado "${c}" na posição ${i + 1}`)
+    if (s[i] !== c) throw new Error(t('formula.esperado_na_posicao', { c, v: i + 1 }))
     i++
   }
   const expr = (): number => {
@@ -52,19 +53,19 @@ export function evalFormula(src: string, vars: Vars): number {
         if (peek() !== ')') { args.push(expr()); while (peek() === ';' || peek() === ',') { i++; args.push(expr()) } }
         eat(')')
         const f = FN[name.toLowerCase()]
-        if (!f) throw new Error(`função desconhecida: ${name}`)
+        if (!f) throw new Error(t('formula.funcao_desconhecida', { name }))
         return f(...args)
       }
       const key = name.toUpperCase()
-      if (!(key in vars)) throw new Error(`variável desconhecida: ${name}`)
+      if (!(key in vars)) throw new Error(t('formula.variavel_desconhecida', { name }))
       return vars[key]
     }
-    throw new Error(`símbolo inesperado na posição ${i + 1}`)
+    throw new Error(t('formula.simbolo_inesperado_na_posicao', { v: i + 1 }))
   }
-  if (!s) throw new Error('fórmula vazia')
+  if (!s) throw new Error(t('formula.formula_vazia'))
   const v = expr()
-  if (i < s.length) throw new Error(`símbolo inesperado na posição ${i + 1}`)
-  if (!Number.isFinite(v)) throw new Error('resultado inválido')
+  if (i < s.length) throw new Error(t('formula.simbolo_inesperado_na_posicao', { v: i + 1 }))
+  if (!Number.isFinite(v)) throw new Error(t('formula.resultado_invalido'))
   return v
 }
 

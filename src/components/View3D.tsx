@@ -6,10 +6,12 @@ import { LAYER_LABEL, areaOf, buildSolids3D, layerTotals, volumeOf } from '../so
 import type { LayerKind } from '../solids'
 import { Scene3D } from '../scene3d'
 import type { HoverInfo } from '../scene3d'
+import { t } from '../i18n'
+import { Rich } from './Rich'
 
 const LAYERS = Object.keys(LAYER_LABEL) as LayerKind[]
-const VIEW_NAME = { top: 'Topo', front: 'Frente', right: 'Direita' } as const
-const KIND_NAME: Record<LayerKind, string> = { solid: 'Sólido', space: 'Ambiente', area: 'Área (laje)', length: 'Parede', count: 'Item' }
+const VIEW_NAME = { get top() { return t('view3d.topo') }, get front() { return t('view3d.frente') }, get right() { return t('view3d.direita') } } as const
+const KIND_NAME: Record<LayerKind, string> = { get solid() { return t('view3d.solido_2') }, get space() { return t('view3d.ambiente') }, get area() { return t('view3d.area_laje') }, get length() { return t('view3d.parede') }, get count() { return t('view3d.item') } }
 
 /** Modo 3D: mostra os volumes das marcações da folha e deixa puxar/empurrar a altura dos sólidos. */
 export function View3D({ compact = false }: { compact?: boolean }) {
@@ -47,7 +49,7 @@ export function View3D({ compact = false }: { compact?: boolean }) {
           else {
             const final = st.markups.find((m) => m.id === id)?.height ?? h
             st.rememberSolid({ height: final })
-            st.notify(`Altura: ${fmt(final)} m (o próximo sólido já nasce assim)`)
+            st.notify(t('view3d.altura_m_o_proximo_solido', { v: fmt(final) }))
           }
         },
       },
@@ -83,7 +85,7 @@ export function View3D({ compact = false }: { compact?: boolean }) {
       <div className="v3-host" ref={host} />
       <div className="v3-bar">
         {!compact && s.sheets.length > 1 && (
-          <select value={s.page} onChange={(e) => s.set({ page: Number(e.target.value), selected: [] })} aria-label="Folha">
+          <select value={s.page} onChange={(e) => s.set({ page: Number(e.target.value), selected: [] })} aria-label={t('view3d.folha')}>
             {s.sheets.map((x, i) => <option key={x.id} value={i}>{x.label}{x.level ? ` · ${x.level}` : ''}</option>)}
           </select>
         )}
@@ -93,8 +95,8 @@ export function View3D({ compact = false }: { compact?: boolean }) {
           </button>
         ))}
         <div className="tb-sep" />
-        {compact && <span className="v3-total">{solids.length ? `${fmt(totals.solid.volume)} m³ em sólidos` : 'sem volumes ainda'}</span>}
-        <button className="btn sm" onClick={() => scene.current?.frame('iso')} data-tip="Enquadrar tudo (vista isométrica)"><Maximize size={13} /> Enquadrar</button>
+        {compact && <span className="v3-total">{solids.length ? t('view3d.m_em_solidos', { v: fmt(totals.solid.volume) }) : t('view3d.sem_volumes_ainda')}</span>}
+        <button className="btn sm" onClick={() => scene.current?.frame('iso')} data-tip={t('view3d.enquadrar_tudo_vista_isometrica')}><Maximize size={13} /> {t('view3d.enquadrar')}</button>
         {(['top', 'front', 'right'] as const).map((v) => (
           <button key={v} className="btn sm" onClick={() => scene.current?.frame(v)}>{v === 'top' ? <ArrowUpToLine size={13} /> : null}{VIEW_NAME[v]}</button>
         ))}
@@ -102,16 +104,16 @@ export function View3D({ compact = false }: { compact?: boolean }) {
 
       {!compact && (
       <aside className="v3-panel">
-        <h4>Resumo da folha</h4>
+        <h4>{t('view3d.resumo_da_folha')}</h4>
         <div className="card">
           {LAYERS.filter((k) => totals[k].n > 0).map((k) => (
             <div key={k} className="kv"><span>{LAYER_LABEL[k]} ({totals[k].n})</span><b>{k === 'count' ? '—' : `${fmt(totals[k].volume)} m³`}</b></div>
           ))}
-          {!solids.length && <span className="muted small">Nada para mostrar ainda.</span>}
+          {!solids.length && <span className="muted small">{t('view3d.nada_para_mostrar_ainda')}</span>}
         </div>
         {listed.length > 0 && (
           <>
-            <h4>Sólidos</h4>
+            <h4>{t('view3d.solidos')}</h4>
             <div className="v3-list">
               {listed.map((x) => (
                 <button key={x.id} className={s.selected.includes(x.markupId) ? 'active' : ''} onClick={() => s.set({ selected: [x.markupId] })}>
@@ -123,18 +125,18 @@ export function View3D({ compact = false }: { compact?: boolean }) {
         )}
         {sel && (
           <>
-            <h4>Sólido selecionado</h4>
-            <label className="field"><span>Nome</span><input value={sel.text} onChange={(e) => s.updateMarkup(sel.id, { text: e.target.value }, false)} /></label>
+            <h4>{t('view3d.solido_selecionado')}</h4>
+            <label className="field"><span>{t('view3d.nome')}</span><input value={sel.text} onChange={(e) => s.updateMarkup(sel.id, { text: e.target.value }, false)} /></label>
             <div className="row">
-              <label className="field"><span>Base (m)</span><input type="number" step={0.05} value={sel.base ?? 0} onChange={(e) => up({ base: Number(e.target.value) })} /></label>
-              <label className="field"><span>Altura (m)</span><input type="number" min={0.05} step={0.05} value={sel.height ?? DEFAULT_SOLID_HEIGHT} onChange={(e) => { const h = Math.max(0.05, Number(e.target.value)); up({ height: h }); s.rememberSolid({ height: h }) }} /></label>
+              <label className="field"><span>{t('view3d.base_m')}</span><input type="number" step={0.05} value={sel.base ?? 0} onChange={(e) => up({ base: Number(e.target.value) })} /></label>
+              <label className="field"><span>{t('view3d.altura_m')}</span><input type="number" min={0.05} step={0.05} value={sel.height ?? DEFAULT_SOLID_HEIGHT} onChange={(e) => { const h = Math.max(0.05, Number(e.target.value)); up({ height: h }); s.rememberSolid({ height: h }) }} /></label>
             </div>
             <div className="row">
-              <label className="field"><span>Cor</span><input type="color" value={sel.color} onChange={(e) => { up({ color: e.target.value, fill: e.target.value }); s.rememberSolid({ color: e.target.value }) }} /></label>
-              <button className="btn sm" onClick={() => goPlan(sel.id)}>Ver na planta</button>
-              <button className="btn sm ghost danger" onClick={() => s.removeMarkups([sel.id])}><Trash2 size={13} /> Excluir</button>
+              <label className="field"><span>{t('view3d.cor')}</span><input type="color" value={sel.color} onChange={(e) => { up({ color: e.target.value, fill: e.target.value }); s.rememberSolid({ color: e.target.value }) }} /></label>
+              <button className="btn sm" onClick={() => goPlan(sel.id)}>{t('view3d.ver_na_planta')}</button>
+              <button className="btn sm ghost danger" onClick={() => s.removeMarkups([sel.id])}><Trash2 size={13} /> {t('view3d.excluir')}</button>
             </div>
-            <span className="muted small">Arraste a seta laranja para puxar ou empurrar a altura (Alt = passo de 1 cm).</span>
+            <span className="muted small">{t('view3d.arraste_a_seta_laranja_para')}</span>
           </>
         )}
       </aside>
@@ -143,16 +145,16 @@ export function View3D({ compact = false }: { compact?: boolean }) {
       {hover && (
         <div className="v3-tip" style={{ left: hover.x + 14, top: hover.y + 14 }}>
           <b>{hover.solid.label}</b> <span className="muted">· {KIND_NAME[hover.solid.kind]}</span>
-          <div>{fmt(areaOf(hover.solid))} m² de base · h = {fmt(hover.solid.height)} m{hover.solid.base ? ` · base ${fmt(hover.solid.base)} m` : ''}</div>
+          <div>{t('view3d.dica_base', { area: fmt(areaOf(hover.solid)), h: fmt(hover.solid.height) })}{hover.solid.base ? t('view3d.dica_cota', { base: fmt(hover.solid.base) }) : ''}</div>
           <div>{fmt(volumeOf(hover.solid))} m³</div>
         </div>
       )}
 
-      {!scale && <div className="v3-empty">Esta folha ainda não tem escala. Defina a escala na planta para ver o 3D em metros.{!compact && <button className="btn sm primary" onClick={() => goPlan()}>Ir para a planta</button>}</div>}
+      {!scale && <div className="v3-empty">{t('view3d.sem_escala')}{!compact && <button className="btn sm primary" onClick={() => goPlan()}>{t('view3d.ir_para_a_planta')}</button>}</div>}
       {scale && !solids.length && (
-        <div className="v3-empty">Nada para mostrar. Desenhe um <b>sólido</b> na planta (tecla <kbd>U</kbd>) ou meça áreas, ambientes e paredes: eles aparecem aqui, ao vivo.{!compact && <button className="btn sm primary" onClick={() => goPlan()}>Ir para a planta</button>}</div>
+        <div className="v3-empty"><Rich k="view3d.nada_para_mostrar" />{!compact && <button className="btn sm primary" onClick={() => goPlan()}>{t('view3d.ir_para_a_planta')}</button>}</div>
       )}
-      {!compact && <div className="hud v3-hint">Roda: zoom · Botão do meio: mover · Shift + botão do meio: girar · Clique: selecionar</div>}
+      {!compact && <div className="hud v3-hint">{t('view3d.roda_zoom_botao_do_meio')}</div>}
     </div>
   )
 }

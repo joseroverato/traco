@@ -7,6 +7,7 @@
  * faz a ação, o resultado aparece e, às vezes, um segundo passo (digitar, puxar, alinhar).
  */
 import type { Tool } from './types'
+import { t } from './i18n'
 
 export type Pt2 = [number, number]
 
@@ -100,8 +101,8 @@ const ARROW_TO: Pt2 = [58, 69]
 
 export const TOOL_INFO: Record<Tool, ToolInfo> = {
   select: {
-    title: 'Selecionar',
-    desc: 'Clique para selecionar e arraste para mover. Arraste na área vazia para marcar vários; Shift soma à seleção.',
+    get title() { return t('toolinfo.selecionar') },
+    get desc() { return t('toolinfo.clique_para_selecionar_e_arraste') },
     demo: {
       scene: 'structure',
       cursor: [[54, 12], [142, 72]],
@@ -109,101 +110,101 @@ export const TOOL_INFO: Record<Tool, ToolInfo> = {
       shapes: [
         { t: 'marquee', a: [54, 12], b: [142, 72], color: A, t0: 0.12, t1: 0.5 },
         { t: 'dots', pts: [[80, 30], [130, 30], [80, 64], [130, 64]], color: A, r: 5.5, square: true, t0: 0.5, t1: 0.64 },
-        { t: 'label', at: [105, 90], text: '4 itens selecionados', color: A, size: 9, t0: 0.66 },
+        { t: 'label', at: [105, 90], get text() { return t('toolinfo.4_itens_selecionados') }, color: A, size: 9, t0: 0.66 },
       ],
     },
   },
   pan: {
-    title: 'Mover vista',
-    desc: 'Arraste para deslocar a folha. Também funciona segurando a barra de espaço ou com o botão do meio do mouse.',
+    get title() { return t('toolinfo.mover_vista') },
+    get desc() { return t('toolinfo.arraste_para_deslocar_a_folha') },
     demo: {
       scene: 'facade',
       panBy: [-56, -16],
       cursor: [[132, 84], [76, 68]],
       cursorTimes: [0.12, 0.55],
-      shapes: [{ t: 'label', at: [100, 112], text: 'níveis à direita', color: A, size: 9, t0: 0.6 }],
+      shapes: [{ t: 'label', at: [100, 112], get text() { return t('toolinfo.niveis_a_direita') }, color: A, size: 9, t0: 0.6 }],
     },
   },
   cloud: {
-    title: 'Nuvem de revisão',
-    desc: 'Arraste um retângulo para circular o que precisa de atenção. Vira um item da lista de revisão, com responsável e prazo.',
+    get title() { return t('toolinfo.nuvem_de_revisao') },
+    get desc() { return t('toolinfo.arraste_um_retangulo_para_circular') },
     demo: {
       scene: 'facade',
       cursor: [[38, 24], [120, 74]],
       cursorTimes: [0.12, 0.5],
-      shapes: [{ t: 'cloud', a: [38, 24], b: [120, 74], color: R, t0: 0.12, t1: 0.5 }, { t: 'label', at: [79, 17], text: 'Rev. B · janelas', color: R, size: 9, t0: 0.58 }],
+      shapes: [{ t: 'cloud', a: [38, 24], b: [120, 74], color: R, t0: 0.12, t1: 0.5 }, { t: 'label', at: [79, 17], get text() { return t('toolinfo.rev_b_janelas') }, color: R, size: 9, t0: 0.58 }],
     },
   },
   rect: {
-    title: 'Retângulo',
-    desc: 'Arraste dois cantos. Use para destacar uma região ou criar um item de revisão.',
+    get title() { return t('toolinfo.retangulo') },
+    get desc() { return t('toolinfo.arraste_dois_cantos_use_para') },
     demo: {
       scene: 'detail',
-      shapes: [{ t: 'path', pts: rect(120, 30, 188, 80), closed: true, color: R, fill: 0.12 }, { t: 'label', at: [154, 24], text: 'conferir cota', color: R, size: 9, t0: 0.62 }],
+      shapes: [{ t: 'path', pts: rect(120, 30, 188, 80), closed: true, color: R, fill: 0.12 }, { t: 'label', at: [154, 24], get text() { return t('toolinfo.conferir_cota') }, color: R, size: 9, t0: 0.62 }],
     },
   },
   ellipse: {
-    title: 'Elipse',
-    desc: 'Arraste para circular um detalhe, como um ponto de atenção na prancha.',
+    get title() { return t('toolinfo.elipse') },
+    get desc() { return t('toolinfo.arraste_para_circular_um_detalhe') },
     demo: {
       scene: 'facade',
       cursor: [[122, 76], [162, 106]],
       cursorTimes: [0.12, 0.5],
-      shapes: [{ t: 'ellipse', c: [142, 91], rx: 21, ry: 13, color: R, t0: 0.12, t1: 0.5 }, { t: 'label', at: [142, 117], text: 'detalhe 3', color: R, size: 9, t0: 0.58 }],
+      shapes: [{ t: 'ellipse', c: [142, 91], rx: 21, ry: 13, color: R, t0: 0.12, t1: 0.5 }, { t: 'label', at: [142, 117], get text() { return t('toolinfo.detalhe_3') }, color: R, size: 9, t0: 0.58 }],
     },
   },
   arrow: {
-    title: 'Seta',
-    desc: 'Arraste do início ao fim. Com Shift trava em 0°, 45° ou 90°. Aponta o que o comentário se refere.',
+    get title() { return t('toolinfo.seta') },
+    get desc() { return t('toolinfo.arraste_do_inicio_ao_fim') },
     demo: {
       scene: 'rooms',
       cursor: [ARROW_FROM, ARROW_TO],
       cursorTimes: [0.32, 0.56],
       shapes: [
-        { t: 'typing', at: [100, 110], text: 'verificar porta', color: R, size: 9, t0: 0.08, t1: 0.3 },
+        { t: 'typing', at: [100, 110], get text() { return t('toolinfo.verificar_porta') }, color: R, size: 9, t0: 0.08, t1: 0.3 },
         { t: 'path', pts: [ARROW_FROM, ARROW_TO], color: R, w: 2, t0: 0.32, t1: 0.56 },
         { t: 'path', pts: head(ARROW_FROM, ARROW_TO), color: R, w: 2, t0: 0.56, t1: 0.62 },
       ],
     },
   },
   line: {
-    title: 'Linha',
-    desc: 'Arraste para traçar uma linha de anotação. Shift trava o ângulo.',
+    get title() { return t('toolinfo.linha') },
+    get desc() { return t('toolinfo.arraste_para_tracar_uma_linha') },
     demo: {
       scene: 'structure',
       shapes: [
         { t: 'path', pts: [[22, 47], [188, 47]], color: R, w: 2, t0: 0.12, t1: 0.55 },
-        { t: 'label', at: [105, 41], text: 'alinhar eixo 2', color: R, size: 9, t0: 0.6 },
+        { t: 'label', at: [105, 41], get text() { return t('toolinfo.alinhar_eixo_2') }, color: R, size: 9, t0: 0.6 },
       ],
     },
   },
   text: {
-    title: 'Texto',
-    desc: 'Clique e digite uma observação direto sobre a folha. Duplo clique edita depois.',
+    get title() { return t('toolinfo.texto') },
+    get desc() { return t('toolinfo.clique_e_digite_uma_observacao') },
     demo: {
       scene: 'facade',
       cursor: [[126, 70], [60, 21]],
       cursorTimes: [0.08, 0.2],
       shapes: [
         { t: 'click', at: [60, 21], color: R, t0: 0.2 },
-        { t: 'typing', at: [68, 21], text: 'Conferir pé-direito', color: R, size: 10, t0: 0.24, t1: 0.6 },
+        { t: 'typing', at: [68, 21], get text() { return t('toolinfo.conferir_pe_direito') }, color: R, size: 10, t0: 0.24, t1: 0.6 },
         { t: 'path', pts: [[72, 25], [72, 52]], color: R, w: 1.2, t0: 0.62, t1: 0.7 },
       ],
     },
   },
   stamp: {
-    title: 'Carimbo',
-    desc: 'Clique para colocar um carimbo (ex.: REVISADO e a data). Aceita {data}, {folha}, {n}, {total} e {autor}.',
+    get title() { return t('toolinfo.carimbo') },
+    get desc() { return t('toolinfo.clique_para_colocar_um_carimbo') },
     demo: {
       scene: 'titleblock',
       cursor: [[100, 66], [150, 38]],
       cursorTimes: [0.12, 0.34],
-      shapes: [{ t: 'click', at: [150, 38], color: R, t0: 0.34 }, { t: 'pop', at: [150, 38], w: 66, h: 30, text: 'REVISADO', sub: '19/10/2026', color: R, angle: -8, t0: 0.36 }],
+      shapes: [{ t: 'click', at: [150, 38], color: R, t0: 0.34 }, { t: 'pop', at: [150, 38], w: 66, h: 30, get text() { return t('toolinfo.revisado') }, sub: '19/10/2026', color: R, angle: -8, t0: 0.36 }],
     },
   },
   image: {
-    title: 'Imagem / assinatura',
-    desc: 'Escolha uma imagem (logo, assinatura, foto) e clique onde ela deve ficar.',
+    get title() { return t('toolinfo.imagem_assinatura') },
+    get desc() { return t('toolinfo.escolha_uma_imagem_logo_assinatura') },
     demo: {
       scene: 'titleblock',
       cursor: [[120, 56], [34, 94]],
@@ -212,8 +213,8 @@ export const TOOL_INFO: Record<Tool, ToolInfo> = {
     },
   },
   redact: {
-    title: 'Tarja / corrigir texto',
-    desc: 'Cubra o que deve ser removido. Ao exportar, o texto e a imagem sob a tarja somem de verdade; o desenho vetorial é preservado.',
+    get title() { return t('toolinfo.tarja_corrigir_texto') },
+    get desc() { return t('toolinfo.cubra_o_que_deve_ser') },
     demo: {
       scene: 'titleblock',
       cursor: [[108, 22], [184, 22], [108, 36], [160, 36]],
@@ -222,51 +223,51 @@ export const TOOL_INFO: Record<Tool, ToolInfo> = {
         { t: 'lines', at: [110, 14], w: 72, n: 5 },
         { t: 'bar', a: [108, 19], b: [184, 26], color: '#000', t0: 0.12, t1: 0.3 },
         { t: 'bar', a: [108, 33], b: [160, 40], color: '#000', t0: 0.38, t1: 0.52 },
-        { t: 'label', at: [146, 56], text: 'removido do PDF', color: '#9aa1b2', size: 9, t0: 0.6 },
+        { t: 'label', at: [146, 56], get text() { return t('toolinfo.removido_do_pdf') }, color: '#9aa1b2', size: 9, t0: 0.6 },
       ],
     },
   },
   calibrate: {
-    title: 'Calibrar escala',
-    desc: 'Trace sobre uma cota conhecida e digite o valor real para acertar a escala da folha (ou do viewport).',
+    get title() { return t('toolinfo.calibrar_escala') },
+    get desc() { return t('toolinfo.trace_sobre_uma_cota_conhecida') },
     demo: {
       scene: 'structure',
       cursor: [[80, 108], [130, 108]],
       cursorTimes: [0.12, 0.42],
       shapes: [
         { t: 'path', pts: [[80, 108], [130, 108]], color: A, w: 2.4, t0: 0.12, t1: 0.42 },
-        { t: 'pop', at: [105, 80], w: 84, h: 26, text: 'Valor real', sub: '5,00 m', color: A, t0: 0.5 },
-        { t: 'label', at: [150, 22], text: 'escala 1:50', color: A, size: 10, t0: 0.78 },
+        { t: 'pop', at: [105, 80], w: 84, h: 26, get text() { return t('toolinfo.valor_real') }, sub: '5,00 m', color: A, t0: 0.5 },
+        { t: 'label', at: [150, 22], get text() { return t('toolinfo.escala_1_50') }, color: A, size: 10, t0: 0.78 },
       ],
     },
   },
   length: {
-    title: 'Comprimento',
-    desc: 'Clique os pontos e Enter (ou duplo clique) para finalizar. Mede na escala da folha; com um marcador vira m, m² ou fórmula.',
+    get title() { return t('toolinfo.comprimento') },
+    get desc() { return t('toolinfo.clique_os_pontos_e_enter') },
     demo: {
       scene: 'rooms',
       shapes: [
         { t: 'path', pts: [[20, 102], [104, 102], [104, 74]], color: G, w: 2.6, t0: 0.12, t1: 0.58 },
         { t: 'label', at: [62, 96], text: '8,4 m', color: G, size: 9, t0: 0.4, t1: 0.58, fade: true },
-        { t: 'label', at: [62, 88], text: 'total 11,3 m', color: G, size: 10, t0: 0.62 },
+        { t: 'label', at: [62, 88], get text() { return t('toolinfo.total_11_3_m') }, color: G, size: 10, t0: 0.62 },
       ],
     },
   },
   area: {
-    title: 'Área',
-    desc: 'Clique os vértices do polígono; clicar no primeiro ponto ou Enter fecha. Mostra m² e perímetro.',
+    get title() { return t('toolinfo.area') },
+    get desc() { return t('toolinfo.clique_os_vertices_do_poligono') },
     demo: {
       scene: 'rooms',
       shapes: [
         { t: 'path', pts: rect(114, 68, 184, 106), closed: true, color: G, fill: 0.26, t0: 0.12, t1: 0.55 },
         { t: 'label', at: [149, 86], text: '13,6 m²', color: G, size: 11, t0: 0.6 },
-        { t: 'label', at: [149, 97], text: 'perím. 14,2 m', color: G, size: 8, t0: 0.66 },
+        { t: 'label', at: [149, 97], get text() { return t('toolinfo.perim_14_2_m') }, color: G, size: 8, t0: 0.66 },
       ],
     },
   },
   fill: {
-    title: 'Área por clique',
-    desc: 'Clique dentro de um ambiente: o contorno sai das linhas do PDF e fosso ou shaft fechados já saem descontados. Shift+clique desconta um vazio.',
+    get title() { return t('toolinfo.area_por_clique') },
+    get desc() { return t('toolinfo.clique_dentro_de_um_ambiente') },
     demo: {
       scene: 'rooms',
       cursor: [[176, 100], [142, 36]],
@@ -279,8 +280,8 @@ export const TOOL_INFO: Record<Tool, ToolInfo> = {
     },
   },
   hole: {
-    title: 'Vazio',
-    desc: 'Desenhe dentro de uma área para descontar fosso, shaft ou pilar. O m² é recalculado.',
+    get title() { return t('toolinfo.vazio') },
+    get desc() { return t('toolinfo.desenhe_dentro_de_uma_area') },
     demo: {
       scene: 'rooms',
       shapes: [
@@ -292,8 +293,8 @@ export const TOOL_INFO: Record<Tool, ToolInfo> = {
     },
   },
   count: {
-    title: 'Contagem',
-    desc: 'Clique em cada item para somar. Esc inicia um novo grupo; duplo clique numa marca a remove.',
+    get title() { return t('toolinfo.contagem') },
+    get desc() { return t('toolinfo.clique_em_cada_item_para') },
     demo: {
       scene: 'rooms',
       cursor: SOCKETS,
@@ -304,8 +305,8 @@ export const TOOL_INFO: Record<Tool, ToolInfo> = {
     },
   },
   symbol: {
-    title: 'Contagem automática',
-    desc: 'Arraste um retângulo em volta de UM símbolo: o Traço acha os iguais, inclusive girados, nesta folha ou em todas.',
+    get title() { return t('toolinfo.contagem_automatica') },
+    get desc() { return t('toolinfo.arraste_um_retangulo_em_volta') },
     demo: {
       scene: 'lighting',
       cursor: [[24, 24], [44, 44]],
@@ -313,26 +314,26 @@ export const TOOL_INFO: Record<Tool, ToolInfo> = {
       shapes: [
         { t: 'marquee', a: [24, 24], b: [44, 44], color: O, keep: true, t0: 0.1, t1: 0.28 },
         { t: 'dots', pts: LUM.slice(1), color: O, r: 7.5, square: true, t0: 0.34, t1: 0.78 },
-        { t: 'label', at: [100, 116], text: '12 iguais (2 tomadas ignoradas)', color: O, size: 9, t0: 0.8 },
+        { t: 'label', at: [100, 116], get text() { return t('toolinfo.12_iguais_2_tomadas_ignoradas') }, color: O, size: 9, t0: 0.8 },
       ],
     },
   },
   space: {
-    title: 'Ambiente',
-    desc: 'Desenhe o contorno de um ambiente. As medições dentro dele são agrupadas por ambiente no quantitativo.',
+    get title() { return t('toolinfo.ambiente') },
+    get desc() { return t('toolinfo.desenhe_o_contorno_de_um') },
     demo: {
       scene: 'rooms',
       cursor: [...rect(14, 66, 108, 108), [14, 66]],
       shapes: [
         { t: 'path', pts: rect(14, 66, 108, 108), closed: true, color: P, fill: 0.14, dash: true, t0: 0.12, t1: 0.5 },
-        { t: 'typing', at: [36, 84], text: 'Cozinha', color: P, size: 11, t0: 0.5, t1: 0.66 },
+        { t: 'typing', at: [36, 84], get text() { return t('toolinfo.cozinha') }, color: P, size: 11, t0: 0.5, t1: 0.66 },
         { t: 'label', at: [61, 97], text: '28,4 m²', color: P, size: 9, t0: 0.7 },
       ],
     },
   },
   solid: {
-    title: 'Sólido 3D',
-    desc: 'Desenhe a base na planta (Enter finaliza). A altura se ajusta nas propriedades ou puxando a seta no modo 3D, e o volume entra no quantitativo.',
+    get title() { return t('toolinfo.solido_3d') },
+    get desc() { return t('toolinfo.desenhe_a_base_na_planta') },
     demo: {
       scene: 'grid',
       cursor: [...BASE, [102, 62], [102, 40]],
@@ -345,8 +346,8 @@ export const TOOL_INFO: Record<Tool, ToolInfo> = {
     },
   },
   viewport: {
-    title: 'Viewport (escala própria)',
-    desc: 'Marque a região de um detalhe que tem outra escala (ex.: 1:20). As medições que começam dentro dela usam essa escala.',
+    get title() { return t('toolinfo.viewport_escala_propria') },
+    get desc() { return t('toolinfo.marque_a_regiao_de_um') },
     demo: {
       scene: 'structure',
       cursor: [[8, 60], [114, 112]],
@@ -355,8 +356,8 @@ export const TOOL_INFO: Record<Tool, ToolInfo> = {
     },
   },
   legend: {
-    title: 'Legenda de quantitativo',
-    desc: 'Clique onde a tabela de quantitativo deve ficar na prancha. Ela sai no PDF exportado.',
+    get title() { return t('toolinfo.legenda_de_quantitativo') },
+    get desc() { return t('toolinfo.clique_onde_a_tabela_de') },
     demo: {
       scene: 'rooms',
       cursor: [[150, 100], [114, 16]],
@@ -365,8 +366,8 @@ export const TOOL_INFO: Record<Tool, ToolInfo> = {
     },
   },
   align: {
-    title: 'Alinhar sobreposição',
-    desc: 'Clique dois pares de pontos (no desenho colorido e na base) para encaixar a outra disciplina sobre a planta.',
+    get title() { return t('toolinfo.alinhar_sobreposicao') },
+    get desc() { return t('toolinfo.clique_dois_pares_de_pontos') },
     demo: {
       scene: 'structure',
       cursor: [[92, 38], [80, 30], [142, 72], [130, 64]],
@@ -377,7 +378,7 @@ export const TOOL_INFO: Record<Tool, ToolInfo> = {
         { t: 'dots', pts: [[80, 30]], color: A, r: 4, t0: 0.2, t1: 0.24 },
         { t: 'dots', pts: [[142, 72]], color: O, r: 4, t0: 0.32, t1: 0.36 },
         { t: 'dots', pts: [[130, 64]], color: A, r: 4, t0: 0.42, t1: 0.46 },
-        { t: 'label', at: [105, 94], text: 'disciplinas alinhadas', color: O, size: 9, t0: 0.8 },
+        { t: 'label', at: [105, 94], get text() { return t('toolinfo.disciplinas_alinhadas') }, color: O, size: 9, t0: 0.8 },
       ],
     },
   },

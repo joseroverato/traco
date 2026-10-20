@@ -12,6 +12,7 @@ import { spaceOf } from './columns'
 import { findPreset } from './presetLookup'
 import type { ToolContent } from './platform'
 import type { Markup, MarkupKind, Preset, Sheet } from './types'
+import { t } from './i18n'
 
 export { TOOLS }
 export interface CommandResult {
@@ -463,9 +464,23 @@ export async function runCommand(name: string, args: Args = {}): Promise<Command
 
 /** Rótulo amigável para mostrar a atividade do Claude no painel. */
 export const TOOL_LABEL: Record<string, string> = {
-  get_document: 'Leu o resumo do projeto', list_sheets: 'Listou as folhas', get_sheet_image: 'Olhou a folha', get_sheet_text: 'Leu o texto da folha',
-  find_text: 'Procurou texto', list_markups: 'Listou marcações', get_quantities: 'Consultou o quantitativo', list_presets: 'Consultou os marcadores',
-  upsert_preset: 'Criou/alterou marcador', set_scale: 'Definiu escala', add_markups: 'Criou marcações', update_markups: 'Alterou marcações',
-  delete_markups: 'Excluiu marcações', rename_sheets: 'Renomeou folhas', go_to: 'Mostrou a folha', save_project: 'Salvou o projeto',
-  fill_area_at: 'Detectou um contorno', find_symbols: 'Contou símbolos', set_sheet_level: 'Definiu o pavimento',
+  get get_document() { return t('toollabel.get_document') },
+  get list_sheets() { return t('toollabel.list_sheets') },
+  get get_sheet_image() { return t('toollabel.get_sheet_image') },
+  get get_sheet_text() { return t('toollabel.get_sheet_text') },
+  get find_text() { return t('toollabel.find_text') },
+  get list_markups() { return t('toollabel.list_markups') },
+  get get_quantities() { return t('toollabel.get_quantities') },
+  get list_presets() { return t('toollabel.list_presets') },
+  get upsert_preset() { return t('toollabel.upsert_preset') },
+  get set_scale() { return t('toollabel.set_scale') },
+  get add_markups() { return t('toollabel.add_markups') },
+  get update_markups() { return t('toollabel.update_markups') },
+  get delete_markups() { return t('toollabel.delete_markups') },
+  get rename_sheets() { return t('toollabel.rename_sheets') },
+  get go_to() { return t('toollabel.go_to') },
+  get save_project() { return t('toollabel.save_project') },
+  get fill_area_at() { return t('toollabel.fill_area_at') },
+  get find_symbols() { return t('toollabel.find_symbols') },
+  get set_sheet_level() { return t('toollabel.set_sheet_level') },
 }

@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useState } from 'react'
 import { useStore } from '../store'
 import { TOUR_STEPS, markTourDone, nextStep } from '../tour'
+import { t } from '../i18n'
 
 /** Passo a passo: escurece a tela, destaca um elemento e explica em um balão. */
 export function Tour() {
@@ -61,17 +62,17 @@ export function Tour() {
   const next = nextStep(step + 1, 1)
 
   return (
-    <div className="tour" role="dialog" aria-label="Passo a passo">
+    <div className="tour" role="dialog" aria-label={t('tour.passo_a_passo')}>
       <div className="tour-spot" style={{ left: box.left - pad, top: box.top - pad, width: box.width + pad * 2, height: box.height + pad * 2 }} />
       <div className="tour-bubble" style={{ left, top, width: W }}>
-        <div className="tour-step">Passo a passo · {step + 1} de {total}</div>
+        <div className="tour-step">{t('tour.passo_a_passo_de', { v: step + 1, total })}</div>
         <h3>{s.title}</h3>
         <p>{s.text}</p>
         <div className="tour-actions">
-          <button className="btn sm ghost" onClick={end}>Pular</button>
+          <button className="btn sm ghost" onClick={end}>{t('tour.pular')}</button>
           <span className="grow" />
-          {prev !== null && <button className="btn sm" onClick={() => go(step - 1, -1)}>Voltar</button>}
-          <button className="btn sm primary" onClick={() => (next === null ? end() : go(step + 1, 1))}>{next === null ? 'Concluir' : 'Próximo'}</button>
+          {prev !== null && <button className="btn sm" onClick={() => go(step - 1, -1)}>{t('tour.voltar')}</button>}
+          <button className="btn sm primary" onClick={() => (next === null ? end() : go(step + 1, 1))}>{next === null ? t('tour.concluir') : t('tour.proximo')}</button>
         </div>
       </div>
     </div>

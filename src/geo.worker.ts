@@ -40,7 +40,7 @@ interface FillReq { key: string; x: number; y: number; gap: number }
 
 function fill(r: FillReq) {
   const s = sheets.get(r.key)
-  if (!s) return { ok: false, reason: 'Geometria da folha ainda carregando' }
+  if (!s) return { ok: false, reason: 'geo.carregando' }
   // janela crescente ao redor do clique: alta precisão em ambientes normais, sem estourar memória
   let half = 300 // pt
   for (let attempt = 0; attempt < 6; attempt++) {
@@ -51,15 +51,15 @@ function fill(r: FillReq) {
     const W = Math.ceil((x1 - x0) * k), H = Math.ceil((y1 - y0) * k)
     const mask = rasterize(s, x0, y0, k, W, H, Math.max(1.6, r.gap * k))
     const sx = Math.floor((r.x - x0) * k), sy = Math.floor((r.y - y0) * k)
-    if (mask[sy * W + sx]) return { ok: false, reason: 'Clique dentro do ambiente, não sobre uma linha' }
+    if (mask[sy * W + sx]) return { ok: false, reason: 'geo.clique_sobre_linha' }
     const touches = flood(mask, W, H, sx, sy)
     if (touches && !whole) {
       half *= 2.2
       continue
     }
-    if (touches) return { ok: false, reason: 'Contorno aberto: a região não fecha (porta sem linha, parede interrompida). Aumente "fechar aberturas" ou desenhe manualmente.' }
+    if (touches) return { ok: false, reason: 'geo.contorno_aberto' }
     const loops = traceLoops(mask, W, H)
-    if (!loops.length) return { ok: false, reason: 'Nenhuma região encontrada' }
+    if (!loops.length) return { ok: false, reason: 'geo.nenhuma_regiao' }
     // maior anel = contorno externo; anéis de orientação oposta = vazios (pilares, shafts, ilhas)
     let outerI = 0
     loops.forEach((l, i) => Math.abs(l.area) > Math.abs(loops[outerI].area) && (outerI = i))
@@ -74,7 +74,7 @@ function fill(r: FillReq) {
     const holes = loops.filter((l, i) => i !== outerI && Math.sign(l.area) !== Math.sign(outer.area) && Math.abs(l.area) > minHole).map((l) => toPt(l.pts))
     return { ok: true, outer: toPt(outer.pts), holes, halfLine: Math.max(1.6, r.gap * k) / 2 / k }
   }
-  return { ok: false, reason: 'Região grande demais' }
+  return { ok: false, reason: 'geo.regiao_grande' }
 }
 
 function rasterize(s: Segs, x0: number, y0: number, k: number, W: number, H: number, lw: number) {
@@ -221,7 +221,7 @@ interface SymReq { key: string; rect: { x: number; y: number; w: number; h: numb
 
 function symbol(r: SymReq) {
   const src = sheets.get(r.srcKey ?? r.key), dst = sheets.get(r.key)
-  if (!src || !dst) return { ok: false, reason: 'Geometria ainda carregando', centers: [] }
+  if (!src || !dst) return { ok: false, reason: 'geo.carregando', centers: [] }
   const { x, y, w, h } = r.rect
   const pad = Math.max(w, h) * 0.04
   const T: number[][] = []

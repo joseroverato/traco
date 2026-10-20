@@ -9,6 +9,7 @@
  */
 import { strFromU8, strToU8, unzipSync, zipSync } from 'fflate'
 import type { CustomColumn, Markup, OcrResult, Overlay, PageScale, Preset, Sheet, StatusDef } from './types'
+import { t } from './i18n'
 
 export const PROJECT_VERSION = 3
 
@@ -49,11 +50,11 @@ const MIGRATIONS: Record<number, (d: ProjectData) => ProjectData> = {
 
 export function migrate(data: ProjectData): ProjectData {
   let d = data
-  if (d.app !== 'traco' || !Number.isInteger(d.version)) throw new Error('Arquivo não é um projeto Traço')
-  if (d.version > PROJECT_VERSION) throw new Error(`Projeto criado por uma versão mais nova do Traço (formato v${d.version}). Atualize o app para abri-lo.`)
+  if (d.app !== 'traco' || !Number.isInteger(d.version)) throw new Error(t('projectformat.arquivo_nao_e_um_projeto'))
+  if (d.version > PROJECT_VERSION) throw new Error(t('projectformat.projeto_criado_por_uma_versao', { version: d.version }))
   while (d.version < PROJECT_VERSION) {
     const step = MIGRATIONS[d.version]
-    if (!step) throw new Error(`Formato de projeto v${d.version} não é mais suportado`)
+    if (!step) throw new Error(t('projectformat.formato_de_projeto_v_nao', { version: d.version }))
     d = step(d)
   }
   return d
@@ -85,13 +86,13 @@ export function decodeProject(input: ArrayBuffer | Uint8Array): ProjectBundle {
     try {
       files = unzipSync(bytes)
     } catch {
-      throw new Error('Arquivo de projeto corrompido')
+      throw new Error(t('projectformat.arquivo_de_projeto_corrompido'))
     }
-    if (!files['project.json']) throw new Error('Arquivo não é um projeto Traço')
+    if (!files['project.json']) throw new Error(t('projectformat.arquivo_nao_e_um_projeto'))
     const data = migrate(JSON.parse(strFromU8(files['project.json'])) as ProjectData)
     const sources = data.sources.map((s) => {
       const f = files[entry(s.id)]
-      if (!f) throw new Error(`PDF "${s.name}" ausente no projeto`)
+      if (!f) throw new Error(t('projectformat.pdf_ausente_no_projeto', { name: s.name }))
       return { id: s.id, name: s.name, bytes: f }
     })
     return { data, sources }
@@ -101,9 +102,9 @@ export function decodeProject(input: ArrayBuffer | Uint8Array): ProjectBundle {
   try {
     raw = JSON.parse(strFromU8(bytes))
   } catch {
-    throw new Error('Arquivo não é um projeto Traço')
+    throw new Error(t('projectformat.arquivo_nao_e_um_projeto'))
   }
-  if (!raw || raw.app !== 'traco' || !Array.isArray(raw.sources)) throw new Error('Arquivo não é um projeto Traço')
+  if (!raw || raw.app !== 'traco' || !Array.isArray(raw.sources)) throw new Error(t('projectformat.arquivo_nao_e_um_projeto'))
   const sources = raw.sources.map((s) => ({ id: s.id, name: s.name, bytes: fromB64(s.pdf) }))
   const data = migrate({ ...raw, sources: sources.map((s) => ({ id: s.id, name: s.name })) })
   return { data, sources }

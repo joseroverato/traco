@@ -2,6 +2,7 @@ import { evalFormula } from './formula'
 import { centroid, inPoly } from './geometry'
 import type { CustomColumn, Markup, Sheet } from './types'
 import type { Qty } from './geometry'
+import { t } from './i18n'
 
 /** Valor de uma coluna personalizada para uma marcação. */
 export function columnValue(c: CustomColumn, m: Markup, q: Qty | null, cols: CustomColumn[]): string | number {
@@ -15,7 +16,7 @@ export function columnValue(c: CustomColumn, m: Markup, q: Qty | null, cols: Cus
     })
     return Math.round(evalFormula(expr, { ...q.vars, Q: q.value }) * 100) / 100
   } catch {
-    return 'erro'
+    return t('columns.erro')
   }
 }
 
@@ -26,4 +27,4 @@ export function spaceOf(m: Markup, all: Markup[]): Markup | undefined {
   return all.find((s) => s.kind === 'space' && s.page === m.page && inPoly(p, s.points) && !(s.holes ?? []).some((h) => inPoly(p, h)))
 }
 
-export const levelOf = (m: Markup, sheets: Sheet[]) => sheets.find((s) => s.id === m.page)?.level || 'Sem pavimento'
+export const levelOf = (m: Markup, sheets: Sheet[]) => sheets.find((s) => s.id === m.page)?.level || t('columns.sem_pavimento')

@@ -1,12 +1,13 @@
 /** Conversa com o Claude (API de Mensagens) usando os comandos do Traço como ferramentas. */
 import { TOOLS, runCommand } from './commands'
+import { LANGS, getLang, t } from './i18n'
 import { desktop } from './platform'
 import { useStore } from './store'
 
 export const MODELS = [
-  { id: 'claude-sonnet-5-5', label: 'Claude Sonnet 5.5 — equilibrado' },
-  { id: 'claude-opus-5-5', label: 'Claude Opus 5.5 — mais capaz' },
-  { id: 'claude-haiku-5-5', label: 'Claude Haiku 5.5 — mais rápido' },
+  { id: 'claude-sonnet-5-5', get label() { return t('ai.claude_sonnet_5_5_equilibrado') } },
+  { id: 'claude-opus-5-5', get label() { return t('ai.claude_opus_5_5_mais') } },
+  { id: 'claude-haiku-5-5', get label() { return t('ai.claude_haiku_5_5_mais') } },
 ]
 
 type Block =
@@ -19,8 +20,8 @@ export interface ApiMessage {
   content: Block[] | string
 }
 
-const SYSTEM = `Você é o assistente de engenharia integrado ao Traço, o app de revisão de pranchas e levantamento de quantitativos da Lottos Engenharia.
-O usuário é engenheiro civil. Responda em português do Brasil, de forma direta e técnica.
+const systemPrompt = () => `Você é o assistente de engenharia integrado ao Traço, o app de revisão de pranchas e levantamento de quantitativos.
+O usuário é engenheiro civil. Responda de forma direta e técnica, no idioma em que ele escrever (o idioma da interface do app é ${LANGS.find((l) => l.id === getLang())!.name}).
 
 Como trabalhar:
 - Use as ferramentas para ler e alterar o projeto aberto. Comece por get_document quando não souber o contexto.
@@ -61,7 +62,7 @@ function prune(msgs: ApiMessage[]): ApiMessage[] {
         ...m,
         content: m.content.map((b) =>
           b.type === 'tool_result' && Array.isArray(b.content)
-            ? { ...b, content: b.content.map((c) => (c.type === 'image' ? ({ type: 'text', text: '[imagem anterior omitida]' } as Block) : c)) }
+            ? { ...b, content: b.content.map((c) => (c.type === 'image' ? ({ type: 'text', text: t('ai.imagem_anterior_omitida') } as Block) : c)) }
             : b,
         ),
       }
@@ -76,7 +77,7 @@ export interface ChatEvents {
 
 export async function chat(history: ApiMessage[], ev: ChatEvents, signal: AbortSignal): Promise<ApiMessage[]> {
   const key = await getApiKey()
-  if (!key) throw new Error('Configure sua chave da API da Anthropic (ícone de engrenagem no painel).')
+  if (!key) throw new Error(t('ai.configure_sua_chave_da_api'))
   const model = useStore.getState().claudeModel
   let msgs = history
   for (let turn = 0; turn < 25; turn++) {
@@ -89,7 +90,7 @@ export async function chat(history: ApiMessage[], ev: ChatEvents, signal: AbortS
         'anthropic-version': '2023-06-01',
         'anthropic-dangerous-direct-browser-access': 'true',
       },
-      body: JSON.stringify({ model, max_tokens: 4096, system: SYSTEM, tools: TOOLS, messages: prune(msgs) }),
+      body: JSON.stringify({ model, max_tokens: 4096, system: systemPrompt(), tools: TOOLS, messages: prune(msgs) }),
     })
     if (!res.ok) {
       let detail = ''
@@ -98,8 +99,8 @@ export async function chat(history: ApiMessage[], ev: ChatEvents, signal: AbortS
       } catch {
         detail = await res.text()
       }
-      if (res.status === 401) throw new Error('Chave da API inválida. Confira nas configurações do painel.')
-      throw new Error(`Erro da API (${res.status}): ${detail}`)
+      if (res.status === 401) throw new Error(t('ai.chave_da_api_invalida_confira'))
+      throw new Error(t('ai.erro_da_api', { status: res.status, detail }))
     }
     const data = (await res.json()) as { content: Block[]; stop_reason: string }
     msgs = [...msgs, { role: 'assistant', content: data.content }]

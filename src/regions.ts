@@ -2,9 +2,10 @@
 import { useStore } from './store'
 import { findSnap, snapIndexFor } from './snap'
 import type { SnapIndex } from './snap'
-import { fillAt, findSymbols } from './geoWorker'
+import { fillAt, findSymbols, reasonText } from './geoWorker'
 import { polyArea } from './geometry'
 import type { Pt, Sheet } from './types'
+import { t } from './i18n'
 
 export async function indexFor(sh: Sheet): Promise<SnapIndex> {
   const src = useStore.getState().sources[sh.src]
@@ -59,7 +60,7 @@ export function refineRing(idx: SnapIndex | null, ring: Pt[], halfLine: number):
 export async function detectRegion(sh: Sheet, p: Pt, gap = useStore.getState().fillGap): Promise<{ outer: Pt[]; holes: Pt[][] } | string> {
   const idx = await indexFor(sh)
   const r = await fillAt(sh, idx, p, gap)
-  if (!r.ok) return r.reason ?? 'Não foi possível detectar o contorno'
+  if (!r.ok) return reasonText(r.reason) ?? t('regions.nao_foi_possivel_detectar')
   const refine = (ring: Pt[]) => refineRing(idx, ring, r.halfLine ?? 1)
   const outer = refine(r.outer!)
   if (outer.length < 3) return 'Contorno muito pequeno'

@@ -2,6 +2,8 @@
 import GeoWorker from './geo.worker.ts?worker&inline'
 import type { SnapIndex } from './snap'
 import type { Pt, Sheet } from './types'
+import { t } from './i18n'
+import type { Key } from './i18n'
 
 let worker: Worker | null = null
 let seq = 0
@@ -69,3 +71,6 @@ export async function findSymbols(target: Sheet, targetIdx: SnapIndex, source: S
 export async function findSymbolsRaster(gray: Uint8Array, W: number, H: number, k: number, rect: { x: number; y: number; w: number; h: number }) {
   return call<{ ok: boolean; centers: [number, number][] }>('raster', { gray, W, H, k, rect, thr: 0.78 }, [gray.buffer])
 }
+
+/** O worker devolve a chave do motivo (ele não conhece o idioma); aqui vira texto na língua atual. */
+export const reasonText = (r?: string) => (r && r.startsWith('geo.') ? t(r as Key) : r)

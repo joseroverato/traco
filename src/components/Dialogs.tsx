@@ -14,6 +14,10 @@ import type { PriceBase } from '../sinapi'
 import { checkFormula } from '../formula'
 import { startTour } from '../tour'
 import { APP_VERSION, REPO_URL, THIRD_PARTY, releaseUrl, releasesUrl } from '../about'
+import { LANGS, localeOf, setLang, t, useLang } from '../i18n'
+import type { Lang } from '../i18n'
+import { Rich } from './Rich'
+import { stampText } from '../geometry'
 
 function Modal({ title, children, onClose, actions, wide }: { title: string; children: React.ReactNode; onClose: () => void; actions: React.ReactNode; wide?: boolean }) {
   return (
@@ -41,9 +45,9 @@ function useRange() {
   const ui = (
     <div className="stack tight">
       <div className="seg wide">
-        <button className={scope === 'all' ? 'active' : ''} onClick={() => setScope('all')}>Todas ({s.sheets.length})</button>
-        <button className={scope === 'current' ? 'active' : ''} onClick={() => setScope('current')}>Folha atual</button>
-        <button className={scope === 'ranges' ? 'active' : ''} onClick={() => setScope('ranges')}>Intervalo</button>
+        <button className={scope === 'all' ? 'active' : ''} onClick={() => setScope('all')}>{t('dialogs.todas', { length: s.sheets.length })}</button>
+        <button className={scope === 'current' ? 'active' : ''} onClick={() => setScope('current')}>{t('dialogs.folha_atual')}</button>
+        <button className={scope === 'ranges' ? 'active' : ''} onClick={() => setScope('ranges')}>{t('dialogs.intervalo')}</button>
       </div>
       {scope === 'ranges' && <input placeholder="ex.: 1-3, 7, 10-12" value={ranges} onChange={(e) => setRanges(e.target.value)} />}
     </div>
@@ -76,34 +80,34 @@ export function ExportDialog() {
     try {
       const bytes = await exportPdf({ sheetIds: ids, flatten, bookmarks, pageLabels, removeAnnots, meta: true, optimize })
       await download(bytes, `${(meta.title || s.fileName.replace(/\.pdf$/i, '')).replace(/[\\/:*?"<>|]/g, '_')}${flatten ? ' - revisado' : ''}.pdf`, 'application/pdf')
-      s.notify(`PDF exportado com ${ids.length} folha(s)`)
+      s.notify(t('dialogs.pdf_exportado_com_folha_s', { length: ids.length }))
       close()
     } catch (e) {
       console.error(e)
-      setErr('Falha ao gerar o PDF: ' + (e as Error).message)
+      setErr(t('dialogs.falha_ao_gerar_o_pdf', { erro: (e as Error).message }))
     } finally {
       setBusy(false)
     }
   }
   return (
-    <Modal title="Exportar PDF" wide onClose={close} actions={<><button className="btn ghost" onClick={close}>Cancelar</button><button className="btn primary" disabled={busy} onClick={go}>{busy ? 'Gerando…' : 'Exportar'}</button></>}>
+    <Modal title={t('dialogs.exportar_pdf')} wide onClose={close} actions={<><button className="btn ghost" onClick={close}>{t('dialogs.cancelar')}</button><button className="btn primary" disabled={busy} onClick={go}>{busy ? t('dialogs.gerando') : t('dialogs.exportar')}</button></>}>
       <div className="two-col">
         <div className="stack">
-          <span className="section-label">Folhas</span>
+          <span className="section-label">{t('dialogs.folhas')}</span>
           {range.ui}
-          <span className="section-label">Conteúdo</span>
-          <label className="check"><input type="checkbox" checked={flatten} onChange={(e) => setFlatten(e.target.checked)} /> Gravar marcações, carimbos e imagens no PDF</label>
-          <label className="check"><input type="checkbox" checked={bookmarks} onChange={(e) => setBookmarks(e.target.checked)} /> Criar índice de folhas (marcadores)</label>
-          <label className="check"><input type="checkbox" checked={pageLabels} onChange={(e) => setPageLabels(e.target.checked)} /> Numerar páginas com o nome da folha</label>
-          <label className="check"><input type="checkbox" checked={removeAnnots} onChange={(e) => setRemoveAnnots(e.target.checked)} /> Remover anotações que vieram no PDF original</label>
-          <label className="check"><input type="checkbox" checked={optimize} onChange={(e) => setOptimize(e.target.checked)} /> Otimizar tamanho do arquivo</label>
+          <span className="section-label">{t('dialogs.conteudo')}</span>
+          <label className="check"><input type="checkbox" checked={flatten} onChange={(e) => setFlatten(e.target.checked)} /> {t('dialogs.gravar_marcacoes_carimbos_e_imagens')}</label>
+          <label className="check"><input type="checkbox" checked={bookmarks} onChange={(e) => setBookmarks(e.target.checked)} /> {t('dialogs.criar_indice_de_folhas_marcadores')}</label>
+          <label className="check"><input type="checkbox" checked={pageLabels} onChange={(e) => setPageLabels(e.target.checked)} /> {t('dialogs.numerar_paginas_com_o_nome')}</label>
+          <label className="check"><input type="checkbox" checked={removeAnnots} onChange={(e) => setRemoveAnnots(e.target.checked)} /> {t('dialogs.remover_anotacoes_que_vieram_no')}</label>
+          <label className="check"><input type="checkbox" checked={optimize} onChange={(e) => setOptimize(e.target.checked)} /> {t('dialogs.otimizar_tamanho_do_arquivo')}</label>
         </div>
         <div className="stack">
-          <span className="section-label">Metadados</span>
-          <label className="field"><span>Título</span><input value={meta.title} onChange={(e) => setMeta({ title: e.target.value })} /></label>
-          <label className="field"><span>Autor</span><input value={meta.author} placeholder={s.author} onChange={(e) => setMeta({ author: e.target.value })} /></label>
-          <label className="field"><span>Assunto</span><input value={meta.subject} placeholder="ex.: Projeto executivo — Rev. 02" onChange={(e) => setMeta({ subject: e.target.value })} /></label>
-          <label className="field"><span>Palavras-chave</span><input value={meta.keywords} placeholder="arquitetura; executivo; rev02" onChange={(e) => setMeta({ keywords: e.target.value })} /></label>
+          <span className="section-label">{t('dialogs.metadados')}</span>
+          <label className="field"><span>{t('dialogs.titulo')}</span><input value={meta.title} onChange={(e) => setMeta({ title: e.target.value })} /></label>
+          <label className="field"><span>{t('dialogs.autor')}</span><input value={meta.author} placeholder={s.author} onChange={(e) => setMeta({ author: e.target.value })} /></label>
+          <label className="field"><span>{t('dialogs.assunto')}</span><input value={meta.subject} placeholder={t('dialogs.ex_projeto_executivo_rev_02')} onChange={(e) => setMeta({ subject: e.target.value })} /></label>
+          <label className="field"><span>{t('dialogs.palavras_chave')}</span><input value={meta.keywords} placeholder={t('dialogs.arquitetura_executivo_rev02')} onChange={(e) => setMeta({ keywords: e.target.value })} /></label>
         </div>
       </div>
       {err && <span className="warn">{err}</span>}
@@ -114,10 +118,10 @@ export function ExportDialog() {
 // ---------------------------------------------------------------- Carimbos em lote
 type Pos = 'tl' | 'tc' | 'tr' | 'ml' | 'c' | 'mr' | 'bl' | 'bc' | 'br'
 const KINDS = {
-  numero: { label: 'Numeração', text: 'Folha {n} de {total}', size: 10, pos: 'br' as Pos, border: 0, angle: 0, opacity: 1, color: '#1f2937' },
-  carimbo: { label: 'Carimbo', text: 'APROVADO PARA OBRA\n{autor} · {data}', size: 14, pos: 'tr' as Pos, border: 2, angle: 0, opacity: 1, color: '#30a46c' },
-  marca: { label: "Marca d'água", text: 'PRELIMINAR', size: 110, pos: 'c' as Pos, border: 0, angle: -30, opacity: 0.14, color: '#e5484d' },
-  imagem: { label: 'Imagem / logo', text: '', size: 12, pos: 'br' as Pos, border: 0, angle: 0, opacity: 1, color: '#000000' },
+  numero: { get label() { return t('dialogs.numeracao') }, get text() { return t('dialogs.folha_de') }, size: 10, pos: 'br' as Pos, border: 0, angle: 0, opacity: 1, color: '#1f2937' },
+  carimbo: { get label() { return t('dialogs.carimbo') }, get text() { return t('dialogs.aprovado_para_obra') }, size: 14, pos: 'tr' as Pos, border: 2, angle: 0, opacity: 1, color: '#30a46c' },
+  marca: { get label() { return t('dialogs.marca_d_agua') }, get text() { return t('dialogs.preliminar') }, size: 110, pos: 'c' as Pos, border: 0, angle: -30, opacity: 0.14, color: '#e5484d' },
+  imagem: { get label() { return t('dialogs.imagem_logo') }, text: '', size: 12, pos: 'br' as Pos, border: 0, angle: 0, opacity: 1, color: '#000000' },
 }
 
 export function StampDialog() {
@@ -168,9 +172,9 @@ export function StampDialog() {
     } catch (e) {
       return setErr((e as Error).message)
     }
-    if (kind === 'imagem' && !img) return setErr('Escolha uma imagem')
+    if (kind === 'imagem' && !img) return setErr(t('dialogs.escolha_uma_imagem'))
     const lines = text.split('\n')
-    const longest = Math.max(...lines.map((l) => l.replace(/\{(total|n)\}/g, '00').replace(/\{data\}/g, '00/00/0000').replace(/\{autor\}/g, s.author).replace(/\{folha\}/g, 'XXX-00').length))
+    const longest = Math.max(...lines.map((l) => stampText(l, { n: 99, total: 99, label: 'XXX-00', file: 'XXXXXXXX', author: s.author }).length))
     const bw = kind === 'imagem' ? imgW : longest * size * 0.62 + (border ? 16 : 6)
     const bh = kind === 'imagem' && img ? (imgW * img.h) / img.w : lines.length * size * 1.25 + (border ? 12 : 4)
     const add: Markup[] = []
@@ -189,12 +193,12 @@ export function StampDialog() {
     }
     s.checkpoint()
     useStore.setState({ markups: [...useStore.getState().markups, ...add] })
-    s.notify(`${KINDS[kind].label} aplicado(a) em ${ids.length} folha(s) — cada um continua editável`)
+    s.notify(t('dialogs.aplicado_a_em_folha_s', { label: KINDS[kind].label, length: ids.length }))
     close()
   }
 
   return (
-    <Modal title="Carimbos, numeração e marca d'água" wide onClose={close} actions={<><button className="btn ghost" onClick={close}>Cancelar</button><button className="btn primary" onClick={apply}>Aplicar</button></>}>
+    <Modal title={t('dialogs.carimbos_numeracao_e_marca_d')} wide onClose={close} actions={<><button className="btn ghost" onClick={close}>{t('dialogs.cancelar')}</button><button className="btn primary" onClick={apply}>{t('dialogs.aplicar')}</button></>}>
       <div className="seg wide">
         {(Object.keys(KINDS) as (keyof typeof KINDS)[]).map((k) => (
           <button key={k} className={kind === k ? 'active' : ''} onClick={() => pick(k)}>{KINDS[k].label}</button>
@@ -204,39 +208,39 @@ export function StampDialog() {
         <div className="stack">
           {kind === 'imagem' ? (
             <>
-              <button className="btn" onClick={loadImg}>{img ? 'Trocar imagem' : 'Escolher PNG ou JPG…'}</button>
+              <button className="btn" onClick={loadImg}>{img ? t('dialogs.trocar_imagem') : t('dialogs.escolher_png_ou_jpg')}</button>
               {img && <img src={img.url} alt="" className="img-preview" />}
-              <label className="field"><span>Largura (pt)</span><input type="number" value={imgW} onChange={(e) => setImgW(Number(e.target.value))} /></label>
+              <label className="field"><span>{t('dialogs.largura_pt')}</span><input type="number" value={imgW} onChange={(e) => setImgW(Number(e.target.value))} /></label>
             </>
           ) : (
             <>
-              <label className="field"><span>Texto</span><textarea rows={3} value={text} onChange={(e) => setText(e.target.value)} /></label>
+              <label className="field"><span>{t('dialogs.texto')}</span><textarea rows={3} value={text} onChange={(e) => setText(e.target.value)} /></label>
               <div className="var-chips">
-                {['{n}', '{total}', '{folha}', '{data}', '{hora}', '{autor}', '{arquivo}'].map((v) => (
+                {t('dialogs.stamp_tokens').split(' ').map((v) => (
                   <button key={v} className="chip-btn" onClick={() => setText(text + v)}>{v}</button>
                 ))}
               </div>
               <div className="row">
-                <label className="field"><span>Fonte</span><input type="number" value={size} onChange={(e) => setSize(Number(e.target.value))} /></label>
-                <label className="field"><span>Cor</span><input type="color" value={color} onChange={(e) => setColor(e.target.value)} /></label>
-                <label className="field"><span>Borda</span><input type="number" min={0} step={0.5} value={border} onChange={(e) => setBorder(Number(e.target.value))} /></label>
+                <label className="field"><span>{t('dialogs.fonte')}</span><input type="number" value={size} onChange={(e) => setSize(Number(e.target.value))} /></label>
+                <label className="field"><span>{t('dialogs.cor')}</span><input type="color" value={color} onChange={(e) => setColor(e.target.value)} /></label>
+                <label className="field"><span>{t('dialogs.borda')}</span><input type="number" min={0} step={0.5} value={border} onChange={(e) => setBorder(Number(e.target.value))} /></label>
               </div>
               <div className="row">
-                <label className="field"><span>Rotação {angle}°</span><input type="range" min={-90} max={90} step={5} value={angle} onChange={(e) => setAngle(Number(e.target.value))} /></label>
-                <label className="field"><span>Opacidade {Math.round(opacity * 100)}%</span><input type="range" min={0.05} max={1} step={0.05} value={opacity} onChange={(e) => setOpacity(Number(e.target.value))} /></label>
+                <label className="field"><span>{t('dialogs.rotacao', { angle })}</span><input type="range" min={-90} max={90} step={5} value={angle} onChange={(e) => setAngle(Number(e.target.value))} /></label>
+                <label className="field"><span>{t('dialogs.opacidade', { round: Math.round(opacity * 100) })}</span><input type="range" min={0.05} max={1} step={0.05} value={opacity} onChange={(e) => setOpacity(Number(e.target.value))} /></label>
               </div>
             </>
           )}
         </div>
         <div className="stack">
-          <span className="section-label">Posição</span>
+          <span className="section-label">{t('dialogs.posicao')}</span>
           <div className="pos-grid">
             {(['tl', 'tc', 'tr', 'ml', 'c', 'mr', 'bl', 'bc', 'br'] as Pos[]).map((p) => (
               <button key={p} className={pos === p ? 'active' : ''} onClick={() => setPos(p)} aria-label={p}><span /></button>
             ))}
           </div>
-          <label className="field"><span>Margem (pt)</span><input type="number" value={margin} onChange={(e) => setMargin(Number(e.target.value))} /></label>
-          <span className="section-label">Aplicar em</span>
+          <label className="field"><span>{t('dialogs.margem_pt')}</span><input type="number" value={margin} onChange={(e) => setMargin(Number(e.target.value))} /></label>
+          <span className="section-label">{t('dialogs.aplicar_em')}</span>
           {range.ui}
         </div>
       </div>
@@ -258,8 +262,8 @@ export function StatusDialog() {
     close()
   }
   return (
-    <Modal title="Modelo de status" onClose={close} actions={<><button className="btn ghost" onClick={() => setList(defaultStatuses())}>Padrão</button><div className="spacer" /><button className="btn ghost" onClick={close}>Cancelar</button><button className="btn primary" onClick={save}>Salvar</button></>}>
-      <p className="muted small">Defina o fluxo de revisão do projeto (ex.: Enviado → Em análise → Aprovado c/ ressalvas → Aprovado). O primeiro é o status inicial.</p>
+    <Modal title={t('dialogs.modelo_de_status')} onClose={close} actions={<><button className="btn ghost" onClick={() => setList(defaultStatuses())}>{t('dialogs.padrao')}</button><div className="spacer" /><button className="btn ghost" onClick={close}>{t('dialogs.cancelar')}</button><button className="btn primary" onClick={save}>{t('dialogs.salvar')}</button></>}>
+      <p className="muted small">{t('dialogs.defina_o_fluxo_de_revisao')}</p>
       <div className="stack tight">
         {list.map((x, i) => (
           <div key={i} className="row center">
@@ -268,7 +272,7 @@ export function StatusDialog() {
             <button className="icon-btn" onClick={() => setList(list.filter((_, j) => j !== i))}><Trash2 size={14} /></button>
           </div>
         ))}
-        <button className="btn ghost sm" onClick={() => setList([...list, { name: 'novo status', color: '#0090ff' }])}><Plus size={14} /> Adicionar status</button>
+        <button className="btn ghost sm" onClick={() => setList([...list, { name: t('dialogs.novo_status'), color: '#0090ff' }])}><Plus size={14} /> {t('dialogs.adicionar_status')}</button>
       </div>
     </Modal>
   )
@@ -278,7 +282,7 @@ export function StatusDialog() {
 export function PricesDialog() {
   const s = useStore()
   const [base, setBase] = useState<PriceBase | null | undefined>(undefined)
-  const [label, setLabel] = useState('SINAPI PR ' + new Date().toLocaleDateString('pt-BR', { month: '2-digit', year: 'numeric' }) + ' não desonerado')
+  const [label, setLabel] = useState('SINAPI PR ' + new Date().toLocaleDateString(localeOf(), { month: '2-digit', year: 'numeric' }) + ' ' + t('dialogs.nao_desonerado'))
   const [merge, setMerge] = useState(false)
   const [busy, setBusy] = useState('')
   const [err, setErr] = useState('')
@@ -297,7 +301,7 @@ export function PricesDialog() {
       try {
         const b = await importPriceFile(f, label, merge)
         setBase(b)
-        s.notify(`${b.items.length.toLocaleString('pt-BR')} itens na base de preços`)
+        s.notify(t('dialogs.itens_na_base_de_precos', { toLocaleString: b.items.length.toLocaleString(localeOf()) }))
       } catch (e) {
         setErr((e as Error).message)
       } finally {
@@ -315,33 +319,33 @@ export function PricesDialog() {
       n++
       return { ...p, unitPrice: Math.round(it.price * 100) / 100 }
     }))
-    s.notify(`${n} marcador(es) com preço atualizado pela base`)
+    s.notify(t('dialogs.marcador_es_com_preco_atualizado', { n }))
   }
   return (
-    <Modal title="Base de preços e BDI" onClose={close} actions={<button className="btn primary" onClick={close}>Concluir</button>}>
+    <Modal title={t('dialogs.base_de_precos_e_bdi')} onClose={close} actions={<button className="btn primary" onClick={close}>{t('dialogs.concluir')}</button>}>
       <div className="card">
-        {base === undefined ? <span className="muted">Carregando…</span> : base ? (
+        {base === undefined ? <span className="muted">{t('dialogs.carregando')}</span> : base ? (
           <>
-            <div className="kv"><span>Base atual</span><b>{base.label}</b></div>
-            <div className="kv"><span>Itens</span><b>{base.items.length.toLocaleString('pt-BR')}</b></div>
-            <div className="kv"><span>Importada em</span><b>{new Date(base.importedAt).toLocaleDateString('pt-BR')}</b></div>
+            <div className="kv"><span>{t('dialogs.base_atual')}</span><b>{base.label}</b></div>
+            <div className="kv"><span>{t('dialogs.itens')}</span><b>{base.items.length.toLocaleString(localeOf())}</b></div>
+            <div className="kv"><span>{t('dialogs.importada_em')}</span><b>{new Date(base.importedAt).toLocaleDateString(localeOf())}</b></div>
             <div className="row">
-              <button className="btn sm" onClick={updatePrices}>Atualizar preços dos marcadores pelo código</button>
-              <button className="btn sm ghost" onClick={async () => { await clearBase(); setBase(null) }}>Remover base</button>
+              <button className="btn sm" onClick={updatePrices}>{t('dialogs.atualizar_precos_dos_marcadores_pelo')}</button>
+              <button className="btn sm ghost" onClick={async () => { await clearBase(); setBase(null) }}>{t('dialogs.remover_base')}</button>
             </div>
           </>
-        ) : <span className="muted">Nenhuma base importada.</span>}
+        ) : <span className="muted">{t('dialogs.nenhuma_base_importada')}</span>}
       </div>
-      <span className="section-label">Importar planilha</span>
-      <label className="field"><span>Nome da base</span><input value={label} onChange={(e) => setLabel(e.target.value)} /></label>
-      <label className="check"><input type="checkbox" checked={merge} onChange={(e) => setMerge(e.target.checked)} /> Somar à base atual (ex.: composições + insumos, ou base própria da Lottos)</label>
-      <button className="btn" disabled={!!busy} onClick={pick}>{busy || 'Escolher planilha .xlsx / .csv…'}</button>
+      <span className="section-label">{t('dialogs.importar_planilha')}</span>
+      <label className="field"><span>{t('dialogs.nome_da_base')}</span><input value={label} onChange={(e) => setLabel(e.target.value)} /></label>
+      <label className="check"><input type="checkbox" checked={merge} onChange={(e) => setMerge(e.target.checked)} /> {t('dialogs.somar_a_base_atual_ex')}</label>
+      <button className="btn" disabled={!!busy} onClick={pick}>{busy || t('dialogs.escolher_planilha_xlsx_csv')}</button>
       {err && <span className="warn">{err}</span>}
-      <p className="muted small">Baixe no site da Caixa (SINAPI → Relatórios de preços → PR) a planilha de <b>composições sintético</b> e/ou <b>insumos</b>. O Traço detecta as colunas de código, descrição, unidade e custo automaticamente. Também serve para uma planilha própria com essas colunas.</p>
-      <span className="section-label">BDI do orçamento</span>
+      <p className="muted small"><Rich k="dialogs.baixe_sinapi" /></p>
+      <span className="section-label">{t('dialogs.bdi_do_orcamento')}</span>
       <div className="row center">
         <input type="number" step={0.01} min={0} value={s.bdi} onChange={(e) => s.set({ bdi: Number(e.target.value) })} style={{ maxWidth: 110 }} />
-        <span className="muted">% aplicado sobre o total do quantitativo</span>
+        <span className="muted">{t('dialogs.aplicado_sobre_o_total_do')}</span>
       </div>
     </Modal>
   )
@@ -357,37 +361,37 @@ export function ColumnsDialog() {
     close()
   }
   return (
-    <Modal title="Colunas personalizadas" wide onClose={close} actions={<><button className="btn ghost" onClick={close}>Cancelar</button><button className="btn primary" onClick={save}>Salvar</button></>}>
-      <p className="muted small">Campos extras em cada medição (etapa, fornecedor, lote…) e colunas calculadas. Aparecem nas propriedades da marcação, na tabela de quantitativo e no Excel.</p>
+    <Modal title={t('dialogs.colunas_personalizadas')} wide onClose={close} actions={<><button className="btn ghost" onClick={close}>{t('dialogs.cancelar')}</button><button className="btn primary" onClick={save}>{t('dialogs.salvar')}</button></>}>
+      <p className="muted small">{t('dialogs.campos_extras_em_cada_medicao')}</p>
       <div className="stack tight">
         {cols.map((c, i) => (
           <div key={c.id} className="row center">
-            <input className="grow" placeholder="Nome da coluna" value={c.name} onChange={(e) => upd(i, { name: e.target.value })} />
+            <input className="grow" placeholder={t('dialogs.nome_da_coluna')} value={c.name} onChange={(e) => upd(i, { name: e.target.value })} />
             <select value={c.type} onChange={(e) => upd(i, { type: e.target.value as CustomColumn['type'] })} style={{ maxWidth: 130 }}>
-              <option value="text">Texto</option><option value="number">Número</option><option value="formula">Fórmula</option>
+              <option value="text">{t('dialogs.texto')}</option><option value="number">{t('dialogs.numero')}</option><option value="formula">{t('dialogs.formula')}</option>
             </select>
             {c.type === 'formula' && (
-              <input className={c.formula && checkFormula(c.formula.replace(/\[[^\]]+\]/g, '1')) ? 'invalid' : ''} placeholder="ex.: Q * [Perda] " value={c.formula ?? ''} onChange={(e) => upd(i, { formula: e.target.value })} style={{ maxWidth: 200 }} />
+              <input className={c.formula && checkFormula(c.formula.replace(/\[[^\]]+\]/g, '1')) ? 'invalid' : ''} placeholder={t('dialogs.ex_q_perda')} value={c.formula ?? ''} onChange={(e) => upd(i, { formula: e.target.value })} style={{ maxWidth: 200 }} />
             )}
             <button className="icon-btn" onClick={() => setCols(cols.filter((_, j) => j !== i))}><Trash2 size={14} /></button>
           </div>
         ))}
-        <button className="btn ghost sm" onClick={() => setCols([...cols, { id: uid(), name: '', type: 'text' }])}><Plus size={14} /> Adicionar coluna</button>
+        <button className="btn ghost sm" onClick={() => setCols([...cols, { id: uid(), name: '', type: 'text' }])}><Plus size={14} /> {t('dialogs.adicionar_coluna')}</button>
       </div>
-      <p className="hint">Fórmulas: <b>Q</b> quantidade final, <b>L A P N H V</b> medidas, e colunas numéricas entre colchetes, ex.: <code>Q * [Perda %] / 100</code>.</p>
+      <p className="hint"><Rich k="dialogs.formulas_colunas" /></p>
     </Modal>
   )
 }
 
 // ---------------------------------------------------------------- Atualizações (GitHub Releases)
 const UPDATE_TEXT: Record<UpdateState['status'], string> = {
-  idle: 'Ainda não verificado.',
-  checking: 'Procurando atualização…',
-  available: 'Nova versão disponível.',
-  latest: 'Você está na versão mais recente.',
-  downloading: 'Baixando…',
-  ready: 'Atualização baixada — reinicie para instalar.',
-  error: 'Não foi possível verificar.',
+  get idle() { return t('dialogs.update_idle') },
+  get checking() { return t('dialogs.update_checking') },
+  get available() { return t('dialogs.update_available') },
+  get latest() { return t('dialogs.update_latest') },
+  get downloading() { return t('dialogs.update_downloading') },
+  get ready() { return t('dialogs.update_ready') },
+  get error() { return t('dialogs.update_error') },
 }
 function UpdatesPanel({ st, setSt }: { st: UpdateState; setSt: React.Dispatch<React.SetStateAction<UpdateState>> }) {
   const [token, setToken] = useState('')
@@ -403,29 +407,29 @@ function UpdatesPanel({ st, setSt }: { st: UpdateState; setSt: React.Dispatch<Re
   return (
     <>
       {!up ? (
-        <p className="muted">A versão web é atualizada no servidor (docker compose pull / up). As atualizações automáticas são do app de PC.</p>
+        <p className="muted">{t('dialogs.a_versao_web_e_atualizada')}</p>
       ) : (
         <div className="stack">
           <div className="card">
-            <div className="kv"><span>Versão instalada</span><b>{st.current ?? '—'}</b></div>
-            <div className="kv"><span>Situação</span><b>{UPDATE_TEXT[st.status]}{st.status === 'available' || st.status === 'ready' ? ` (${st.version})` : ''}</b></div>
+            <div className="kv"><span>{t('dialogs.versao_instalada')}</span><b>{st.current ?? '—'}</b></div>
+            <div className="kv"><span>{t('dialogs.situacao')}</span><b>{UPDATE_TEXT[st.status]}{st.status === 'available' || st.status === 'ready' ? ` (${st.version})` : ''}</b></div>
             {st.status === 'downloading' && <div className="progress"><div style={{ width: `${st.percent ?? 0}%` }} /></div>}
             {st.status === 'error' && st.error && <span className="warn small">{st.error}</span>}
             <div className="row">
-              <button className="btn sm" disabled={st.status === 'checking' || st.status === 'downloading'} onClick={() => up.check()}>Verificar agora</button>
-              {st.status === 'available' && <button className="btn sm primary" onClick={() => up.download()}>Baixar {st.version}</button>}
-              {st.status === 'ready' && <button className="btn sm primary" onClick={() => up.install()}>Reiniciar e instalar</button>}
+              <button className="btn sm" disabled={st.status === 'checking' || st.status === 'downloading'} onClick={() => up.check()}>{t('dialogs.verificar_agora')}</button>
+              {st.status === 'available' && <button className="btn sm primary" onClick={() => up.download()}>{t('dialogs.baixar', { version: st.version })}</button>}
+              {st.status === 'ready' && <button className="btn sm primary" onClick={() => up.install()}>{t('dialogs.reiniciar_e_instalar')}</button>}
             </div>
           </div>
-          <label className="field"><span>Token de leitura do GitHub (opcional) {st.configured ? '· configurado ✓' : ''}</span>
-            <input type="password" autoComplete="off" value={token} placeholder={st.configured ? 'Colar outro token para trocar' : 'github_pat_…'} onChange={(e) => { setToken(e.target.value); setSaved(false) }} />
+          <label className="field"><span>{t('dialogs.token_de_leitura')} {st.configured ? t('dialogs.token_configurado') : ''}</span>
+            <input type="password" autoComplete="off" value={token} placeholder={st.configured ? t('dialogs.colar_outro_token_para_trocar') : t('dialogs.github_pat')} onChange={(e) => { setToken(e.target.value); setSaved(false) }} />
           </label>
           <div className="row">
-            <button className="btn sm primary" disabled={!token.trim()} onClick={saveToken}>Salvar token</button>
-            {st.configured && <button className="btn sm ghost" onClick={async () => { await desktop!.setSecret('github-token', ''); setSt((o) => ({ ...o, configured: false })) }}>Remover token</button>}
-            {saved && <span className="muted small">Salvo (criptografado neste PC).</span>}
+            <button className="btn sm primary" disabled={!token.trim()} onClick={saveToken}>{t('dialogs.salvar_token')}</button>
+            {st.configured && <button className="btn sm ghost" onClick={async () => { await desktop!.setSecret('github-token', ''); setSt((o) => ({ ...o, configured: false })) }}>{t('dialogs.remover_token')}</button>}
+            {saved && <span className="muted small">{t('dialogs.salvo_criptografado_neste_pc')}</span>}
           </div>
-          <p className="muted small">O Traço consulta as releases públicas de joseroverato/traco e não precisa de token. O token só é necessário numa cópia <b>privada</b> do repositório: use um token “fine-grained” só com <b>Contents: Read-only</b>. Ele fica guardado criptografado neste computador e nunca vai para o código nem para o projeto.</p>
+          <p className="muted small"><Rich k="dialogs.token_explicacao" /></p>
         </div>
       )}
     </>
@@ -433,38 +437,44 @@ function UpdatesPanel({ st, setSt }: { st: UpdateState; setSt: React.Dispatch<Re
 }
 
 function AboutPanel({ st, goUpdates }: { st: UpdateState; goUpdates: () => void }) {
+  const lang = useLang()
   const up = desktop?.update
   const version = st.current ?? APP_VERSION
   const busy = st.status === 'checking' || st.status === 'downloading'
   const newer = st.status === 'available' || st.status === 'ready'
   return (
     <div className="stack">
+      <label className="field"><span>Idioma · Language</span>
+        <select value={lang} onChange={(e) => void setLang(e.target.value as Lang)}>
+          {LANGS.map((l) => <option key={l.id} value={l.id}>{l.name}</option>)}
+        </select>
+      </label>
       <div className="card">
-        <div className="kv"><span>Traço</span><b>{IS_DESKTOP ? 'App de PC' : 'Versão web'}</b></div>
-        <div className="kv"><span>Versão instalada</span><b>{version}</b></div>
+        <div className="kv"><span>Traço</span><b>{IS_DESKTOP ? t('dialogs.app_de_pc') : t('dialogs.versao_web')}</b></div>
+        <div className="kv"><span>{t('dialogs.versao_instalada')}</span><b>{version}</b></div>
         {up ? (
           <>
-            <div className="kv"><span>Atualização</span><b>{UPDATE_TEXT[st.status]}{newer ? ` (${st.version})` : ''}</b></div>
+            <div className="kv"><span>{t('dialogs.atualizacao')}</span><b>{UPDATE_TEXT[st.status]}{newer ? ` (${st.version})` : ''}</b></div>
             {st.status === 'downloading' && <div className="progress"><div style={{ width: `${st.percent ?? 0}%` }} /></div>}
             {st.status === 'error' && st.error && <span className="warn small">{st.error}</span>}
             <div className="row">
-              <button className="btn sm" disabled={busy} onClick={() => up.check()}>Verificar atualização</button>
-              {st.status === 'available' && <button className="btn sm primary" onClick={() => up.download()}>Baixar {st.version}</button>}
-              {st.status === 'ready' && <button className="btn sm primary" onClick={() => up.install()}>Reiniciar e instalar</button>}
-              <button className="btn sm ghost" onClick={goUpdates} data-tip="Só para cópia privada do repositório">Token (opcional)</button>
+              <button className="btn sm" disabled={busy} onClick={() => up.check()}>{t('dialogs.verificar_atualizacao')}</button>
+              {st.status === 'available' && <button className="btn sm primary" onClick={() => up.download()}>{t('dialogs.baixar', { version: st.version })}</button>}
+              {st.status === 'ready' && <button className="btn sm primary" onClick={() => up.install()}>{t('dialogs.reiniciar_e_instalar')}</button>}
+              <button className="btn sm ghost" onClick={goUpdates} data-tip={t('dialogs.so_para_copia_privada_do')}>{t('dialogs.token_opcional')}</button>
             </div>
           </>
         ) : (
-          <p className="muted small">A versão web é atualizada no servidor (docker compose pull / up). A atualização automática é do app de PC.</p>
+          <p className="muted small">{t('dialogs.a_versao_web_e_atualizada_2')}</p>
         )}
         {st.notes && newer && <pre className="notes">{st.notes}</pre>}
       </div>
       <div className="row">
-        <a className="btn sm" href={REPO_URL} target="_blank" rel="noreferrer">Repositório no GitHub</a>
-        <button className="btn sm" onClick={() => { useStore.setState({ dialog: null }); startTour() }}>Rever o passo a passo</button>
-        <a className="btn sm" href={newer && st.version ? releaseUrl(st.version) : releasesUrl()} target="_blank" rel="noreferrer">Versões e notas</a>
+        <a className="btn sm" href={REPO_URL} target="_blank" rel="noreferrer">{t('dialogs.repositorio_no_github')}</a>
+        <button className="btn sm" onClick={() => { useStore.setState({ dialog: null }); startTour() }}>{t('dialogs.rever_o_passo_a_passo')}</button>
+        <a className="btn sm" href={newer && st.version ? releaseUrl(st.version) : releasesUrl()} target="_blank" rel="noreferrer">{t('dialogs.versoes_e_notas')}</a>
       </div>
-      <p className="muted small">Traço — Lottos Engenharia. Usa {THIRD_PARTY.map(([n, l]) => `${n} (${l})`).join(', ')}.</p>
+      <p className="muted small">{t('dialogs.traco_lottos_engenharia_usa', { join: THIRD_PARTY.map(([n, l]) => `${n} (${l})`).join(', ') })}</p>
     </div>
   )
 }
@@ -484,10 +494,10 @@ export function SettingsDialog() {
     up.onState((x) => setSt((o) => ({ ...o, ...x })))
   }, [up])
   return (
-    <Modal title="Configurações" onClose={close} actions={<><div className="spacer" /><button className="btn ghost" onClick={close}>Fechar</button></>}>
+    <Modal title={t('dialogs.configuracoes')} onClose={close} actions={<><div className="spacer" /><button className="btn ghost" onClick={close}>{t('dialogs.fechar')}</button></>}>
       <div className="tabs">
-        <button className={tab === 'about' ? 'active' : ''} onClick={() => setTab('about')}>Sobre</button>
-        <button className={tab === 'updates' ? 'active' : ''} onClick={() => setTab('updates')}>Atualizações</button>
+        <button className={tab === 'about' ? 'active' : ''} onClick={() => setTab('about')}>{t('dialogs.sobre')}</button>
+        <button className={tab === 'updates' ? 'active' : ''} onClick={() => setTab('updates')}>{t('dialogs.atualizacoes')}</button>
       </div>
       {tab === 'about' ? <AboutPanel st={st} goUpdates={() => setTab('updates')} /> : <UpdatesPanel st={st} setSt={setSt} />}
     </Modal>
@@ -508,18 +518,18 @@ export function RecoverDialog() {
     close()
   }
   return (
-    <Modal title="Recuperar trabalho não salvo" onClose={close} actions={<><button className="btn ghost danger" onClick={discard}>Descartar</button><div className="spacer" /><button className="btn ghost" onClick={close}>Agora não</button><button className="btn primary" disabled={busy} onClick={async () => {
+    <Modal title={t('dialogs.recuperar_trabalho_nao_salvo')} onClose={close} actions={<><button className="btn ghost danger" onClick={discard}>{t('dialogs.descartar')}</button><div className="spacer" /><button className="btn ghost" onClick={close}>{t('dialogs.agora_nao')}</button><button className="btn primary" disabled={busy} onClick={async () => {
       setBusy(true)
       try {
         await restoreRecovery()
-        s.notify('Trabalho recuperado — salve o projeto para manter')
+        s.notify(t('dialogs.trabalho_recuperado_salve_o_projeto'))
         close()
       } catch (e) {
         s.notify(String((e as Error).message))
         setBusy(false)
       }
-    }}>{busy ? 'Abrindo…' : 'Recuperar'}</button></>}>
-      <p>O Traço foi fechado sem salvar. Há uma cópia automática de <b>{info.fileName || 'projeto'}</b> de {new Date(info.savedAt).toLocaleString('pt-BR')} ({info.sheets} folha(s), {info.markups} marcação(ões)).</p>
+    }}>{busy ? t('dialogs.abrindo') : t('dialogs.recuperar')}</button></>}>
+      <p><Rich k="dialogs.recuperar_texto" vars={{ nome: info.fileName || t('dialogs.projeto'), data: new Date(info.savedAt).toLocaleString(localeOf()), folhas: info.sheets, marcacoes: info.markups }} /></p>
     </Modal>
   )
 }

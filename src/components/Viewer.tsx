@@ -9,7 +9,7 @@ import { DRAWING_TOOLS, computeLayout, markupsInRect, snapAllowed } from '../vie
 import { useElementSize, usePageRender, useZoomControls } from './viewerHooks'
 import { buildDraft, commitDraw, commitFill, commitPolygon, minVertices, placeAt } from '../viewerActions'
 import { Magnet, Move } from 'lucide-react'
-import { fillAt, findSymbols } from '../geoWorker'
+import { fillAt, findSymbols, reasonText } from '../geoWorker'
 import { OverlayCanvas } from './OverlayCanvas'
 import { applyM, invertM, overlaySheet, similarity } from '../overlayMath'
 import { LegendBox } from './LegendBox'
@@ -24,6 +24,7 @@ import { AlignPoints, DashedRect, SearchHighlights, SelectionHandles, SymbolMatc
 import { TextEditor } from './TextEditor'
 import { filterHoles, refineRing } from '../regions'
 import type { SnapHit, SnapIndex } from '../snap'
+import { t } from '../i18n'
 
 
 type Drag =
@@ -158,15 +159,15 @@ export function Viewer({ onOpen }: { onOpen: () => void }) {
   /** Área por clique: contorno fechado pelas linhas do PDF ao redor do ponto. */
   const doFill = async (p: Pt, asHole: boolean) => {
     const st = useStore.getState()
-    if (!sheet || !snapIdx.current) return st.notify('Aguarde: lendo as linhas da folha…')
-    setBusy('Detectando contorno…')
+    if (!sheet || !snapIdx.current) return st.notify(t('viewer.aguarde_lendo_as_linhas_da'))
+    setBusy(t('viewer.detectando_contorno'))
     try {
       const r = await fillAt(sheet, snapIdx.current, p, st.fillGap)
-      if (!r.ok) return st.notify(r.reason ?? 'Não foi possível detectar o contorno')
+      if (!r.ok) return st.notify(reasonText(r.reason) ?? t('viewer.nao_foi_possivel_detectar_o'))
       const refine = (ring: Pt[]) => refineRing(snapIdx.current, ring, r.halfLine ?? 1)
       const outer = refine(r.outer!)
       const holes = filterHoles(page, r.holes!.map(refine).filter((h) => h.length >= 3))
-      if (outer.length < 3) return st.notify('Contorno muito pequeno')
+      if (outer.length < 3) return st.notify(t('viewer.contorno_muito_pequeno'))
       commitFill(page, outer, holes, asHole)
     } finally {
       setBusy(null)
@@ -177,7 +178,7 @@ export function Viewer({ onOpen }: { onOpen: () => void }) {
   const doSymbol = async (rect: { x: number; y: number; w: number; h: number }) => {
     const st = useStore.getState()
     if (!sheet || !snapIdx.current) return
-    setBusy('Procurando símbolos iguais…')
+    setBusy(t('viewer.procurando_simbolos'))
     try {
       const r = await findSymbols(sheet, snapIdx.current, sheet, snapIdx.current, rect, true)
       if (!r.ok) {
@@ -187,7 +188,7 @@ export function Viewer({ onOpen }: { onOpen: () => void }) {
           setSymFound({ rect, centers })
           return
         }
-        return st.notify(r.reason ?? 'Nada encontrado')
+        return st.notify(reasonText(r.reason) ?? t('viewer.nada_encontrado'))
       }
       setSymFound({ rect, centers: r.centers.map(([x, y]) => ({ x, y })) })
     } finally {
@@ -318,7 +319,7 @@ export function Viewer({ onOpen }: { onOpen: () => void }) {
     if (pts.length < 4) return st.set({ aligning: { ...a, step: a.step + 1, pts } })
     const m = similarity(pts[0], pts[2], pts[1], pts[3])
     st.set({ aligning: null, overlays: { ...st.overlays, [page]: (st.overlays[page] ?? []).map((o) => (o.id === ov.id ? { ...o, matrix: m } : o)) } })
-    st.notify(`"${ov.label}" alinhada (escala ${(Math.hypot(m[0], m[1]) * 100).toFixed(1)}%)`)
+    st.notify(t('viewer.alinhada_escala', { label: ov.label, toFixed: (Math.hypot(m[0], m[1]) * 100).toFixed(1) }))
   }
 
   const onPointerDown = (e: React.PointerEvent) => {
@@ -464,7 +465,7 @@ export function Viewer({ onOpen }: { onOpen: () => void }) {
     if (d.type === 'symbol' && symRect) {
       const r = bbox([symRect.a, symRect.b])
       setSymRect(null)
-      if (r.w * zoom < 6 || r.h * zoom < 6) return st.notify('Arraste um retângulo em volta de UM símbolo')
+      if (r.w * zoom < 6 || r.h * zoom < 6) return st.notify(t('viewer.arraste_um_retangulo_em_volta'))
       void doSymbol(r)
       return
     }
@@ -494,7 +495,7 @@ export function Viewer({ onOpen }: { onOpen: () => void }) {
       const m = s.markups.find((x) => x.id === h.dataset.mid)
       if (m?.kind === 'count' && m.points.length > 1) {
         s.updateMarkup(m.id, { points: m.points.filter((_, i) => i !== Number(h.dataset.handle)) })
-        return s.notify('Item removido da contagem')
+        return s.notify(t('viewer.item_removido_da_contagem'))
       }
     }
     const id = ((e.target as Element).closest('[data-id]') as SVGElement | null)?.dataset.id
@@ -588,12 +589,11 @@ export function Viewer({ onOpen }: { onOpen: () => void }) {
       </div>
         {sheet && (s.tour === null || s.tour === 0) && found?.sheet === sheet.id && !found.hidden && <ScaleBanner sheetId={sheet.id} detected={found.n} current={s.scales[sheet.id]} onHide={() => setFound({ ...found, hidden: true })} />}
         <div className="view-tools" onPointerDown={(e) => e.stopPropagation()}>
-          <button className={s.snap ? 'on' : ''} onClick={() => { const v = !s.snap; s.set({ snap: v }); try { localStorage.setItem('traco.snap', JSON.stringify(v)) } catch { /* */ } }} data-tip="Snap na geometria do PDF  F3 (Alt desliga ao segurar)">
+          <button className={s.snap ? 'on' : ''} onClick={() => { const v = !s.snap; s.set({ snap: v }); try { localStorage.setItem('traco.snap', JSON.stringify(v)) } catch { /* */ } }} data-tip={t('viewer.snap_na_geometria_do_pdf')}>
             <Magnet size={14} /> Snap{s.snap && snapState === 'loading' ? '…' : ''}
           </button>
-          <button className={s.ortho ? 'on' : ''} onClick={() => s.set({ ortho: !s.ortho })} data-tip="Ortogonal: só 0° e 90°  F8 (Shift = 45°)">
-            <Move size={14} /> Orto
-          </button>
+          <button className={s.ortho ? 'on' : ''} onClick={() => s.set({ ortho: !s.ortho })} data-tip={t('viewer.ortogonal_so_0_e_90')}>
+            <Move size={14} /> {t('viewer.orto')}</button>
         </div>
         {symFound && <SymbolResult found={symFound} sheetId={page} onClose={() => setSymFound(null)} />}
         <ViewerHints tool={tool} busy={busy} poly={poly} symFound={!!symFound} aligning={s.aligning} fillGap={s.fillGap} />

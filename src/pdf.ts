@@ -2,6 +2,7 @@ import type { PDFDocumentProxy, PDFPageProxy } from 'pdfjs-dist'
 import type { Sheet } from './types'
 import type { OptionalContentConfig } from 'pdfjs-dist/types/src/display/optional_content_config'
 import { useStore } from './store'
+import { t } from './i18n'
 
 // pdf.js só é baixado quando o primeiro PDF é aberto (abertura do app mais rápida).
 let lib: Promise<typeof import('pdfjs-dist')> | null = null
@@ -51,7 +52,7 @@ export async function sheetsOf(src: Source): Promise<Sheet[]> {
   for (let i = 0; i < src.doc.numPages; i++) {
     const p = await src.doc.getPage(i + 1)
     const vp = p.getViewport({ scale: 1 })
-    out.push({ id: uid(), src: src.id, srcIndex: i, baseRot: p.rotate, rot: 0, label: labels?.[i] || `Folha ${i + 1}`, width: vp.width, height: vp.height })
+    out.push({ id: uid(), src: src.id, srcIndex: i, baseRot: p.rotate, rot: 0, label: labels?.[i] || t('pdf.folha', { v: i + 1 }), width: vp.width, height: vp.height })
   }
   return out
 }
@@ -83,17 +84,24 @@ export async function renderSheet(src: Source, s: Sheet, scale: number, canvas =
   return canvas
 }
 
-/** Procura a escala escrita na prancha ("ESC 1:50", "ESCALA 1/100"…). Retorna os N encontrados, do mais frequente. */
+/**
+ * Escalas escritas num texto de prancha, da mais frequente para a menos: "ESC 1:50", "ESCALA 1/100", "SCALE 1:50",
+ * "ÉCHELLE 1:20", "MASSSTAB 1:100" / "M 1:50", "SCALA 1:50", "比例 1:50"… (os idiomas do Traço).
+ */
+export function scalesIn(txt: string): number[] {
+  const re = /(?:(?<![A-Za-zÀ-ÿ])ESC(?:ALA)?|(?<![A-Za-zÀ-ÿ])SCALE|(?<![A-Za-zÀ-ÿ])SCALA|(?<![A-Za-zÀ-ÿ])[EÉ]CHELLE|(?<![A-Za-zÀ-ÿ])MA(?:SS|ß)STAB|(?<![A-Za-zÀ-ÿ])M(?=\.?\s*1\s*[:/])|比例)\.?\s*[:=–-：]?\s*1\s*[:/]\s*(\d{1,4})/gi
+  const count = new Map<number, number>()
+  for (const m of txt.matchAll(re)) {
+    const n = Number(m[1])
+    if (n >= 1 && n <= 5000) count.set(n, (count.get(n) ?? 0) + 1)
+  }
+  return [...count.entries()].sort((x, y) => y[1] - x[1]).map(([n]) => n)
+}
+
+/** Procura a escala escrita na prancha. Retorna os N encontrados, do mais frequente. */
 export async function detectScales(src: Source, index: number): Promise<number[]> {
   try {
-    const txt = await pageText(src, index)
-    const re = /ESC(?:ALA)?\.?\s*[:=–-]?\s*1\s*[:/]\s*(\d{1,4})/gi
-    const count = new Map<number, number>()
-    for (const m of txt.matchAll(re)) {
-      const n = Number(m[1])
-      if (n >= 1 && n <= 5000) count.set(n, (count.get(n) ?? 0) + 1)
-    }
-    return [...count.entries()].sort((a, b) => b[1] - a[1]).map(([n]) => n)
+    return scalesIn(await pageText(src, index))
   } catch {
     return []
   }

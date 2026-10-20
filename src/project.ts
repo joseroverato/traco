@@ -5,12 +5,13 @@ import { desktop } from './platform'
 import { decodeProject, encodeProject } from './projectFormat'
 import type { ProjectData } from './projectFormat'
 import type { Sheet } from './types'
+import { t } from './i18n'
 
 const toBuffer = (u: Uint8Array) => u.buffer.slice(u.byteOffset, u.byteOffset + u.byteLength) as ArrayBuffer
 
 const FILTERS: Record<string, { name: string; extensions: string[] }> = {
   pdf: { name: 'PDF', extensions: ['pdf'] },
-  traco: { name: 'Projeto Traço', extensions: ['traco'] },
+  traco: { get name() { return t('project.filtro_traco') }, extensions: ['traco'] },
   xlsx: { name: 'Excel', extensions: ['xlsx'] },
   zip: { name: 'ZIP', extensions: ['zip'] },
   json: { name: 'JSON', extensions: ['json'] },
@@ -37,7 +38,7 @@ const destroyAll = () => Object.values(useStore.getState().sources).forEach((s) 
 export function confirmReplace(): boolean {
   const st = useStore.getState()
   if (!st.dirty || !st.sheets.length || typeof window === 'undefined') return true
-  return window.confirm('Há alterações não salvas neste projeto. Abrir outro arquivo e descartá-las?')
+  return window.confirm(t('project.ha_alteracoes_nao_salvas_neste'))
 }
 
 /**
@@ -137,7 +138,7 @@ export async function saveProject(saveAs = false) {
   const path = await download(bytes, `${st.fileName.replace(/\.pdf$/i, '')}.traco`, 'application/zip', saveAs ? undefined : st.projectPath ?? undefined)
   if (desktop && !path) return false // cancelado
   useStore.setState({ dirty: false, ...(path ? { projectPath: path } : {}) })
-  st.notify(path ? `Projeto salvo em ${path}` : 'Projeto salvo')
+  st.notify(path ? t('project.projeto_salvo_em', { path }) : t('project.projeto_salvo'))
   ;(await import('./autosave')).clearRecovery()
   return true
 }

@@ -2,6 +2,9 @@ import { create } from 'zustand'
 import type { CustomColumn, Markup, MarkupKind, OcrResult, Overlay, PageScale, Preset, Sheet, StatusDef, Tool } from './types'
 import type { Source } from './pdf'
 import { pushHistory } from './history'
+import { onLangChange, t as tNow, translator } from './i18n'
+import type { Lang } from './i18n'
+type Translate = (key: Parameters<typeof tNow>[0]) => string
 
 export const uid = () => Math.random().toString(36).slice(2, 10)
 
@@ -23,24 +26,24 @@ const P = (p: Partial<Preset> & Pick<Preset, 'name' | 'group' | 'measure' | 'col
   ...p,
 })
 
-export const defaultPresets = (): Preset[] => [
-  P({ name: 'Alvenaria bloco cerâmico 14 cm', group: 'Civil', measure: 'length', color: '#e5484d', width: 4, pattern: 'hatch', factor: 2.8, factorLabel: 'pé-direito (m)', resultUnit: 'm²' }),
-  P({ name: 'Contrapiso e = 4 cm', group: 'Civil', measure: 'area', color: '#8b8d98', pattern: 'dots', opacity: 0.3 }),
-  P({ name: 'Revestimento cerâmico piso', group: 'Civil', measure: 'area', color: '#3e63dd', pattern: 'cross', opacity: 0.22 }),
-  P({ name: 'Rodapé cerâmico h = 7 cm', group: 'Civil', measure: 'area', color: '#0d74ce', pattern: 'none', opacity: 0.1, formula: 'P', resultUnit: 'm' }),
-  P({ name: 'Pintura paredes + teto', group: 'Acabamento', measure: 'area', color: '#12a594', pattern: 'hatch', opacity: 0.18, factor: 2.8, factorLabel: 'pé-direito (m)', formula: 'A + P*H' }),
-  P({ name: 'Pintura acrílica parede', group: 'Acabamento', measure: 'length', color: '#12a594', width: 3, dash: 'dash', factor: 2.8, factorLabel: 'altura (m)', resultUnit: 'm²' }),
-  P({ name: 'Ponto de tomada', group: 'Elétrica', measure: 'count', color: '#f76b15', symbol: 'circle' }),
-  P({ name: 'Ponto de iluminação', group: 'Elétrica', measure: 'count', color: '#ffc53d', symbol: 'letter', letter: 'L' }),
-  P({ name: 'Eletroduto PVC 3/4"', group: 'Elétrica', measure: 'length', color: '#d6409f', width: 2, dash: 'dot', formula: 'L * 1,10', factorLabel: '' }),
-  P({ name: 'Tubo PVC esgoto 100 mm', group: 'Hidrossanitário', measure: 'length', color: '#8e4ec6', width: 3 }),
+export const defaultPresets = (t: Translate = tNow): Preset[] => [
+  P({ name: t('store.p_alvenaria'), group: t('store.g_civil'), measure: 'length', color: '#e5484d', width: 4, pattern: 'hatch', factor: 2.8, factorLabel: t('store.f_pe_direito'), resultUnit: 'm²' }),
+  P({ name: t('store.p_contrapiso'), group: t('store.g_civil'), measure: 'area', color: '#8b8d98', pattern: 'dots', opacity: 0.3 }),
+  P({ name: t('store.p_revestimento_piso'), group: t('store.g_civil'), measure: 'area', color: '#3e63dd', pattern: 'cross', opacity: 0.22 }),
+  P({ name: t('store.p_rodape'), group: t('store.g_civil'), measure: 'area', color: '#0d74ce', pattern: 'none', opacity: 0.1, formula: 'P', resultUnit: 'm' }),
+  P({ name: t('store.p_pintura_paredes_teto'), group: t('store.g_acabamento'), measure: 'area', color: '#12a594', pattern: 'hatch', opacity: 0.18, factor: 2.8, factorLabel: t('store.f_pe_direito'), formula: 'A + P*H' }),
+  P({ name: t('store.p_pintura_parede'), group: t('store.g_acabamento'), measure: 'length', color: '#12a594', width: 3, dash: 'dash', factor: 2.8, factorLabel: t('store.f_altura'), resultUnit: 'm²' }),
+  P({ name: t('store.p_tomada'), group: t('store.g_eletrica'), measure: 'count', color: '#f76b15', symbol: 'circle' }),
+  P({ name: t('store.p_iluminacao'), group: t('store.g_eletrica'), measure: 'count', color: '#ffc53d', symbol: 'letter', letter: t('store.letra_iluminacao') }),
+  P({ name: t('store.p_eletroduto'), group: t('store.g_eletrica'), measure: 'length', color: '#d6409f', width: 2, dash: 'dot', formula: t('store.formula_eletroduto'), factorLabel: '' }),
+  P({ name: t('store.p_tubo_esgoto'), group: t('store.g_hidrossanitario'), measure: 'length', color: '#8e4ec6', width: 3 }),
 ]
 
-export const defaultStatuses = (): StatusDef[] => [
-  { name: 'aberto', color: '#e5484d' },
-  { name: 'em análise', color: '#ffb224' },
-  { name: 'resolvido', color: '#30a46c' },
-  { name: 'rejeitado', color: '#8b8d98' },
+export const defaultStatuses = (t: Translate = tNow): StatusDef[] => [
+  { name: t('store.s_aberto'), color: '#e5484d' },
+  { name: t('store.s_em_analise'), color: '#ffb224' },
+  { name: t('store.s_resolvido'), color: '#30a46c' },
+  { name: t('store.s_rejeitado'), color: '#8b8d98' },
 ]
 
 const ls = {
@@ -161,7 +164,7 @@ export const useStore = create<State>((set, get) => ({
   scales: {},
   selected: [],
   theme: ls.get<'dark' | 'light'>('traco.theme', 'dark'),
-  author: ls.get('traco.author', 'José'),
+  author: ls.get('traco.author', tNow('store.autor_padrao')),
   past: [],
   future: [],
   calibrating: null,
@@ -296,3 +299,21 @@ export const useStore = create<State>((set, get) => ({
     setTimeout(() => get().toast === msg && set({ toast: null }), 2800)
   },
 }))
+
+/**
+ * Ao trocar de idioma, marcadores e nome de autor que ainda são os padrão do idioma anterior (a pessoa não mexeu)
+ * passam para os do novo idioma. O que ela criou ou editou não é tocado. Os marcadores mantêm o id, então as
+ * medições já feitas continuam ligadas a eles. Os status ficam como estão: as marcações guardam o nome do status.
+ */
+onLangChange((prev: Lang, next: Lang) => {
+  const from = defaultPresets(translator(prev)), to = defaultPresets(translator(next))
+  const st = useStore.getState()
+  const presets = st.presets.map((p) => {
+    const i = from.findIndex((d) => d.name === p.name && d.group === p.group)
+    if (i < 0) return p
+    return { ...p, name: to[i].name, group: to[i].group, factorLabel: p.factorLabel === from[i].factorLabel ? to[i].factorLabel : p.factorLabel, formula: p.formula === from[i].formula ? to[i].formula : p.formula, letter: p.letter === from[i].letter ? to[i].letter : p.letter }
+  })
+  if (presets.some((p, i) => p !== st.presets[i])) st.setPresets(presets)
+  const author = translator(prev)('store.autor_padrao')
+  if (st.author === author) useStore.setState({ author: translator(next)('store.autor_padrao') })
+})

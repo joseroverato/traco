@@ -6,6 +6,8 @@ import type { ApiMessage } from '../ai'
 import { TOOL_LABEL } from '../commands'
 import { desktop } from '../platform'
 import type { ClaudeStatus } from '../platform'
+import { t } from '../i18n'
+import { Rich } from './Rich'
 
 interface Item {
   role: 'user' | 'assistant' | 'tool' | 'error'
@@ -16,12 +18,7 @@ interface Item {
 // conversa sobrevive à troca de abas
 const session: { items: Item[]; history: ApiMessage[] } = { items: [], history: [] }
 
-const SUGGESTIONS = [
-  'Resuma o quantitativo do projeto por disciplina',
-  'Olhe esta folha e diga a escala indicada no carimbo',
-  'Liste as marcações em aberto e sugira prioridades',
-  'Crie marcadores para piso, rodapé e pintura do apartamento',
-]
+const SUGGESTION_KEYS = ['claudepanel.sugestao_quantitativo', 'claudepanel.sugestao_escala', 'claudepanel.sugestao_abertas', 'claudepanel.sugestao_marcadores'] as const
 
 function md(t: string) {
   const esc = t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
@@ -44,22 +41,22 @@ function Settings({ onClose }: { onClose: () => void }) {
   return (
     <div className="claude-settings stack">
       <div className="row center">
-        <b className="grow">Configurações do Claude</b>
+        <b className="grow">{t('claudepanel.configuracoes_do_claude')}</b>
         <button className="icon-btn xs" onClick={onClose}><X size={14} /></button>
       </div>
       <label className="field">
-        <span>Chave da API Anthropic {has && <em className="ok-tag"><Check size={11} /> salva</em>}</span>
-        <input type="password" placeholder={has ? '•••••••• (digite para trocar)' : 'sk-ant-…'} value={key} onChange={(e) => setKey(e.target.value)} />
+        <span>{t('claudepanel.chave_da_api_anthropic')} {has && <em className="ok-tag"><Check size={11} /> {t('claudepanel.salva')}</em>}</span>
+        <input type="password" placeholder={has ? t('claudepanel.digite_para_trocar') : t('claudepanel.sk_ant')} value={key} onChange={(e) => setKey(e.target.value)} />
       </label>
       <div className="row">
-        <button className="btn sm primary" disabled={!key.trim()} onClick={async () => { await setApiKey(key.trim()); setKey(''); setHas(true); s.notify('Chave salva') }}>Salvar chave</button>
-        {has && <button className="btn sm ghost" onClick={async () => { await setApiKey(''); setHas(false) }}>Remover</button>}
+        <button className="btn sm primary" disabled={!key.trim()} onClick={async () => { await setApiKey(key.trim()); setKey(''); setHas(true); s.notify(t('claudepanel.chave_salva')) }}>{t('claudepanel.salvar_chave')}</button>
+        {has && <button className="btn sm ghost" onClick={async () => { await setApiKey(''); setHas(false) }}>{t('claudepanel.remover')}</button>}
       </div>
       <span className="muted small">
-        {desktop ? 'Guardada criptografada neste computador.' : 'Guardada só neste navegador. Em computador compartilhado, remova ao terminar.'} Crie a chave em console.anthropic.com.
+        {desktop ? t('claudepanel.guardada_criptografada') : t('claudepanel.guardada_navegador')} {t('claudepanel.crie_a_chave')}
       </span>
       <label className="field">
-        <span>Modelo</span>
+        <span>{t('claudepanel.modelo')}</span>
         <select value={s.claudeModel} onChange={(e) => { s.set({ claudeModel: e.target.value }); try { localStorage.setItem('traco.model', JSON.stringify(e.target.value)) } catch { /* */ } }}>
           {MODELS.map((m) => <option key={m.id} value={m.id}>{m.label}</option>)}
         </select>
@@ -92,24 +89,24 @@ function ClaudeDesktopCard() {
   }
   return (
     <div className="card">
-      <b>Claude Desktop (MCP)</b>
-      <span className="muted small">Permite usar o Claude Desktop — com a sua assinatura, sem chave de API — para ler e editar o projeto aberto no Traço.</span>
+      <b>{t('claudepanel.claude_desktop_mcp')}</b>
+      <span className="muted small">{t('claudepanel.permite_usar_o_claude_desktop')}</span>
       {st && (
         <div className={`mcp-status ${ok ? 'ok' : 'warn'}`}>
-          {ok ? 'Configuração do Claude Desktop aponta para este Traço.' : found.some((c) => c.hasTraco) ? 'A configuração existe, mas aponta para outra instalação do Traço. Clique em Conectar.' : 'O Traço ainda não está na configuração do Claude Desktop.'}
-          {found.find((c) => c.error) && <span className="warn small"> Arquivo de configuração com erro: {found.find((c) => c.error)!.error}</span>}
-          {!st.serverExists && <span className="warn small"> Servidor MCP não encontrado em {st.server}.</span>}
+          {ok ? t('claudepanel.configuracao_do_claude_desktop_aponta') : found.some((c) => c.hasTraco) ? t('claudepanel.a_configuracao_existe_mas_aponta') : t('claudepanel.o_traco_ainda_nao_esta')}
+          {found.find((c) => c.error) && <span className="warn small"> {t('claudepanel.arquivo_de_configuracao_com_erro', { error: found.find((c) => c.error)!.error })}</span>}
+          {!st.serverExists && <span className="warn small"> {t('claudepanel.servidor_mcp_nao_encontrado_em', { server: st.server })}</span>}
         </div>
       )}
       <ol className="mcp-steps small">
-        <li>Feche o Claude Desktop pelo ícone da bandeja do Windows (botão direito › <b>Sair</b>). Fechar só a janela não basta: ele regrava a configuração ao sair e apaga a do Traço.</li>
-        <li>Clique em <b>Conectar</b>.</li>
-        <li>Abra o Claude Desktop. O Traço aparece nas ferramentas como <b>traco</b>.</li>
+        <li><Rich k="claudepanel.passo_fechar" /></li>
+        <li><Rich k="claudepanel.passo_conectar" /></li>
+        <li><Rich k="claudepanel.passo_abrir" /></li>
       </ol>
       <div className="row">
-        <button className="btn sm primary" disabled={busy} onClick={() => run(async () => { const r = await desktop!.connectClaudeDesktop(); setMsg({ ok: r.ok, text: r.ok ? `Configuração gravada em ${r.paths.length} arquivo(s).` : r.message }) })}><Link2 size={14} /> Conectar</button>
-        <button className="btn sm" disabled={busy || !desktop!.claudeTest} onClick={() => run(async () => { setMsg({ ok: true, text: 'Testando…' }); const r = await desktop!.claudeTest!(); setMsg({ ok: r.ok, text: r.ok ? r.message : `${r.message}${r.stderr ? ` — ${r.stderr.split('\n').filter(Boolean).slice(-2).join(' ')}` : ''}` }) })}>Testar servidor</button>
-        <button className="btn sm ghost" disabled={!desktop!.claudeLog} onClick={async () => setLog(log === null ? (await desktop!.claudeLog!()) || '(sem registros ainda — o Claude Desktop não iniciou o servidor)' : null)}>{log === null ? 'Ver registro' : 'Ocultar registro'}</button>
+        <button className="btn sm primary" disabled={busy} onClick={() => run(async () => { const r = await desktop!.connectClaudeDesktop(); setMsg({ ok: r.ok, text: r.ok ? t('claudepanel.configuracao_gravada_em_arquivo_s', { length: r.paths.length }) : r.message }) })}><Link2 size={14} /> {t('claudepanel.conectar')}</button>
+        <button className="btn sm" disabled={busy || !desktop!.claudeTest} onClick={() => run(async () => { setMsg({ ok: true, text: t('claudepanel.testando') }); const r = await desktop!.claudeTest!(); setMsg({ ok: r.ok, text: r.ok ? r.message : `${r.message}${r.stderr ? ` — ${r.stderr.split('\n').filter(Boolean).slice(-2).join(' ')}` : ''}` }) })}>{t('claudepanel.testar_servidor')}</button>
+        <button className="btn sm ghost" disabled={!desktop!.claudeLog} onClick={async () => setLog(log === null ? (await desktop!.claudeLog!()) || t('claudepanel.sem_registros') : null)}>{log === null ? t('claudepanel.ver_registro') : t('claudepanel.ocultar_registro')}</button>
       </div>
       {msg && <span className={`small ${msg.ok ? '' : 'warn'}`}>{msg.text}</span>}
       {log !== null && <pre className="mcp-log">{log}</pre>}
@@ -173,17 +170,17 @@ export function ClaudePanel() {
       <div className="claude-head">
         <Sparkles size={15} className="spark" />
         <span className="grow">Claude</span>
-        <button className="icon-btn xs" data-tip="Nova conversa" onClick={clear}><Trash2 size={14} /></button>
-        <button className="icon-btn xs" data-tip="Configurações" onClick={() => setShowSettings(!showSettings)}><Settings2 size={14} /></button>
+        <button className="icon-btn xs" data-tip={t('claudepanel.nova_conversa')} onClick={clear}><Trash2 size={14} /></button>
+        <button className="icon-btn xs" data-tip={t('claudepanel.configuracoes')} onClick={() => setShowSettings(!showSettings)}><Settings2 size={14} /></button>
       </div>
       {showSettings && <Settings onClose={() => setShowSettings(false)} />}
       <div className="claude-list" ref={list}>
         {items.length === 0 && (
           <div className="claude-empty">
-            <p className="muted">Peça para o Claude ler as pranchas, criar marcadores, medir, revisar marcações ou resumir o quantitativo.</p>
-            {!hasKey && <p className="warn small">Configure a chave da API{desktop ? ' ou conecte o Claude Desktop' : ''} na engrenagem.</p>}
-            {SUGGESTIONS.map((t) => (
-              <button key={t} className="suggestion" onClick={() => send(t)}>{t}</button>
+            <p className="muted">{t('claudepanel.peca_para_o_claude_ler')}</p>
+            {!hasKey && <p className="warn small">{desktop ? t('claudepanel.configure_chave_desktop') : t('claudepanel.configure_chave')}</p>}
+            {SUGGESTION_KEYS.map((k) => (
+              <button key={k} className="suggestion" onClick={() => send(t(k))}>{t(k)}</button>
             ))}
           </div>
         )}
@@ -199,7 +196,7 @@ export function ClaudePanel() {
       <div className="claude-input">
         <textarea
           rows={2}
-          placeholder="Pergunte ou peça uma alteração…"
+          placeholder={t('claudepanel.pergunte_ou_peca_uma_alteracao')}
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => {
@@ -210,9 +207,9 @@ export function ClaudePanel() {
           }}
         />
         {busy ? (
-          <button className="send stop" onClick={() => abort.current?.abort()} aria-label="Parar"><Square size={13} /></button>
+          <button className="send stop" onClick={() => abort.current?.abort()} aria-label={t('claudepanel.parar')}><Square size={13} /></button>
         ) : (
-          <button className="send" disabled={!input.trim()} onClick={() => send(input)} aria-label="Enviar"><ArrowUp size={16} /></button>
+          <button className="send" disabled={!input.trim()} onClick={() => send(input)} aria-label={t('claudepanel.enviar')}><ArrowUp size={16} /></button>
         )}
       </div>
     </div>

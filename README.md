@@ -2,6 +2,8 @@
 
 **Marque, revise e quantifique pranchas em PDF.** Gratuito e de código aberto, feito por engenheiro, para engenheiros.
 
+🇬🇧 [Read in English](README.en.md) · O app fala **português, inglês, espanhol, francês, alemão, italiano e chinês (simplificado)**.
+
 ![Demonstração do Traço: escala pelo carimbo, medição, ambientes, 3D ao vivo e puxar a altura de um sólido](docs/demo.gif)
 
 O Traço abre a prancha em PDF e deixa você medir em cima dela: comprimento, área e contagem, com escala por folha ou por região. O quantitativo se monta sozinho, com fórmulas, ambientes e pavimentos, e sai em Excel. Um modo 3D, ao estilo SketchUp, mostra em volume o que foi medido.
@@ -24,6 +26,10 @@ O Traço abre a prancha em PDF e deixa você medir em cima dela: comprimento, á
 3. Abra um PDF ou um projeto `.traco`.
 
 Também há uma **versão web** (`Traco-Web-…zip`, com Docker) para rodar num servidor. As atualizações do app de PC são verificadas ao abrir (Configurações › Sobre).
+
+## Idiomas
+
+O Traço abre no idioma do sistema (ou em inglês, se não for um dos sete) e a troca fica em **Configurações › Sobre › Idioma · Language**. A tradução é de sentido, não literal: os nomes das ferramentas e os termos de obra seguem o uso de cada língua ("quantitativo" vira *takeoff*, *mediciones*, *métré*, *Mengenermittlung*, *computo metrico*, 工程量…). Veja [docs/IDIOMAS.md](docs/IDIOMAS.md) para o glossário e para corrigir ou acrescentar um idioma.
 
 ## Privacidade
 
@@ -132,4 +138,5 @@ O app verifica a release mais recente ao abrir e avisa quando houver versão nov
 - [x] Fase 3: integração com Claude (painel com API + servidor MCP para o Claude Desktop)
 - [x] Fase 4: app de PC (Electron, motor completo) e versão web leve com Docker
 - [x] Fase 5: modo 3D (sólidos, tela dividida, navegação estilo Revit)
-- [ ] Próximos: pavimentos empilhados no 3D, formas prontas (cilindro, prisma), assinatura digital do instalador
+- [x] Fase 6: sete idiomas (pt, en, es, fr, de, it, zh), com tradução de sentido
+- [ ] Próximos: assinatura digital do instalador, versão para Linux, pavimentos empilhados no 3D, formas prontas (cilindro, prisma)

@@ -7,6 +7,7 @@ import type { PDFPageProxy } from 'pdfjs-dist'
 import { layerKey, ocConfig, pdfOps, viewportOf } from './pdf'
 import type { Source } from './pdf'
 import type { Pt, Sheet } from './types'
+import { t } from './i18n'
 
 export type SnapKind = 'endpoint' | 'intersection' | 'midpoint' | 'nearest' | 'markup'
 export interface SnapHit {
@@ -272,5 +273,9 @@ export function findSnap(idx: SnapIndex | null, p: Pt, tol: number, extra: Pt[] 
 }
 
 export const SNAP_LABEL: Record<SnapKind, string> = {
-  endpoint: 'Extremidade', intersection: 'Interseção', midpoint: 'Ponto médio', nearest: 'Sobre a linha', markup: 'Vértice',
+  get endpoint() { return t('snap.extremidade') },
+  get intersection() { return t('snap.intersecao') },
+  get midpoint() { return t('snap.ponto_medio') },
+  get nearest() { return t('snap.sobre_a_linha') },
+  get markup() { return t('snap.vertice') },
 }

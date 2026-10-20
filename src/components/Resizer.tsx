@@ -1,4 +1,5 @@
 import { useStore } from '../store'
+import { t } from '../i18n'
 
 const LIMITS = { h: [120, 0.7], v: [260, 0.5] } as const
 
@@ -41,5 +42,5 @@ export function Resizer({ dir }: { dir: 'h' | 'v' }) {
     useStore.setState({ [key]: v } as Partial<ReturnType<typeof useStore.getState>>)
     save(v)
   }
-  return <div className={`resizer ${dir}`} onPointerDown={down} onDoubleClick={reset} title="Arraste para redimensionar · duplo clique volta ao padrão" />
+  return <div className={`resizer ${dir}`} onPointerDown={down} onDoubleClick={reset} title={t('resizer.arraste_para_redimensionar')} />
 }

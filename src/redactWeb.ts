@@ -1,6 +1,7 @@
 import wasmUrl from '@embedpdf/pdfium/pdfium.wasm?url'
 import { redactWith } from '../shared/redact-core.mjs'
 import type { PdfiumModule, RedactItem } from '../shared/redact-core.mjs'
+import { t } from './i18n'
 
 /** Tarja definitiva no navegador: o mesmo código do app de PC, com o PDFium carregado sob demanda (~4,6 MB, só ao exportar com tarja). */
 let pdfiumP: Promise<PdfiumModule> | null = null
@@ -8,7 +9,7 @@ function pdfium(): Promise<PdfiumModule> {
   pdfiumP ??= (async () => {
     const { init } = await import('@embedpdf/pdfium')
     const res = await fetch(wasmUrl)
-    if (!res.ok) throw new Error('Não foi possível carregar o motor de tarja (PDFium)')
+    if (!res.ok) throw new Error(t('redactweb.nao_foi_possivel_carregar_o'))
     const m = (await init({ wasmBinary: await res.arrayBuffer() })) as unknown as PdfiumModule
     m.PDFiumExt_Init()
     return m

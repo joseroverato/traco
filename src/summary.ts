@@ -1,6 +1,7 @@
 import { measureOf, scaleFor } from './geometry'
 import type { CustomColumn, Markup, PageScale, Preset, Sheet } from './types'
 import { columnValue, levelOf, spaceOf } from './columns'
+import { localeOf, t } from './i18n'
 
 export interface SummaryRow {
   key: string
@@ -27,7 +28,7 @@ export type GroupBy = 'preset' | 'space' | 'level' | 'sheet' | 'status'
 const KIND_UNIT = { length: 'm', area: 'm²', count: 'un', solid: 'm³' } as const
 
 export function bucketOf(m: Markup, by: GroupBy, all: Markup[], pages: Sheet[]) {
-  if (by === 'space') return spaceOf(m, all)?.text || 'Fora de ambiente'
+  if (by === 'space') return spaceOf(m, all)?.text || t('summary.fora_de_ambiente')
   if (by === 'level') return levelOf(m, pages)
   if (by === 'sheet') return pages.find((s) => s.id === m.page)?.label ?? ''
   if (by === 'status') return m.status
@@ -45,7 +46,7 @@ export function summarize(markups: Markup[], presets: Preset[], scales: Record<s
     let r = rows.get(key)
     if (!r) {
       r = {
-        key, group: p?.group ?? (m.kind === 'solid' ? 'Sólidos 3D' : 'Sem marcador'), code: p?.code ?? '', name: p?.name ?? (m.kind === 'solid' ? m.text || 'Sólido' : `${m.kind === 'length' ? 'Comprimento' : m.kind === 'area' ? 'Área' : 'Contagem'} avulso`),
+        key, group: p?.group ?? (m.kind === 'solid' ? t('summary.solidos_3d') : t('summary.sem_marcador')), code: p?.code ?? '', name: p?.name ?? (m.kind === 'solid' ? m.text || t('summary.solido') : t('summary.avulso', { tipo: m.kind === 'length' ? t('summary.comprimento') : m.kind === 'area' ? t('summary.area') : t('summary.contagem') })),
         color: p?.color ?? m.color, sheets: '', items: 0, raw: 0, rawUnit: KIND_UNIT[m.kind], factor: p?.factor || 1, qty: 0,
         unit: p?.resultUnit || KIND_UNIT[m.kind], price: p?.unitPrice ?? 0, total: 0, unscaled: 0, _pages: new Set(), bucket, fields: {},
       }
@@ -73,6 +74,6 @@ export function summarize(markups: Markup[], presets: Preset[], scales: Record<s
   }
   return Array.from(rows.values())
     .map(({ _pages, ...r }) => ({ ...r, sheets: pages.filter((pg) => _pages.has(pg.id)).map((pg) => pg.label).join(', '), total: r.qty * r.price }))
-    .sort((a, b) => a.bucket.localeCompare(b.bucket, 'pt-BR', { numeric: true }) || a.group.localeCompare(b.group) || a.name.localeCompare(b.name))
+    .sort((a, b) => a.bucket.localeCompare(b.bucket, localeOf(), { numeric: true }) || a.group.localeCompare(b.group) || a.name.localeCompare(b.name))
 }
 

@@ -25,6 +25,10 @@ async function abrir() {
   const app = await electron.launch({ executablePath: electronPath, args: [...(exe ? [] : [root]), `--user-data-dir=${userData}`], env: { ...process.env, TRACO_SAVE_DIR: saveDir } })
   const page = await app.firstWindow()
   await page.waitForSelector('input[type=file]', { state: 'attached' })
+  // os textos conferidos abaixo estão em português: fixa o idioma (o app abre no idioma do sistema)
+  await page.evaluate(() => localStorage.setItem('traco.lang', 'pt'))
+  await page.reload()
+  await page.waitForSelector('input[type=file]', { state: 'attached' })
   const errors = []
   page.on('pageerror', (e) => errors.push(e.message))
   return { app, page, errors }

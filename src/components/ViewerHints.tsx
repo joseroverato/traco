@@ -1,5 +1,7 @@
 import type { State } from '../store'
 import type { Pt, Tool } from '../types'
+import { t } from '../i18n'
+import { Rich } from './Rich'
 
 export interface ViewerHintsProps {
   tool: Tool
@@ -10,7 +12,7 @@ export interface ViewerHintsProps {
   fillGap: number
 }
 
-const POLY_LABEL = { area: 'Área', hole: 'Vazio', space: 'Ambiente', solid: 'Sólido (base)', length: 'Comprimento' } as const
+const POLY_LABEL = { get area() { return t('viewerhints.area') }, get hole() { return t('viewerhints.vazio') }, get space() { return t('viewerhints.ambiente') }, get solid() { return t('viewerhints.solido_base') }, get length() { return t('viewerhints.comprimento') } } as const
 
 /** Faixas de ajuda (HUD) que aparecem sobre a folha conforme a ferramenta ativa. */
 export function ViewerHints({ tool, busy, poly, symFound, aligning, fillGap }: ViewerHintsProps) {
@@ -19,24 +21,24 @@ export function ViewerHints({ tool, busy, poly, symFound, aligning, fillGap }: V
       {busy && <div className="hud busy-hud"><span className="spinner" /> {busy}</div>}
       {aligning && (
         <div className="hud">
-          Alinhar · par {Math.floor(aligning.step / 2) + 1} de 2 — clique num ponto do <b>{aligning.step % 2 === 0 ? 'desenho colorido (sobreposto)' : 'desenho base'}</b> · <b>Esc</b> cancela
+          <Rich k="viewerhints.alinhar" vars={{ n: Math.floor(aligning.step / 2) + 1, alvo: aligning.step % 2 === 0 ? t('viewerhints.desenho_colorido_sobreposto') : t('viewerhints.desenho_base') }} />
         </div>
       )}
-      {tool === 'fill' && !busy && <div className="hud">Área por clique — clique dentro do ambiente · <b>Shift+clique</b> desconta como vazio · aberturas até {fillGap} pt são fechadas</div>}
-      {tool === 'symbol' && !symFound && !busy && <div className="hud">Contagem automática — arraste um retângulo em volta de <b>um</b> símbolo (tomada, luminária, ponto…)</div>}
-      {tool === 'legend' && <div className="hud">Legenda — clique onde a tabela de quantitativo deve ficar</div>}
+      {tool === 'fill' && !busy && <div className="hud"><Rich k="viewerhints.area_por_clique" vars={{ gap: fillGap }} /></div>}
+      {tool === 'symbol' && !symFound && !busy && <div className="hud"><Rich k="viewerhints.contagem_automatica" /></div>}
+      {tool === 'legend' && <div className="hud">{t('viewerhints.legenda_clique_onde_a_tabela')}</div>}
       {poly && (
         <div className="hud">
-          {POLY_LABEL[poly.kind]} · {poly.points.length} vértice(s) — <b>Enter</b>/duplo clique finaliza · <b>Backspace</b> desfaz vértice · <b>Shift</b> trava ângulo · <b>Esc</b> cancela
+          <Rich k="viewerhints.poligono" vars={{ label: POLY_LABEL[poly.kind], n: poly.points.length }} />
         </div>
       )}
-      {tool === 'solid' && !poly && <div className="hud">Sólido 3D — clique os vértices da base · <b>Enter</b> finaliza · depois ajuste a altura nas propriedades ou no modo <b>3D</b></div>}
-      {tool === 'count' && <div className="hud">Contagem — clique para somar · <b>Esc</b> inicia novo grupo</div>}
-      {tool === 'calibrate' && <div className="hud">Calibrar escala — trace sobre uma cota conhecida (dentro de um viewport, calibra só ele)</div>}
-      {tool === 'viewport' && <div className="hud">Viewport — desenhe a região que tem escala própria (ex.: detalhe 1:20)</div>}
-      {tool === 'stamp' && <div className="hud">Carimbo — clique para posicionar · variáveis: {'{data} {folha} {n} {total} {autor}'}</div>}
-      {tool === 'redact' && <div className="hud">Tarja — cubra o trecho a remover; nas propriedades escolha preta/branca e um texto de substituição</div>}
-      {tool === 'image' && <div className="hud">Imagem — clique onde a imagem deve ficar (logo, assinatura, foto)</div>}
+      {tool === 'solid' && !poly && <div className="hud"><Rich k="viewerhints.solido" /></div>}
+      {tool === 'count' && <div className="hud"><Rich k="viewerhints.contagem" /></div>}
+      {tool === 'calibrate' && <div className="hud">{t('viewerhints.calibrar_escala_trace_sobre_uma')}</div>}
+      {tool === 'viewport' && <div className="hud">{t('viewerhints.viewport_desenhe_a_regiao_que')}</div>}
+      {tool === 'stamp' && <div className="hud">{t('viewerhints.carimbo_clique_para_posicionar_variaveis')}</div>}
+      {tool === 'redact' && <div className="hud">{t('viewerhints.tarja_cubra_o_trecho_a')}</div>}
+      {tool === 'image' && <div className="hud">{t('viewerhints.imagem_clique_onde_a_imagem')}</div>}
     </>
   )
 }

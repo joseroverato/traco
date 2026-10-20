@@ -7,6 +7,7 @@
  */
 import { DEFAULT_SOLID_HEIGHT, polyArea, polyLength, scaleFor } from './geometry'
 import type { Markup, PageScale, Preset, Pt } from './types'
+import { t } from './i18n'
 
 export { DEFAULT_SOLID_HEIGHT }
 export const DEFAULT_SLAB = 0.1 // espessura das áreas (piso, contrapiso…)
@@ -14,7 +15,7 @@ export const DEFAULT_WALL_THICKNESS = 0.15
 export const COUNT_SIZE = 0.3 // lado do cubo que marca cada item de contagem
 
 export type LayerKind = 'solid' | 'space' | 'area' | 'length' | 'count'
-export const LAYER_LABEL: Record<LayerKind, string> = { solid: 'Sólidos', space: 'Ambientes', length: 'Paredes / linhas', area: 'Áreas', count: 'Contagens' }
+export const LAYER_LABEL: Record<LayerKind, string> = { get solid() { return t('solids.solidos') }, get space() { return t('solids.ambientes') }, get length() { return t('solids.paredes_linhas') }, get area() { return t('solids.areas') }, get count() { return t('solids.contagens') } }
 
 export interface Solid3D {
   id: string // único por volume (uma contagem gera vários)
@@ -99,16 +100,16 @@ export function buildSolids3D({ page, markups, presets, scales, ceiling = DEFAUL
     const holes = (m.holes ?? []).map((h) => h.map((p) => toM(p, k)))
     const base = { markupId: m.id, color, holes: [] as Pt[][], base: 0, opacity: 1, editable: false }
     if (m.kind === 'solid' && m.points.length >= 3) {
-      out.push({ ...base, id: m.id, kind: 'solid', label: m.text || 'Sólido', ring: m.points.map((p) => toM(p, k)), holes, base: m.base ?? 0, height: m.height ?? DEFAULT_SOLID_HEIGHT, opacity: 0.92, editable: true })
+      out.push({ ...base, id: m.id, kind: 'solid', label: m.text || t('solids.solido'), ring: m.points.map((p) => toM(p, k)), holes, base: m.base ?? 0, height: m.height ?? DEFAULT_SOLID_HEIGHT, opacity: 0.92, editable: true })
     } else if (m.kind === 'space' && m.points.length >= 3) {
-      out.push({ ...base, id: m.id, kind: 'space', label: m.text || 'Ambiente', ring: m.points.map((p) => toM(p, k)), holes, height: ceiling, opacity: 0.16 })
+      out.push({ ...base, id: m.id, kind: 'space', label: m.text || t('solids.ambiente'), ring: m.points.map((p) => toM(p, k)), holes, height: ceiling, opacity: 0.16 })
     } else if (m.kind === 'area' && m.points.length >= 3) {
-      out.push({ ...base, id: m.id, kind: 'area', label: preset?.name ?? 'Área', ring: m.points.map((p) => toM(p, k)), holes, height: DEFAULT_SLAB, opacity: 0.85 })
+      out.push({ ...base, id: m.id, kind: 'area', label: preset?.name ?? t('solids.area'), ring: m.points.map((p) => toM(p, k)), holes, height: DEFAULT_SLAB, opacity: 0.85 })
     } else if (m.kind === 'length' && m.points.length >= 2) {
       const h = preset?.factor && preset.factor !== 1 ? preset.factor : ceiling
-      wallRings(m.points.map((p) => toM(p, k)), DEFAULT_WALL_THICKNESS).forEach((ring, i) => out.push({ ...base, id: `${m.id}:${i}`, kind: 'length', label: preset?.name ?? 'Parede', ring, height: h, opacity: 0.9 }))
+      wallRings(m.points.map((p) => toM(p, k)), DEFAULT_WALL_THICKNESS).forEach((ring, i) => out.push({ ...base, id: `${m.id}:${i}`, kind: 'length', label: preset?.name ?? t('solids.parede'), ring, height: h, opacity: 0.9 }))
     } else if (m.kind === 'count') {
-      m.points.forEach((p, i) => out.push({ ...base, id: `${m.id}:${i}`, kind: 'count', label: preset?.name ?? 'Item', ring: squareAt(toM(p, k), COUNT_SIZE), height: COUNT_SIZE, opacity: 0.95 }))
+      m.points.forEach((p, i) => out.push({ ...base, id: `${m.id}:${i}`, kind: 'count', label: preset?.name ?? t('solids.item'), ring: squareAt(toM(p, k), COUNT_SIZE), height: COUNT_SIZE, opacity: 0.95 }))
     }
   }
   return out

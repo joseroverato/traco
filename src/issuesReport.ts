@@ -8,6 +8,8 @@ import { download } from './project'
 import { filtered } from './issues'
 import type { ReportFilter } from './issues'
 import type { Markup } from './types'
+import { fmtDate, t, tPdf } from './i18n'
+import { priorityLabel } from './kinds'
 
 const safe = (t: string) => (t ?? '').replace(/[−–—]/g, '-').replace(/[“”]/g, '"').replace(/[‘’]/g, "'").replace(/→/g, '->').replace(/[^\n\x20-\xFF€•…]/g, '?')
 const hex = (h: string) => {
@@ -78,18 +80,18 @@ export async function issuesPdf(f: ReportFilter, onProgress?: (t: string) => voi
   const statusColor = (st: string) => hex(s.statuses.find((x) => x.name === st)?.color ?? '#888888')
 
   // capa / resumo
-  text('RELATÓRIO DE COMPATIBILIZAÇÃO', M, 18, bold)
+  text(tPdf('issues.relatorio_titulo'), M, 18, bold)
   y -= 22
   text(s.meta.title || s.fileName.replace(/\.pdf$/i, ''), M, 12, font, rgb(0.3, 0.3, 0.35))
   y -= 16
-  text(`${new Date().toLocaleDateString('pt-BR')} · ${s.meta.author || s.author} · ${items.length} item(ns)`, M, 9, font, rgb(0.45, 0.45, 0.5))
+  text(tPdf('issues.resumo_linha', { data: fmtDate(Date.now(), true), autor: s.meta.author || s.author, n: items.length }), M, 9, font, rgb(0.45, 0.45, 0.5))
   y -= 26
   const by = (key: (m: Markup) => string) => {
     const mp = new Map<string, number>()
     items.forEach(({ m }) => mp.set(key(m) || '—', (mp.get(key(m) || '—') ?? 0) + 1))
     return [...mp.entries()]
   }
-  for (const [title, rows] of [['Por status', by((m) => m.status)], ['Por responsável', by((m) => m.assignee ?? '')]] as const) {
+  for (const [title, rows] of [[tPdf('issues.por_status'), by((m) => m.status)], [tPdf('issues.por_responsavel'), by((m) => m.assignee ?? '')]] as const) {
     text(title, M, 10, bold)
     y -= 14
     for (const [k, n] of rows) {
@@ -103,13 +105,13 @@ export async function issuesPdf(f: ReportFilter, onProgress?: (t: string) => voi
   y -= 18
 
   for (const [i, { m, no }] of items.entries()) {
-    onProgress?.(`Item ${i + 1} de ${items.length}…`)
+    onProgress?.(t('issues.progresso', { i: i + 1, total: items.length }))
     const sh = s.sheets.find((x) => x.id === m.page)
     const img = await doc.embedJpg(Uint8Array.from(atob((await cropImage(m)).split(',')[1]), (c) => c.charCodeAt(0)))
     const iw = 250, ih = Math.min(220, (img.height / img.width) * iw)
-    const desc = [m.text, m.comment].filter(Boolean).join('\n') || '(sem descrição)'
+    const desc = [m.text, m.comment].filter(Boolean).join('\n') || tPdf('issues.sem_descricao')
     const lines = wrap(desc, font, 9, A4[0] - M * 2 - iw - 16)
-    const replies = (m.replies ?? []).flatMap((r) => wrap(`${r.author} (${new Date(r.at).toLocaleDateString('pt-BR')}): ${r.text}`, font, 8, A4[0] - M * 2 - iw - 16))
+    const replies = (m.replies ?? []).flatMap((r) => wrap(`${r.author} (${fmtDate(r.at, true)}): ${r.text}`, font, 8, A4[0] - M * 2 - iw - 16))
     const need = Math.max(ih, 62 + lines.length * 11 + (replies.length ? 16 + replies.length * 10 : 0)) + 34
     if (y - need < M) {
       page = doc.addPage(A4)
@@ -119,7 +121,7 @@ export async function issuesPdf(f: ReportFilter, onProgress?: (t: string) => voi
     page.drawRectangle({ x: M, y: y - 16, width: A4[0] - M * 2, height: 20, color: rgb(0.95, 0.95, 0.96) })
     page.drawRectangle({ x: M, y: y - 16, width: 4, height: 20, color: statusColor(m.status) })
     y -= 10
-    text(`ITEM ${String(no).padStart(2, '0')}`, M + 10, 10, bold)
+    text(tPdf('issues.item', { n: String(no).padStart(2, '0') }), M + 10, 10, bold)
     text(`${sh?.label ?? ''}`, M + 80, 9)
     const st = safe(m.status.toUpperCase())
     page.drawText(st, { x: A4[0] - M - 8 - bold.widthOfTextAtSize(st, 8), y, size: 8, font: bold, color: statusColor(m.status) })
@@ -133,12 +135,12 @@ export async function issuesPdf(f: ReportFilter, onProgress?: (t: string) => voi
       page.drawText(safe(v || '—'), { x: x2 + 70, y, size: 9, font })
       y -= 13
     }
-    field('RESPONSÁVEL', m.assignee ?? '')
-    field('PRIORIDADE', m.priority ?? '')
-    field('PRAZO', m.due ? new Date(m.due + 'T12:00').toLocaleDateString('pt-BR') : '')
-    field('ABERTO POR', `${m.author} · ${new Date(m.createdAt).toLocaleDateString('pt-BR')}`)
+    field(tPdf('issues.responsavel'), m.assignee ?? '')
+    field(tPdf('issues.prioridade'), m.priority ? priorityLabel(m.priority, true) : '')
+    field(tPdf('issues.prazo'), m.due ? fmtDate(m.due + 'T12:00', true) : '')
+    field(tPdf('issues.aberto_por'), `${m.author} · ${fmtDate(m.createdAt, true)}`)
     y -= 4
-    page.drawText('DESCRIÇÃO', { x: x2, y, size: 7.5, font: bold, color: rgb(0.45, 0.45, 0.5) })
+    page.drawText(safe(tPdf('issues.descricao')), { x: x2, y, size: 7.5, font: bold, color: rgb(0.45, 0.45, 0.5) })
     y -= 12
     for (const l of lines) {
       page.drawText(l, { x: x2, y, size: 9, font })
@@ -146,7 +148,7 @@ export async function issuesPdf(f: ReportFilter, onProgress?: (t: string) => voi
     }
     if (replies.length) {
       y -= 4
-      page.drawText('RESPOSTAS', { x: x2, y, size: 7.5, font: bold, color: rgb(0.45, 0.45, 0.5) })
+      page.drawText(safe(tPdf('issues.respostas')), { x: x2, y, size: 7.5, font: bold, color: rgb(0.45, 0.45, 0.5) })
       y -= 11
       for (const l of replies) {
         page.drawText(l, { x: x2, y, size: 8, font, color: rgb(0.25, 0.25, 0.3) })
@@ -157,25 +159,25 @@ export async function issuesPdf(f: ReportFilter, onProgress?: (t: string) => voi
   }
   // rodapé com numeração
   const pages = doc.getPages()
-  pages.forEach((p, i) => p.drawText(safe(`Traço · Lottos Engenharia · página ${i + 1} de ${pages.length}`), { x: M, y: 22, size: 7, font, color: rgb(0.55, 0.55, 0.6) }))
-  doc.setTitle('Relatório de compatibilização')
+  pages.forEach((p, i) => p.drawText(safe(tPdf('issues.rodape', { i: i + 1, total: pages.length })), { x: M, y: 22, size: 7, font, color: rgb(0.55, 0.55, 0.6) }))
+  doc.setTitle(tPdf('issues.titulo_pdf'))
   doc.setProducer('Traço')
   const bytes = await doc.save()
-  return download(bytes, `${(s.meta.title || s.fileName.replace(/\.pdf$/i, '')).replace(/[\\/:*?"<>|]/g, '_')} - compatibilizacao.pdf`, 'application/pdf')
+  return download(bytes, `${(s.meta.title || s.fileName.replace(/\.pdf$/i, '')).replace(/[\\/:*?"<>|]/g, '_')} - ${t('issues.sufixo_arquivo')}.pdf`, 'application/pdf')
 }
 
 export async function issuesXlsx(f: ReportFilter) {
   const XLSX = await import('xlsx')
   const s = useStore.getState()
   const rows = filtered(f).map(({ m, no }) => ({
-    Item: no, Folha: s.sheets.find((x) => x.id === m.page)?.label ?? '', Status: m.status, Responsável: m.assignee ?? '', Prioridade: m.priority ?? '',
-    Prazo: m.due ?? '', Descrição: [m.text, m.comment].filter(Boolean).join(' — '), Respostas: (m.replies ?? []).map((r) => `${r.author}: ${r.text}`).join(' | '),
-    Autor: m.author, Data: new Date(m.createdAt).toLocaleDateString('pt-BR'),
+    [t('issues.x_item')]: no, [t('issues.x_folha')]: s.sheets.find((x) => x.id === m.page)?.label ?? '', [t('issues.x_status')]: m.status, [t('issues.x_responsavel')]: m.assignee ?? '', [t('issues.x_prioridade')]: m.priority ? priorityLabel(m.priority) : '',
+    [t('issues.x_prazo')]: m.due ?? '', [t('issues.x_descricao')]: [m.text, m.comment].filter(Boolean).join(' — '), [t('issues.x_respostas')]: (m.replies ?? []).map((r) => `${r.author}: ${r.text}`).join(' | '),
+    [t('issues.x_autor')]: m.author, [t('issues.x_data')]: fmtDate(m.createdAt),
   }))
   const wb = XLSX.utils.book_new()
   const ws = XLSX.utils.json_to_sheet(rows)
   ws['!cols'] = [6, 14, 12, 18, 10, 11, 60, 50, 12, 11].map((w) => ({ wch: w }))
-  XLSX.utils.book_append_sheet(wb, ws, 'Itens')
+  XLSX.utils.book_append_sheet(wb, ws, t('issues.aba_itens'))
   const out = XLSX.write(wb, { type: 'array', bookType: 'xlsx' }) as ArrayBuffer
-  return download(out, `${s.fileName.replace(/\.pdf$/i, '')} - compatibilizacao.xlsx`, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+  return download(out, `${s.fileName.replace(/\.pdf$/i, '')} - ${t('issues.sufixo_arquivo')}.xlsx`, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
 }

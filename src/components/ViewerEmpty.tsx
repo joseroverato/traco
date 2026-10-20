@@ -1,5 +1,6 @@
 import type { DragEvent, RefObject } from 'react'
 import { FileUp } from 'lucide-react'
+import { t } from '../i18n'
 
 /** Tela inicial (nenhum documento aberto): arrastar um PDF, abrir ou experimentar com a planta de exemplo. */
 export function ViewerEmpty({ boxRef, dragOver, setDragOver, onDrop, onOpen, onSample }: {
@@ -23,10 +24,10 @@ export function ViewerEmpty({ boxRef, dragOver, setDragOver, onDrop, onOpen, onS
     >
       <div className="empty-card">
         <div className="empty-icon"><FileUp size={28} strokeWidth={1.6} /></div>
-        <h2>Abra uma prancha para começar</h2>
-        <p>Arraste um PDF aqui ou</p>
-        <button className="btn primary" onClick={onOpen}>Abrir PDF</button>
-        <button className="btn ghost" onClick={onSample} data-tip="Uma planta pronta para testar, com um passo a passo">Experimentar com uma planta de exemplo</button>
+        <h2>{t('viewerempty.abra_uma_prancha_para_comecar')}</h2>
+        <p>{t('viewerempty.arraste_um_pdf_aqui_ou')}</p>
+        <button className="btn primary" onClick={onOpen}>{t('viewerempty.abrir_pdf')}</button>
+        <button className="btn ghost" onClick={onSample} data-tip={t('viewerempty.uma_planta_pronta_para_testar')}>{t('viewerempty.experimentar_com_uma_planta_de')}</button>
         <div className="kbd-hint"><kbd>Ctrl</kbd>+<kbd>O</kbd></div>
       </div>
     </div>

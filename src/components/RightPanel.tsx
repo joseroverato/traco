@@ -6,8 +6,10 @@ import { DEFAULT_SOLID_HEIGHT, fmt, measureOf, polyArea, scaleFor } from '../geo
 import { isIssue, issueList } from '../issues'
 import { spaceOf } from '../columns'
 import { KIND_LABEL } from '../kinds'
+import { localeOf, t } from '../i18n'
+import { Rich } from './Rich'
 
-const MEASURE_LABEL = { length: 'Comprimento', area: 'Área', count: 'Contagem' }
+const MEASURE_LABEL = { get length() { return t('rightpanel.comprimento') }, get area() { return t('rightpanel.area') }, get count() { return t('rightpanel.contagem') } }
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
@@ -26,14 +28,14 @@ function Props() {
     const sc = sh ? s.scales[sh.id] : undefined
     return (
       <div className="pad stack">
-        <p className="muted">Selecione uma marcação para editar suas propriedades.</p>
+        <p className="muted">{t('rightpanel.selecione_uma_marcacao_para_editar')}</p>
         {sh && (
           <div className="card">
-            <div className="kv"><span>Folha</span><b>{sh.label}</b></div>
-            <div className="kv"><span>Escala</span><b>{sc ? sc.label : '—'}</b></div>
-            <div className="kv"><span>Viewports</span><b>{s.markups.filter((m) => m.page === sh.id && m.kind === 'viewport').length}</b></div>
-            <div className="kv"><span>Marcações</span><b>{s.markups.filter((m) => m.page === sh.id && m.kind !== 'viewport').length}</b></div>
-            <button className="btn sm" onClick={() => s.set({ calibrating: { page: sh.id, length: 0 } })}>Definir escala</button>
+            <div className="kv"><span>{t('rightpanel.folha')}</span><b>{sh.label}</b></div>
+            <div className="kv"><span>{t('rightpanel.escala')}</span><b>{sc ? sc.label : '—'}</b></div>
+            <div className="kv"><span>{t('rightpanel.viewports')}</span><b>{s.markups.filter((m) => m.page === sh.id && m.kind === 'viewport').length}</b></div>
+            <div className="kv"><span>{t('rightpanel.marcacoes')}</span><b>{s.markups.filter((m) => m.page === sh.id && m.kind !== 'viewport').length}</b></div>
+            <button className="btn sm" onClick={() => s.set({ calibrating: { page: sh.id, length: 0 } })}>{t('rightpanel.definir_escala')}</button>
           </div>
         )}
       </div>
@@ -42,14 +44,14 @@ function Props() {
   if (sel.length > 1) {
     return (
       <div className="pad stack">
-        <p><b>{sel.length}</b> marcações selecionadas</p>
-        <Field label="Status">
+        <p><Rich k="rightpanel.n_selecionadas" vars={{ n: sel.length }} /></p>
+        <Field label={t('rightpanel.status')}>
           <select onChange={(e) => s.setStatus(s.selected, e.target.value)} defaultValue="">
-            <option value="" disabled>Alterar status…</option>
+            <option value="" disabled>{t('rightpanel.alterar_status')}</option>
             {s.statuses.map((x) => <option key={x.name}>{x.name}</option>)}
           </select>
         </Field>
-        <button className="btn danger sm" onClick={() => s.removeMarkups(s.selected)}><Trash2 size={14} /> Excluir</button>
+        <button className="btn danger sm" onClick={() => s.removeMarkups(s.selected)}><Trash2 size={14} /> {t('rightpanel.excluir')}</button>
       </div>
     )
   }
@@ -69,7 +71,7 @@ function Props() {
           {q ? (
             <>
               <div className="big">{q.error ? '—' : fmt(q.value)} <small>{q.unit}</small></div>
-              {q.error && <div className="warn">Fórmula: {q.error}</div>}
+              {q.error && <div className="warn">{t('rightpanel.formula', { error: q.error })}</div>}
               <div className="vars muted small">
                 {m.kind === 'length' && <span>L {fmt(q.vars.L)} m</span>}
                 {m.kind === 'area' && <><span>A {fmt(q.vars.A)} m²</span><span>P {fmt(q.vars.P)} m</span>{q.vars.V > 0 && <span>V {fmt(q.vars.V)} m²</span>}</>}
@@ -79,12 +81,12 @@ function Props() {
               </div>
             </>
           ) : (
-            <div className="muted">Defina a escala da folha para medir.</div>
+            <div className="muted">{t('rightpanel.defina_a_escala_da_folha')}</div>
           )}
         </div>
       )}
       {isMeasure && (
-        <Field label="Marcador de quantitativo">
+        <Field label={t('rightpanel.marcador_de_quantitativo')}>
           <select
             value={m.presetId ?? ''}
             onChange={(e) => {
@@ -92,124 +94,122 @@ function Props() {
               up(p ? { presetId: p.id, color: p.color, fill: p.color, width: p.width, fillOpacity: p.opacity } : { presetId: null })
             }}
           >
-            <option value="">— sem marcador —</option>
+            <option value="">{t('rightpanel.sem_marcador')}</option>
             {s.presets.filter((p) => p.measure === m.kind).map((p) => <option key={p.id} value={p.id}>{p.group} · {p.name}</option>)}
           </select>
         </Field>
       )}
       {(m.kind === 'length' || m.kind === 'area') && (
         <label className="check">
-          <input type="checkbox" checked={m.deduct} onChange={(e) => up({ deduct: e.target.checked })} />
-          Dedução (vão / desconto)
-        </label>
+          <input type="checkbox" checked={m.deduct} onChange={(e) => up({ deduct: e.target.checked })} />{t('rightpanel.deducao_vao_desconto')}</label>
       )}
       {!preset && !['stamp', 'image', 'viewport', 'redact'].includes(m.kind) && (
         <div className="row">
-          <Field label="Cor"><input type="color" value={m.color} onChange={(e) => up({ color: e.target.value, fill: e.target.value })} /></Field>
-          <Field label="Espessura"><input type="number" min={0.25} step={0.25} value={m.width} onChange={(e) => up({ width: Number(e.target.value) })} /></Field>
+          <Field label={t('rightpanel.cor')}><input type="color" value={m.color} onChange={(e) => up({ color: e.target.value, fill: e.target.value })} /></Field>
+          <Field label={t('rightpanel.espessura')}><input type="number" min={0.25} step={0.25} value={m.width} onChange={(e) => up({ width: Number(e.target.value) })} /></Field>
           {m.kind !== 'text' && m.kind !== 'count' && m.kind !== 'line' && m.kind !== 'arrow' && m.kind !== 'length' && (
-            <Field label="Preench."><input type="range" min={0} max={0.8} step={0.05} value={m.fillOpacity} onChange={(e) => up({ fillOpacity: Number(e.target.value) })} /></Field>
+            <Field label={t('rightpanel.preench')}><input type="range" min={0} max={0.8} step={0.05} value={m.fillOpacity} onChange={(e) => up({ fillOpacity: Number(e.target.value) })} /></Field>
           )}
         </div>
       )}
       {m.kind === 'viewport' && (
         <>
-          <Field label="Nome do viewport"><input value={m.text} onChange={(e) => s.updateMarkup(m.id, { text: e.target.value }, false)} /></Field>
+          <Field label={t('rightpanel.nome_do_viewport')}><input value={m.text} onChange={(e) => s.updateMarkup(m.id, { text: e.target.value }, false)} /></Field>
           <div className="card">
-            <div className="kv"><span>Escala</span><b>{m.scale?.label ?? '—'}</b></div>
-            <button className="btn sm" onClick={() => s.set({ calibrating: { page: m.page, length: 0, viewport: m.id } })}>Definir escala</button>
-            <span className="muted small">Medições que começam dentro deste retângulo usam esta escala. Para calibrar por cota, use a ferramenta Calibrar dentro dele.</span>
+            <div className="kv"><span>{t('rightpanel.escala')}</span><b>{m.scale?.label ?? '—'}</b></div>
+            <button className="btn sm" onClick={() => s.set({ calibrating: { page: m.page, length: 0, viewport: m.id } })}>{t('rightpanel.definir_escala')}</button>
+            <span className="muted small">{t('rightpanel.medicoes_que_comecam_dentro_deste')}</span>
           </div>
         </>
       )}
       {m.kind === 'stamp' && (
         <>
-          <Field label="Texto (variáveis: {data} {hora} {folha} {n} {total} {autor} {arquivo})"><textarea rows={3} value={m.text} onChange={(e) => s.updateMarkup(m.id, { text: e.target.value }, false)} /></Field>
+          <Field label={t('rightpanel.texto_variaveis')}><textarea rows={3} value={m.text} onChange={(e) => s.updateMarkup(m.id, { text: e.target.value }, false)} /></Field>
           <div className="row">
-            <Field label="Cor"><input type="color" value={m.color} onChange={(e) => up({ color: e.target.value })} /></Field>
-            <Field label="Fonte"><input type="number" min={6} max={200} value={m.fontSize} onChange={(e) => up({ fontSize: Number(e.target.value) })} /></Field>
-            <Field label="Borda"><input type="number" min={0} step={0.5} value={m.width} onChange={(e) => up({ width: Number(e.target.value) })} /></Field>
+            <Field label={t('rightpanel.cor')}><input type="color" value={m.color} onChange={(e) => up({ color: e.target.value })} /></Field>
+            <Field label={t('rightpanel.fonte')}><input type="number" min={6} max={200} value={m.fontSize} onChange={(e) => up({ fontSize: Number(e.target.value) })} /></Field>
+            <Field label={t('rightpanel.borda')}><input type="number" min={0} step={0.5} value={m.width} onChange={(e) => up({ width: Number(e.target.value) })} /></Field>
           </div>
           <div className="row">
-            <Field label={`Rotação ${m.angle ?? 0}°`}><input type="range" min={-90} max={90} step={5} value={m.angle ?? 0} onChange={(e) => up({ angle: Number(e.target.value) })} /></Field>
-            <Field label={`Opacidade ${Math.round((m.opacity ?? 1) * 100)}%`}><input type="range" min={0.05} max={1} step={0.05} value={m.opacity ?? 1} onChange={(e) => up({ opacity: Number(e.target.value) })} /></Field>
+            <Field label={t('rightpanel.rotacao', { v: m.angle ?? 0 })}><input type="range" min={-90} max={90} step={5} value={m.angle ?? 0} onChange={(e) => up({ angle: Number(e.target.value) })} /></Field>
+            <Field label={t('rightpanel.opacidade', { round: Math.round((m.opacity ?? 1) * 100) })}><input type="range" min={0.05} max={1} step={0.05} value={m.opacity ?? 1} onChange={(e) => up({ opacity: Number(e.target.value) })} /></Field>
           </div>
         </>
       )}
       {m.kind === 'redact' && (
         <>
           <div className="seg wide">
-            <button className={m.fill === '#000000' ? 'active' : ''} onClick={() => up({ fill: '#000000' })}>Tarja preta</button>
-            <button className={m.fill === '#ffffff' ? 'active' : ''} onClick={() => up({ fill: '#ffffff' })}>Apagar (branco)</button>
+            <button className={m.fill === '#000000' ? 'active' : ''} onClick={() => up({ fill: '#000000' })}>{t('rightpanel.tarja_preta')}</button>
+            <button className={m.fill === '#ffffff' ? 'active' : ''} onClick={() => up({ fill: '#ffffff' })}>{t('rightpanel.apagar_branco')}</button>
           </div>
-          <Field label="Texto de substituição (opcional — corrige o texto do PDF)"><textarea rows={2} value={m.text} onChange={(e) => s.updateMarkup(m.id, { text: e.target.value }, false)} /></Field>
-          <Field label="Tamanho da fonte"><input type="number" min={4} max={72} value={m.fontSize} onChange={(e) => up({ fontSize: Number(e.target.value) })} /></Field>
-          <span className="muted small">O conteúdo sob a tarja (texto e imagem) é removido de verdade ao exportar; o desenho vetorial é preservado.</span>
+          <Field label={t('rightpanel.texto_de_substituicao_opcional_corrige')}><textarea rows={2} value={m.text} onChange={(e) => s.updateMarkup(m.id, { text: e.target.value }, false)} /></Field>
+          <Field label={t('rightpanel.tamanho_da_fonte')}><input type="number" min={4} max={72} value={m.fontSize} onChange={(e) => up({ fontSize: Number(e.target.value) })} /></Field>
+          <span className="muted small">{t('rightpanel.o_conteudo_sob_a_tarja')}</span>
         </>
       )}
       {m.kind === 'image' && (
-        <Field label={`Opacidade ${Math.round((m.opacity ?? 1) * 100)}%`}><input type="range" min={0.05} max={1} step={0.05} value={m.opacity ?? 1} onChange={(e) => up({ opacity: Number(e.target.value) })} /></Field>
+        <Field label={t('rightpanel.opacidade', { round: Math.round((m.opacity ?? 1) * 100) })}><input type="range" min={0.05} max={1} step={0.05} value={m.opacity ?? 1} onChange={(e) => up({ opacity: Number(e.target.value) })} /></Field>
       )}
       {m.kind === 'text' && (
         <>
-          <Field label="Texto"><textarea rows={3} value={m.text} onChange={(e) => s.updateMarkup(m.id, { text: e.target.value }, false)} /></Field>
-          <Field label="Tamanho da fonte"><input type="number" min={6} max={72} value={m.fontSize} onChange={(e) => up({ fontSize: Number(e.target.value) })} /></Field>
+          <Field label={t('rightpanel.texto')}><textarea rows={3} value={m.text} onChange={(e) => s.updateMarkup(m.id, { text: e.target.value }, false)} /></Field>
+          <Field label={t('rightpanel.tamanho_da_fonte')}><input type="number" min={6} max={72} value={m.fontSize} onChange={(e) => up({ fontSize: Number(e.target.value) })} /></Field>
         </>
       )}
       {(m.kind === 'area' || m.kind === 'space' || m.kind === 'solid') && (
         <div className="card holes-card">
-          <div className="kv"><span>Vazios (fosso, shaft, pilar)</span><b>{m.holes?.length ?? 0}</b></div>
+          <div className="kv"><span>{t('rightpanel.vazios_fosso_shaft_pilar')}</span><b>{m.holes?.length ?? 0}</b></div>
           {(m.holes ?? []).map((h, i) => {
             const sc = scaleFor(m, s.markups, s.scales[m.page])
             const a = sc ? polyArea(h) * sc.metersPerUnit * sc.metersPerUnit : null
             return (
               <div key={i} className="hole-row">
-                <SquareDashed size={13} /> <span className="grow">Vazio {i + 1}</span>
+                <SquareDashed size={13} /> <span className="grow">{t('rightpanel.vazio', { v: i + 1 })}</span>
                 <span className="muted small">{a != null ? `${fmt(a)} m²` : ''}</span>
-                <button className="icon-btn xs" data-tip="Remover vazio" onClick={() => up({ holes: m.holes!.filter((_, j) => j !== i) })}><X size={12} /></button>
+                <button className="icon-btn xs" data-tip={t('rightpanel.remover_vazio')} onClick={() => up({ holes: m.holes!.filter((_, j) => j !== i) })}><X size={12} /></button>
               </div>
             )
           })}
           <div className="row">
-            <button className="btn sm" onClick={() => s.set({ tool: 'hole', holeTarget: m.id })}><SquareDashed size={13} /> Desenhar vazio</button>
-            <button className="btn sm ghost" onClick={() => s.set({ tool: 'fill', fillAs: m.kind === 'space' ? 'space' : 'area', holeTarget: m.id })} data-tip="Shift+clique dentro do vazio">Por clique</button>
+            <button className="btn sm" onClick={() => s.set({ tool: 'hole', holeTarget: m.id })}><SquareDashed size={13} /> {t('rightpanel.desenhar_vazio')}</button>
+            <button className="btn sm ghost" onClick={() => s.set({ tool: 'fill', fillAs: m.kind === 'space' ? 'space' : 'area', holeTarget: m.id })} data-tip={t('rightpanel.shift_clique_dentro_do_vazio')}>{t('rightpanel.por_clique')}</button>
           </div>
         </div>
       )}
       {m.kind === 'solid' && (
         <>
-          <Field label="Nome do sólido"><input value={m.text} onChange={(e) => s.updateMarkup(m.id, { text: e.target.value }, false)} /></Field>
+          <Field label={t('rightpanel.nome_do_solido')}><input value={m.text} onChange={(e) => s.updateMarkup(m.id, { text: e.target.value }, false)} /></Field>
           <div className="row">
-            <Field label="Base (m)"><input type="number" step={0.05} value={m.base ?? 0} onChange={(e) => up({ base: Number(e.target.value) })} /></Field>
-            <Field label="Altura (m)"><input type="number" min={0.05} step={0.05} value={m.height ?? DEFAULT_SOLID_HEIGHT} onChange={(e) => { const h = Math.max(0.05, Number(e.target.value)); up({ height: h }); s.rememberSolid({ height: h }) }} /></Field>
-            <Field label="Cor"><input type="color" value={m.color} onChange={(e) => { up({ color: e.target.value, fill: e.target.value }); s.rememberSolid({ color: e.target.value }) }} /></Field>
+            <Field label={t('rightpanel.base_m')}><input type="number" step={0.05} value={m.base ?? 0} onChange={(e) => up({ base: Number(e.target.value) })} /></Field>
+            <Field label={t('rightpanel.altura_m')}><input type="number" min={0.05} step={0.05} value={m.height ?? DEFAULT_SOLID_HEIGHT} onChange={(e) => { const h = Math.max(0.05, Number(e.target.value)); up({ height: h }); s.rememberSolid({ height: h }) }} /></Field>
+            <Field label={t('rightpanel.cor')}><input type="color" value={m.color} onChange={(e) => { up({ color: e.target.value, fill: e.target.value }); s.rememberSolid({ color: e.target.value }) }} /></Field>
           </div>
           <div className="card">
             {q ? (
               <>
-                <div className="kv"><span>Volume</span><b>{fmt(q.vars.VOL)} m³</b></div>
-                <div className="kv"><span>Área da base</span><b>{fmt(q.vars.A)} m²</b></div>
-                <div className="kv"><span>Área lateral</span><b>{fmt(q.vars.AL)} m²</b></div>
-                <div className="kv"><span>Topo na cota</span><b>{fmt((m.base ?? 0) + (m.height ?? DEFAULT_SOLID_HEIGHT))} m</b></div>
+                <div className="kv"><span>{t('rightpanel.volume')}</span><b>{fmt(q.vars.VOL)} m³</b></div>
+                <div className="kv"><span>{t('rightpanel.area_da_base')}</span><b>{fmt(q.vars.A)} m²</b></div>
+                <div className="kv"><span>{t('rightpanel.area_lateral')}</span><b>{fmt(q.vars.AL)} m²</b></div>
+                <div className="kv"><span>{t('rightpanel.topo_na_cota')}</span><b>{fmt((m.base ?? 0) + (m.height ?? DEFAULT_SOLID_HEIGHT))} m</b></div>
               </>
-            ) : <span className="muted small">Defina a escala da folha para medir.</span>}
+            ) : <span className="muted small">{t('rightpanel.defina_a_escala_da_folha')}</span>}
           </div>
-          <span className="muted small">Abra o modo <b>3D</b> para ver o sólido e puxar/empurrar a altura com o mouse.</span>
+          <span className="muted small"><Rich k="rightpanel.abra_o_modo_3d" /></span>
         </>
       )}
       {m.kind === 'space' && (
         <>
-          <Field label="Nome do ambiente"><input value={m.text} onChange={(e) => s.updateMarkup(m.id, { text: e.target.value }, false)} /></Field>
+          <Field label={t('rightpanel.nome_do_ambiente')}><input value={m.text} onChange={(e) => s.updateMarkup(m.id, { text: e.target.value }, false)} /></Field>
           <div className="row">
-            <Field label="Cor"><input type="color" value={m.color} onChange={(e) => up({ color: e.target.value, fill: e.target.value })} /></Field>
-            <span className="muted small">{q ? `${fmt(q.vars.A)} m² · ${fmt(q.vars.P)} m de perímetro` : 'Defina a escala para medir.'}</span>
+            <Field label={t('rightpanel.cor')}><input type="color" value={m.color} onChange={(e) => up({ color: e.target.value, fill: e.target.value })} /></Field>
+            <span className="muted small">{q ? t('rightpanel.m_m_de_perimetro', { v: fmt(q.vars.A), v2: fmt(q.vars.P) }) : t('rightpanel.defina_a_escala_para_medir')}</span>
           </div>
-          <span className="muted small">Medições cujo centro cai dentro deste ambiente são agrupadas nele na tabela (Agrupar por → Ambiente).</span>
+          <span className="muted small">{t('rightpanel.medicoes_cujo_centro_cai_dentro')}</span>
         </>
       )}
       {isMeasure && s.columns.some((c) => c.type !== 'formula') && (
         <div className="card">
-          <span className="muted small">Colunas personalizadas{spaceOf(m, s.markups) ? ` · ambiente ${spaceOf(m, s.markups)!.text}` : ''}</span>
+          <span className="muted small">{t('rightpanel.colunas_personalizadas')}{spaceOf(m, s.markups) ? t('rightpanel.ambiente_x', { nome: spaceOf(m, s.markups)!.text }) : ''}</span>
           {s.columns.filter((c) => c.type !== 'formula').map((c) => (
             <Field key={c.id} label={c.name}>
               <input type={c.type === 'number' ? 'number' : 'text'} value={m.fields?.[c.id] ?? ''} onChange={(e) => s.updateMarkup(m.id, { fields: { ...m.fields, [c.id]: c.type === 'number' ? (e.target.value === '' ? '' : Number(e.target.value)) : e.target.value } }, false)} />
@@ -218,18 +218,18 @@ function Props() {
         </div>
       )}
       {isIssue(m) && <IssueFields m={m} />}
-      <Field label="Status">
+      <Field label={t('rightpanel.status')}>
         <select value={m.status} onChange={(e) => up({ status: e.target.value })}>
           {s.statuses.map((x) => <option key={x.name}>{x.name}</option>)}
           {!s.statuses.some((x) => x.name === m.status) && <option>{m.status}</option>}
         </select>
       </Field>
-      <button className="link" onClick={() => s.set({ dialog: 'statuses' })}>Gerenciar status…</button>
-      <Field label="Comentário">
-        <textarea rows={3} value={m.comment} placeholder="Observação, ambiente, responsável…" onChange={(e) => s.updateMarkup(m.id, { comment: e.target.value }, false)} />
+      <button className="link" onClick={() => s.set({ dialog: 'statuses' })}>{t('rightpanel.gerenciar_status')}</button>
+      <Field label={t('rightpanel.comentario')}>
+        <textarea rows={3} value={m.comment} placeholder={t('rightpanel.observacao_ambiente_responsavel')} onChange={(e) => s.updateMarkup(m.id, { comment: e.target.value }, false)} />
       </Field>
-      <div className="muted small">{m.author} · {new Date(m.createdAt).toLocaleString('pt-BR')}</div>
-      <button className="btn danger sm" onClick={() => s.removeMarkups([m.id])}><Trash2 size={14} /> Excluir</button>
+      <div className="muted small">{m.author} · {new Date(m.createdAt).toLocaleString(localeOf())}</div>
+      <button className="btn danger sm" onClick={() => s.removeMarkups([m.id])}><Trash2 size={14} /> {t('rightpanel.excluir')}</button>
     </div>
   )
 }
@@ -246,30 +246,30 @@ function IssueFields({ m }: { m: Markup }) {
   }
   return (
     <div className="card issue-card">
-      <div className="kv"><span>Item de compatibilização</span><b>nº {String(m.issueNo ?? no ?? '').padStart(2, '0')}</b></div>
+      <div className="kv"><span>{t('rightpanel.item_de_compatibilizacao')}</span><b>nº {String(m.issueNo ?? no ?? '').padStart(2, '0')}</b></div>
       <datalist id="people">{people.map((p) => <option key={p} value={p} />)}</datalist>
-      <Field label="Responsável"><input list="people" value={m.assignee ?? ''} placeholder="ex.: Elétrica — Fulano" onChange={(e) => s.updateMarkup(m.id, { assignee: e.target.value }, false)} /></Field>
+      <Field label={t('rightpanel.responsavel')}><input list="people" value={m.assignee ?? ''} placeholder={t('rightpanel.ex_eletrica_fulano')} onChange={(e) => s.updateMarkup(m.id, { assignee: e.target.value }, false)} /></Field>
       <div className="row">
-        <Field label="Prioridade">
+        <Field label={t('rightpanel.prioridade')}>
           <select value={m.priority ?? ''} onChange={(e) => s.updateMarkup(m.id, { priority: (e.target.value || undefined) as Markup['priority'] })}>
-            <option value="">—</option><option value="alta">Alta</option><option value="média">Média</option><option value="baixa">Baixa</option>
+            <option value="">—</option><option value="alta">{t('rightpanel.alta')}</option><option value="média">{t('rightpanel.media')}</option><option value="baixa">{t('rightpanel.baixa')}</option>
           </select>
         </Field>
-        <Field label="Prazo"><input type="date" value={m.due ?? ''} onChange={(e) => s.updateMarkup(m.id, { due: e.target.value || undefined })} /></Field>
+        <Field label={t('rightpanel.prazo')}><input type="date" value={m.due ?? ''} onChange={(e) => s.updateMarkup(m.id, { due: e.target.value || undefined })} /></Field>
       </div>
-      <Field label="Nº fixo"><input type="number" min={1} value={m.issueNo ?? ''} placeholder={String(no ?? '')} onChange={(e) => s.updateMarkup(m.id, { issueNo: e.target.value ? Number(e.target.value) : undefined }, false)} /></Field>
+      <Field label={t('rightpanel.n_fixo')}><input type="number" min={1} value={m.issueNo ?? ''} placeholder={String(no ?? '')} onChange={(e) => s.updateMarkup(m.id, { issueNo: e.target.value ? Number(e.target.value) : undefined }, false)} /></Field>
       <div className="replies">
         {(m.replies ?? []).map((r, i) => (
           <div key={i} className="reply">
-            <div className="muted small"><b>{r.author}</b> · {new Date(r.at).toLocaleString('pt-BR')}
-              <button className="icon-btn xs" data-tip="Remover" onClick={() => s.updateMarkup(m.id, { replies: m.replies!.filter((_, j) => j !== i) })}><X size={11} /></button>
+            <div className="muted small"><b>{r.author}</b> · {new Date(r.at).toLocaleString(localeOf())}
+              <button className="icon-btn xs" data-tip={t('rightpanel.remover')} onClick={() => s.updateMarkup(m.id, { replies: m.replies!.filter((_, j) => j !== i) })}><X size={11} /></button>
             </div>
             <div>{r.text}</div>
           </div>
         ))}
         <div className="reply-new">
-          <textarea rows={2} value={reply} placeholder="Responder…" onChange={(e) => setReply(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) send() }} />
-          <button className="icon-btn" data-tip="Enviar  Ctrl+Enter" disabled={!reply.trim()} onClick={send}><Send size={14} /></button>
+          <textarea rows={2} value={reply} placeholder={t('rightpanel.responder')} onChange={(e) => setReply(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) send() }} />
+          <button className="icon-btn" data-tip={t('rightpanel.enviar_ctrl_enter')} disabled={!reply.trim()} onClick={send}><Send size={14} /></button>
         </div>
       </div>
     </div>
@@ -304,9 +304,9 @@ function Presets() {
       try {
         const arr = JSON.parse(await f.text()) as Preset[]
         s.setPresets([...s.presets, ...arr.map((p) => ({ ...p, id: uid() }))])
-        s.notify(`${arr.length} marcadores importados`)
+        s.notify(t('rightpanel.marcadores_importados', { length: arr.length }))
       } catch {
-        s.notify('Arquivo de biblioteca inválido')
+        s.notify(t('rightpanel.arquivo_de_biblioteca_invalido'))
       }
     }
     i.click()
@@ -316,8 +316,8 @@ function Presets() {
     <div className="presets">
       <datalist id="groups">{groups.map((g) => <option key={g} value={g} />)}</datalist>
       <div className="pad-x toolbar-row">
-        <input className="search" placeholder="Buscar marcador…" value={q} onChange={(e) => setQ(e.target.value)} />
-        <button className="btn sm primary new-preset" onClick={add}><Plus size={14} /> Novo</button>
+        <input className="search" placeholder={t('rightpanel.buscar_marcador')} value={q} onChange={(e) => setQ(e.target.value)} />
+        <button className="btn sm primary new-preset" onClick={add}><Plus size={14} /> {t('rightpanel.novo')}</button>
       </div>
       {groups.map((g) => {
         const items = list.filter((p) => p.group === g)
@@ -334,9 +334,9 @@ function Presets() {
                     <span className="muted small">{MEASURE_LABEL[p.measure]}{p.formula ? ` = ${p.formula}` : p.factor !== 1 ? ` × ${fmt(p.factor)}` : ''} · {p.resultUnit}{p.code ? ` · ${p.code}` : ''}</span>
                   </div>
                   <div className="preset-actions" onClick={(e) => e.stopPropagation()}>
-                    <button className="icon-btn xs" data-tip="Editar" onClick={() => s.set({ presetDialog: { id: p.id } })}><Pencil size={13} /></button>
-                    <button className="icon-btn xs" data-tip="Duplicar" onClick={() => { const i = s.presets.indexOf(p); const c = { ...p, id: uid(), name: `${p.name} (cópia)` }; s.setPresets([...s.presets.slice(0, i + 1), c, ...s.presets.slice(i + 1)]); s.set({ presetDialog: { id: c.id } }) }}><Copy size={13} /></button>
-                    <button className="icon-btn xs" data-tip="Excluir" onClick={() => s.setPresets(s.presets.filter((x) => x.id !== p.id))}><Trash2 size={13} /></button>
+                    <button className="icon-btn xs" data-tip={t('rightpanel.editar')} onClick={() => s.set({ presetDialog: { id: p.id } })}><Pencil size={13} /></button>
+                    <button className="icon-btn xs" data-tip={t('rightpanel.duplicar')} onClick={() => { const i = s.presets.indexOf(p); const c = { ...p, id: uid(), name: t('rightpanel.copia_de', { nome: p.name }) }; s.setPresets([...s.presets.slice(0, i + 1), c, ...s.presets.slice(i + 1)]); s.set({ presetDialog: { id: c.id } }) }}><Copy size={13} /></button>
+                    <button className="icon-btn xs" data-tip={t('rightpanel.excluir')} onClick={() => s.setPresets(s.presets.filter((x) => x.id !== p.id))}><Trash2 size={13} /></button>
                   </div>
                 </div>
               </div>
@@ -345,9 +345,9 @@ function Presets() {
         )
       })}
       <div className="pad-x lib-actions">
-        <button className="btn ghost sm" onClick={importLib}><Upload size={13} /> Importar</button>
-        <button className="btn ghost sm" onClick={exportLib}><Download size={13} /> Exportar</button>
-        <button className="btn ghost sm" onClick={() => s.setPresets(defaultPresets())}><RotateCcw size={13} /> Padrão</button>
+        <button className="btn ghost sm" onClick={importLib}><Upload size={13} /> {t('rightpanel.importar')}</button>
+        <button className="btn ghost sm" onClick={exportLib}><Download size={13} /> {t('rightpanel.exportar')}</button>
+        <button className="btn ghost sm" onClick={() => s.setPresets(defaultPresets())}><RotateCcw size={13} /> {t('rightpanel.padrao')}</button>
       </div>
     </div>
   )
@@ -374,20 +374,20 @@ export function RightPanel() {
   const tab = useStore((s) => s.rightTab)
   const selected = useStore((s) => s.selected.length)
   const set = useStore((s) => s.set)
-  const t = tab === 'claude' ? 'claude' : selected ? 'props' : tab
+  const cur = tab === 'claude' ? 'claude' : selected ? 'props' : tab
   return (
     <aside className="panel right">
       <header className="tabs">
-        <button className={t === 'presets' ? 'active' : ''} onClick={() => set({ selected: [], rightTab: 'presets' })}>Marcadores</button>
-        <button className={t === 'props' ? 'active' : ''} onClick={() => set({ rightTab: 'props' })}>Propriedades</button>
-        <button className={`claude-tab ${t === 'claude' ? 'active' : ''}`} onClick={() => set({ rightTab: 'claude' })}><Sparkles size={13} /> Claude</button>
+        <button className={cur === 'presets' ? 'active' : ''} onClick={() => set({ selected: [], rightTab: 'presets' })}>{t('rightpanel.marcadores')}</button>
+        <button className={cur === 'props' ? 'active' : ''} onClick={() => set({ rightTab: 'props' })}>{t('rightpanel.propriedades')}</button>
+        <button className={`claude-tab ${cur === 'claude' ? 'active' : ''}`} onClick={() => set({ rightTab: 'claude' })}><Sparkles size={13} /> Claude</button>
         <div className="spacer" />
-        <button className="icon-btn xs panel-hide" data-tip="Ocultar painel  Ctrl+3" onClick={() => set({ panels: { ...useStore.getState().panels, right: false } })}><ChevronsRight size={15} /></button>
+        <button className="icon-btn xs panel-hide" data-tip={t('rightpanel.ocultar_painel_ctrl_3')} onClick={() => set({ panels: { ...useStore.getState().panels, right: false } })}><ChevronsRight size={15} /></button>
       </header>
       <div className="panel-body">
-        {t === 'claude' ? (
-          <Suspense fallback={<div className="loading-mod">Carregando…</div>}><ClaudePanel /></Suspense>
-        ) : t === 'props' ? <Props /> : <Presets />}
+        {cur === 'claude' ? (
+          <Suspense fallback={<div className="loading-mod">{t('rightpanel.carregando')}</div>}><ClaudePanel /></Suspense>
+        ) : cur === 'props' ? <Props /> : <Presets />}
       </div>
     </aside>
   )

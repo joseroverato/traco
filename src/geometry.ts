@@ -1,5 +1,6 @@
 import type { Markup, PageScale, Preset, Pt } from './types'
 import { evalFormula } from './formula'
+import { fmtNum, localeOf } from './i18n'
 
 /** Altura padrão de um sólido novo (pé-direito), em metros. */
 export const DEFAULT_SOLID_HEIGHT = 2.8
@@ -171,8 +172,7 @@ export function measureOf(m: Markup, scale: PageScale | undefined, preset?: Pres
   return { raw, value: value * (m.deduct ? -1 : 1), unit: preset?.resultUnit || unit, vars, error }
 }
 
-export const fmt = (n: number, d = 2) =>
-  n.toLocaleString('pt-BR', { minimumFractionDigits: d, maximumFractionDigits: d })
+export const fmt = (n: number, d = 2) => fmtNum(n, d)
 
 /** Escala de papel 1:N → metros por pt. 1 pt = 1/72 pol. */
 export const paperScale = (n: number) => (0.0254 / 72) * n
@@ -187,17 +187,28 @@ export function scaleMismatch(metersPerUnit: number, stampN: number): number | n
   return Math.abs(n - stampN) / stampN > 0.02 ? Math.round(n) : null
 }
 
+/** Nomes aceitos para cada variável de carimbo: os de todos os idiomas, para o texto continuar valendo se a interface mudar de idioma. */
+const STAMP_VARS = {
+  folha: ['folha', 'sheet', 'hoja', 'feuille', 'blatt', 'foglio'],
+  arquivo: ['arquivo', 'file', 'archivo', 'fichier', 'datei'],
+  autor: ['autor', 'author', 'auteur', 'autore'],
+  data: ['data', 'date', 'fecha', 'datum'],
+  hora: ['hora', 'time', 'heure', 'uhrzeit', 'ora'],
+}
+const stampRe = (names: string[]) => new RegExp(`\\{(?:${names.join('|')})\\}`, 'gi')
+
 /** Substitui variáveis de carimbo. */
 export function stampText(t: string, ctx: { n: number; total: number; label: string; file: string; author: string }) {
   const d = new Date()
+  const loc = localeOf()
   return t
     .replace(/\{n\}/gi, String(ctx.n))
     .replace(/\{total\}/gi, String(ctx.total))
-    .replace(/\{folha\}/gi, ctx.label)
-    .replace(/\{arquivo\}/gi, ctx.file.replace(/\.pdf$/i, ''))
-    .replace(/\{autor\}/gi, ctx.author)
-    .replace(/\{data\}/gi, d.toLocaleDateString('pt-BR'))
-    .replace(/\{hora\}/gi, d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }))
+    .replace(stampRe(STAMP_VARS.folha), ctx.label)
+    .replace(stampRe(STAMP_VARS.arquivo), ctx.file.replace(/\.pdf$/i, ''))
+    .replace(stampRe(STAMP_VARS.autor), ctx.author)
+    .replace(stampRe(STAMP_VARS.data), d.toLocaleDateString(loc))
+    .replace(stampRe(STAMP_VARS.hora), d.toLocaleTimeString(loc, { hour: '2-digit', minute: '2-digit' }))
 }
 
 /** Ponto dentro de polígono (par-ímpar). */

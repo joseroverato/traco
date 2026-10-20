@@ -6,6 +6,7 @@ import { useStore } from './store'
 import { dist, inRect } from './geometry'
 import { pickHoleTarget, redactFontSize } from './viewerLogic'
 import type { Markup, MarkupKind, Pt } from './types'
+import { t } from './i18n'
 
 export type PolyKind = 'length' | 'area' | 'hole' | 'space' | 'solid'
 
@@ -22,13 +23,13 @@ export const minVertices = (kind: PolyKind) => (kind === 'length' ? 2 : 3)
 export function addHole(page: string, pts: Pt[]) {
   const st = useStore.getState()
   const target = pickHoleTarget(st.markups, page, pts, st.holeTarget, st.selected)
-  if (!target) return st.notify('Desenhe o vazio dentro de uma área ou ambiente')
+  if (!target) return st.notify(t('vieweractions.desenhe_o_vazio_dentro_de'))
   st.updateMarkup(target.id, { holes: [...(target.holes ?? []), pts] })
   st.set({ selected: [target.id] })
-  st.notify('Vazio descontado da área')
+  st.notify(t('vieweractions.vazio_descontado_da_area'))
 }
 
-const nextSpaceName = () => `Ambiente ${useStore.getState().markups.filter((m) => m.kind === 'space').length + 1}`
+const nextSpaceName = () => t('vieweractions.ambiente_n', { n: useStore.getState().markups.filter((m) => m.kind === 'space').length + 1 })
 
 /** Finaliza uma polilinha/polígono já validado (comprimento, área, ambiente ou vazio). */
 export function commitPolygon(kind: PolyKind, page: string, points: Pt[]) {
@@ -40,7 +41,7 @@ export function commitPolygon(kind: PolyKind, page: string, points: Pt[]) {
   }
   if (kind === 'solid') {
     const n = st.markups.filter((m) => m.kind === 'solid').length + 1
-    const m = st.addMarkup('solid', page, points, { text: `Sólido ${n}`, color: st.solidDefaults.color, fill: st.solidDefaults.color, base: 0, height: st.solidDefaults.height })
+    const m = st.addMarkup('solid', page, points, { text: t('vieweractions.solido', { n }), color: st.solidDefaults.color, fill: st.solidDefaults.color, base: 0, height: st.solidDefaults.height })
     return openProps(m.id)
   }
   st.addMarkup(kind, page, points)
@@ -56,7 +57,7 @@ export function commitFill(page: string, outer: Pt[], holes: Pt[][], asHole: boo
   }
   const m = st.addMarkup('area', page, outer, holes.length ? { holes } : {})
   st.set({ selected: [m.id] })
-  if (holes.length) st.notify(`Área criada com ${holes.length} vazio(s) descontado(s)`)
+  if (holes.length) st.notify(t('vieweractions.area_criada_com_vazio_s', { length: holes.length }))
 }
 
 /** Fim do arrasto de uma forma de dois pontos: calibrar, viewport, tarja ou marcação de revisão. */
@@ -69,7 +70,7 @@ export function commitDraw(kind: MarkupKind | 'calibrate', page: string, a: Pt, 
   }
   if (kind === 'viewport') {
     const n = st.markups.filter((v) => v.kind === 'viewport' && v.page === page).length + 1
-    const m = st.addMarkup('viewport', page, [a, b], { text: `Viewport ${n}`, color: '#0090ff' })
+    const m = st.addMarkup('viewport', page, [a, b], { text: t('vieweractions.viewport', { n }), color: '#0090ff' })
     return st.set({ calibrating: { page, length: 0, viewport: m.id }, tool: 'select' })
   }
   if (kind === 'redact') {
@@ -92,7 +93,7 @@ export function placeAt(tool: 'stamp' | 'text' | 'legend', page: string, p: Pt) 
     return openProps(m.id)
   }
   if (tool === 'stamp') {
-    const m = st.addMarkup('stamp', page, [{ x: p.x - 90, y: p.y - 22 }, { x: p.x + 90, y: p.y + 22 }], { text: 'REVISADO\n{data}', color: '#e5484d', width: 2, fontSize: 14 })
+    const m = st.addMarkup('stamp', page, [{ x: p.x - 90, y: p.y - 22 }, { x: p.x + 90, y: p.y + 22 }], { text: t('vieweractions.revisado'), color: '#e5484d', width: 2, fontSize: 14 })
     return st.set({ editingText: m.id, tool: 'select' })
   }
   const m = st.addMarkup('text', page, [p, { x: p.x + 160, y: p.y + 42 }], { color: '#e5484d', width: 1 })

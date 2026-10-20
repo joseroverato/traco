@@ -7,6 +7,7 @@ import { legendLayout, legendRows } from './legend'
 import type { Source } from './pdf'
 import { DEFAULT_SOLID_HEIGHT, arrowHead, bbox, centroid, cloudPoints, fmt, measureOf, scaleFor, signedArea, stampText } from './geometry'
 import type { Markup, Preset, Pt, Sheet } from './types'
+import { fmtMoney, t, tPdf } from './i18n'
 
 export interface ExportOptions {
   sheetIds?: string[] // padrão: todas, na ordem atual
@@ -114,7 +115,7 @@ async function paintMarkup(P: Painter, m: Markup, preset: Preset | undefined, ct
   const dash = preset?.dash === 'dash' ? [m.width * 4, m.width * 2.5] : preset?.dash === 'dot' ? [m.width, m.width * 2] : undefined
   const q = measureOf(m, scaleFor(m, ctx.all, ctx.sheetScale), preset)
   const derived = !!preset && (!!preset.formula?.trim() || (preset.factor !== 1 && !!preset.factor))
-  const label = (base: string) => (!q ? 'sem escala' : `${m.deduct ? '-' : ''}${fmt(q.raw)} ${base}${derived ? ` -> ${fmt(Math.abs(q.value))} ${q.unit}` : ''}`)
+  const label = (base: string) => (!q ? tPdf('markupshape.sem_escala') : `${m.deduct ? '-' : ''}${fmt(q.raw)} ${base}${derived ? ` -> ${fmt(Math.abs(q.value))} ${q.unit}` : ''}`)
   switch (m.kind) {
     case 'rect':
     case 'ellipse':
@@ -182,7 +183,7 @@ async function paintMarkup(P: Painter, m: Markup, preset: Preset | undefined, ct
       P.path(m.points, { closed: true, holes: m.holes, stroke: m.color, width: m.width || 1, dash: [4, 3], fill: m.color, fillOpacity: 0.07 })
       if (m.points.length > 2) {
         const c = centroid(m.points)
-        P.text({ x: c.x, y: c.y - 2 }, m.text || 'Ambiente', 8, m.color, { bold: true, align: 'center', halo: true })
+        P.text({ x: c.x, y: c.y - 2 }, m.text || tPdf('markupshape.ambiente'), 8, m.color, { bold: true, align: 'center', halo: true })
         if (q) P.text({ x: c.x, y: c.y + 8 }, `${fmt(q.vars.A)} m²`, 7, m.color, { align: 'center', halo: true })
       }
       break
@@ -191,7 +192,7 @@ async function paintMarkup(P: Painter, m: Markup, preset: Preset | undefined, ct
       P.path(m.points, { closed: true, holes: m.holes, stroke: m.color, width: m.width || 1.5, fill: m.color, fillOpacity: 0.22 })
       if (m.points.length > 2) {
         const c = centroid(m.points)
-        P.text({ x: c.x, y: c.y - 2 }, m.text || 'Sólido', 8, m.color, { bold: true, align: 'center', halo: true })
+        P.text({ x: c.x, y: c.y - 2 }, m.text || tPdf('markupshape.solido'), 8, m.color, { bold: true, align: 'center', halo: true })
         P.text({ x: c.x, y: c.y + 8 }, q ? `h = ${fmt(m.height ?? DEFAULT_SOLID_HEIGHT)} m · ${fmt(q.vars.VOL)} m³` : `h = ${fmt(m.height ?? DEFAULT_SOLID_HEIGHT)} m`, 7, m.color, { align: 'center', halo: true })
       }
       break
@@ -202,19 +203,19 @@ async function paintMarkup(P: Painter, m: Markup, preset: Preset | undefined, ct
       const box = (x: number, y: number, w: number, h: number) => [{ x, y }, { x: x + w, y }, { x: x + w, y: y + h }, { x, y: y + h }]
       P.path(box(L.x, L.y, L.w, L.h), { closed: true, fill: '#ffffff', fillOpacity: 1, stroke: '#1f2937', width: 0.8 })
       P.path(box(L.x, L.y, L.w, L.head), { closed: true, fill: '#1f2937', fillOpacity: 1 })
-      P.text({ x: L.x + L.fs * 0.6, y: L.y + L.head * 0.62 }, `QUANTITATIVO ${m.legend?.scope === 'all' ? '- PROJETO' : '- FOLHA'}`, L.fs * 1.05, '#ffffff', { bold: true })
+      P.text({ x: L.x + L.fs * 0.6, y: L.y + L.head * 0.62 }, tPdf(m.legend?.scope === 'all' ? 'legendbox.titulo_projeto' : 'legendbox.titulo_folha'), L.fs * 1.05, '#ffffff', { bold: true })
       const colQ = L.x + L.w * (L.prices ? 0.62 : 0.78)
       const right = (x: number, y: number, s: string, bold = false) => P.text({ x: x - P.width(s, L.fs, bold), y }, s, L.fs, '#111827', { bold })
-      if (!rows.length) P.text({ x: L.x + L.fs * 0.6, y: L.y + L.head + L.lh * 0.7 }, 'Sem medições', L.fs, '#6b7280')
+      if (!rows.length) P.text({ x: L.x + L.fs * 0.6, y: L.y + L.head + L.lh * 0.7 }, tPdf('pdfexport.sem_medicoes'), L.fs, '#6b7280')
       rows.forEach((r, i) => {
         const y = L.y + L.head + i * L.lh
         if (i % 2 === 1) P.path(box(L.x + 0.4, y, L.w - 0.8, L.lh), { closed: true, fill: '#f3f4f6', fillOpacity: 1 })
         P.path(box(L.x + L.fs * 0.6, y + L.lh * 0.25, L.fs * 1.2, L.lh * 0.5), { closed: true, fill: r.color, fillOpacity: 0.8 })
         P.text({ x: L.x + L.fs * 2.3, y: y + L.lh * 0.66 }, r.name.length > 48 ? r.name.slice(0, 46) + '...' : r.name, L.fs, '#111827')
         right(colQ, y + L.lh * 0.66, `${fmt(r.qty)} ${r.unit}`, true)
-        if (L.prices) right(L.x + L.w - L.fs * 0.6, y + L.lh * 0.66, r.price ? `R$ ${fmt(r.total)}` : '-')
+        if (L.prices) right(L.x + L.w - L.fs * 0.6, y + L.lh * 0.66, r.price ? fmtMoney(r.total) : '-')
       })
-      if (L.prices) right(L.x + L.w - L.fs * 0.6, L.y + L.head + rows.length * L.lh + L.lh * 0.7, `Total R$ ${fmt(rows.reduce((t, r) => t + r.total, 0))}`, true)
+      if (L.prices) right(L.x + L.w - L.fs * 0.6, L.y + L.head + rows.length * L.lh + L.lh * 0.7, tPdf('pdfexport.total', { valor: fmtMoney(rows.reduce((t, r) => t + r.total, 0)) }), true)
       break
     }
     case 'count': {
@@ -377,7 +378,7 @@ export async function splitToZip(groups: { name: string; ids: string[] }[], base
 }
 
 /** Cria uma folha em branco (fonte própria) no tamanho indicado em pt. */
-export async function blankSource(w: number, h: number, name = 'Folha em branco'): Promise<Source> {
+export async function blankSource(w: number, h: number, name = t('pdfexport.folha_em_branco')): Promise<Source> {
   const d = await PDFDocument.create()
   d.addPage([w, h])
   const bytes = await d.save()

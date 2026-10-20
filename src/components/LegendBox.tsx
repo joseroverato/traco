@@ -2,6 +2,7 @@ import { useStore } from '../store'
 import { fmt } from '../geometry'
 import { legendLayout, legendRows } from '../legend'
 import type { Markup } from '../types'
+import { t } from '../i18n'
 
 export function LegendBox({ m, zoom, selected }: { m: Markup; zoom: number; selected: boolean }) {
   useStore((s) => s.markups) // re-render quando as medições mudam
@@ -14,10 +15,10 @@ export function LegendBox({ m, zoom, selected }: { m: Markup; zoom: number; sele
       <rect x={L.x} y={L.y} width={L.w} height={L.h} fill="#ffffff" stroke="#1f2937" strokeWidth={0.8} />
       <rect x={L.x} y={L.y} width={L.w} height={L.head} fill="#1f2937" />
       <text x={L.x + L.fs * 0.6} y={L.y + L.head * 0.62} fontSize={L.fs * 1.05} fontWeight={700} fill="#fff" style={{ fontFamily: 'Helvetica, Arial, sans-serif' }}>
-        QUANTITATIVO {m.legend?.scope === 'all' ? '— PROJETO' : '— FOLHA'}
+        {m.legend?.scope === 'all' ? t('legendbox.titulo_projeto') : t('legendbox.titulo_folha')}
       </text>
       {rows.length === 0 && (
-        <text x={L.x + L.fs * 0.6} y={L.y + L.head + L.lh * 0.7} fontSize={L.fs} fill="#6b7280" style={{ fontFamily: 'Helvetica, Arial, sans-serif' }}>Sem medições</text>
+        <text x={L.x + L.fs * 0.6} y={L.y + L.head + L.lh * 0.7} fontSize={L.fs} fill="#6b7280" style={{ fontFamily: 'Helvetica, Arial, sans-serif' }}>{t('legendbox.sem_medicoes')}</text>
       )}
       {rows.map((r, i) => {
         const y = L.y + L.head + i * L.lh
@@ -32,9 +33,7 @@ export function LegendBox({ m, zoom, selected }: { m: Markup; zoom: number; sele
         )
       })}
       {L.prices && (
-        <text x={L.x + L.w - L.fs * 0.6} y={L.y + L.head + rows.length * L.lh + L.lh * 0.7} fontSize={L.fs} fontWeight={700} fill="#111827" textAnchor="end" style={{ fontFamily: 'Helvetica, Arial, sans-serif' }}>
-          Total R$ {fmt(total)}
-        </text>
+        <text x={L.x + L.w - L.fs * 0.6} y={L.y + L.head + rows.length * L.lh + L.lh * 0.7} fontSize={L.fs} fontWeight={700} fill="#111827" textAnchor="end" style={{ fontFamily: 'Helvetica, Arial, sans-serif' }}>{t('legendbox.total_r', { v: fmt(total) })}</text>
       )}
       <rect x={L.x} y={L.y} width={L.w} height={L.h} fill="transparent" />
       {selected && <rect x={L.x + L.w - 5 / zoom} y={L.y + L.h - 5 / zoom} width={10 / zoom} height={10 / zoom} fill="var(--handle-fill)" stroke="var(--accent)" strokeWidth={1.5 / zoom} data-handle={1} data-mid={m.id} style={{ cursor: 'ew-resize' }} />}

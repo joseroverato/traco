@@ -1,11 +1,12 @@
 import type { Markup, PageScale, Preset, Pt } from '../types'
 import { DEFAULT_SOLID_HEIGHT, arrowHead, bbox, centroid, cloudPath, fmt, measureOf, ringsPath, stampText } from '../geometry'
 import type { Qty } from '../geometry'
+import { t } from '../i18n'
 
 const derived = (p?: Preset) => !!p && (!!p.formula?.trim() || (p.factor !== 1 && !!p.factor))
 function qtyText(q: Qty | null, p: Preset | undefined, baseUnit: string, deduct: boolean) {
-  if (!q) return 'sem escala'
-  if (q.error) return 'erro na fórmula'
+  if (!q) return t('markupshape.sem_escala')
+  if (q.error) return t('markupshape.erro_na_formula')
   const sign = deduct ? '− ' : ''
   return `${sign}${fmt(q.raw)} ${baseUnit}${derived(p) ? ` → ${fmt(Math.abs(q.value))} ${q.unit}` : ''}`
 }
@@ -161,7 +162,7 @@ export function MarkupShape({ m, preset, scale, zoom, selected, draft, stampCtx 
           <rect x={bb.x} y={bb.y} width={bb.w} height={bb.h} fill="var(--text-box)" fillOpacity={0.92} stroke={color} strokeWidth={w} rx={2} />
           <foreignObject x={bb.x} y={bb.y} width={bb.w} height={bb.h} style={{ pointerEvents: 'none' }}>
             <div style={{ padding: 4, fontSize: m.fontSize, lineHeight: 1.25, color, fontFamily: 'var(--font)', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
-              {m.text || (draft ? '' : 'Texto')}
+              {m.text || (draft ? '' : t('markupshape.texto'))}
             </div>
           </foreignObject>
         </g>
@@ -200,7 +201,7 @@ export function MarkupShape({ m, preset, scale, zoom, selected, draft, stampCtx 
           {m.text ? (
             <text x={bb.x + 2} y={bb.y + bb.h / 2} fontSize={m.fontSize} fill={m.fill === '#000000' ? '#fff' : '#000'} dominantBaseline="central" style={{ fontFamily: 'Helvetica, Arial, sans-serif', pointerEvents: 'none' }}>{m.text}</text>
           ) : m.fill === '#000000' && bb.w > 30 ? (
-            <text x={bb.x + bb.w / 2} y={bb.y + bb.h / 2} fontSize={Math.min(8, bb.h * 0.6)} fill="#666" textAnchor="middle" dominantBaseline="central" style={{ pointerEvents: 'none' }}>TARJA</text>
+            <text x={bb.x + bb.w / 2} y={bb.y + bb.h / 2} fontSize={Math.min(8, bb.h * 0.6)} fill="#666" textAnchor="middle" dominantBaseline="central" style={{ pointerEvents: 'none' }}>{t('markupshape.tarja')}</text>
           ) : null}
         </g>
       )
@@ -219,7 +220,7 @@ export function MarkupShape({ m, preset, scale, zoom, selected, draft, stampCtx 
         <g style={{ pointerEvents: 'none' }}>
           <rect x={bb.x} y={bb.y - 16 / zoom} width={Math.max(64, (m.text || 'Viewport').length * 6.5 + 50) / zoom} height={15 / zoom} rx={3 / zoom} fill="#0090ff" />
           <text x={bb.x + 5 / zoom} y={bb.y - 8.5 / zoom} fontSize={10 / zoom} fontWeight={600} fill="#fff" dominantBaseline="central" style={{ fontFamily: 'var(--font)' }}>
-            {(m.text || 'Viewport') + ' · ' + (m.scale?.label ?? 'sem escala')}
+            {(m.text || 'Viewport') + ' · ' + (m.scale?.label ?? t('markupshape.sem_escala'))}
           </text>
         </g>
       )
@@ -272,7 +273,7 @@ export function MarkupShape({ m, preset, scale, zoom, selected, draft, stampCtx 
         const c = centroid(m.points)
         label = (
           <g style={{ pointerEvents: 'none' }}>
-            <Label at={{ x: c.x, y: c.y - 7 / zoom }} color={color} zoom={zoom} text={m.text || 'Ambiente'} />
+            <Label at={{ x: c.x, y: c.y - 7 / zoom }} color={color} zoom={zoom} text={m.text || t('markupshape.ambiente')} />
             {q && <Label at={{ x: c.x, y: c.y + 7 / zoom }} color={color} zoom={zoom} text={`${fmt(q.vars.A)} m²`} />}
           </g>
         )
@@ -286,7 +287,7 @@ export function MarkupShape({ m, preset, scale, zoom, selected, draft, stampCtx 
         const c = centroid(m.points)
         label = (
           <g style={{ pointerEvents: 'none' }}>
-            <Label at={{ x: c.x, y: c.y - 7 / zoom }} color={color} zoom={zoom} text={m.text || 'Sólido'} />
+            <Label at={{ x: c.x, y: c.y - 7 / zoom }} color={color} zoom={zoom} text={m.text || t('markupshape.solido')} />
             <Label at={{ x: c.x, y: c.y + 7 / zoom }} color={color} zoom={zoom} text={q ? `h = ${fmt(m.height ?? DEFAULT_SOLID_HEIGHT)} m · ${fmt(q.vars.VOL)} m³` : `h = ${fmt(m.height ?? DEFAULT_SOLID_HEIGHT)} m`} />
           </g>
         )

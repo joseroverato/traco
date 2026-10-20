@@ -7,6 +7,8 @@ import { loadBase, measureForUnit, searchBase } from '../sinapi'
 import type { PriceBase } from '../sinapi'
 import { fmt } from '../geometry'
 import { PresetSwatch } from './RightPanel'
+import { localeOf, t } from '../i18n'
+import { Rich } from './Rich'
 
 const BLANK: Omit<Preset, 'id'> = {
   name: '', group: 'Geral', code: '', measure: 'area', color: '#0090ff', opacity: 0.25, width: 1.5, dash: 'solid', pattern: 'solid',
@@ -58,11 +60,11 @@ export function PresetDialog() {
     if (original) {
       s.setPresets(s.presets.map((x) => (x.id === next.id ? next : x)))
       useStore.setState({ markups: useStore.getState().markups.map((m) => (m.presetId === next.id ? { ...m, color: next.color, fill: next.color, width: next.width, fillOpacity: next.opacity } : m)) })
-      s.notify('Marcador atualizado')
+      s.notify(t('presetdialog.marcador_atualizado'))
     } else {
       s.setPresets([next, ...s.presets]) // novo marcador entra no topo
       s.set({ activePreset: next.id, tool: next.measure, selected: [] })
-      s.notify(`Marcador "${next.name}" criado e ativado`)
+      s.notify(t('presetdialog.marcador_criado_e_ativado', { name: next.name }))
     }
     close()
   }
@@ -73,13 +75,13 @@ export function PresetDialog() {
       <div className="modal wide preset-modal" onMouseDown={(e) => e.stopPropagation()} onKeyDown={(e) => { if (e.key === 'Enter' && (e.target as HTMLElement).tagName !== 'TEXTAREA' && !hits.length) save(); if (e.key === 'Escape') close() }}>
         <div className="row center">
           <PresetSwatch p={p} />
-          <h3 className="grow">{original ? 'Editar marcador' : 'Novo marcador de quantitativo'}</h3>
+          <h3 className="grow">{original ? t('presetdialog.editar_marcador') : t('presetdialog.novo_marcador_de_quantitativo')}</h3>
         </div>
 
         <div className="sinapi-search">
           <Search size={14} />
-          <input placeholder={base ? `Buscar na base: ${base.label} (código ou descrição)` : 'Importe a base SINAPI em Medir → Base de preços para buscar aqui'} value={q} disabled={!base} onChange={(e) => setQ(e.target.value)} />
-          {base && <span className="muted small">{base.items.length.toLocaleString('pt-BR')} itens</span>}
+          <input placeholder={base ? t('presetdialog.buscar_na_base_codigo_ou', { label: base.label }) : t('presetdialog.importe_a_base_sinapi_em')} value={q} disabled={!base} onChange={(e) => setQ(e.target.value)} />
+          {base && <span className="muted small">{t('presetdialog.itens', { toLocaleString: base.items.length.toLocaleString(localeOf()) })}</span>}
           {hits.length > 0 && (
             <div className="sinapi-hits">
               {hits.map((it) => (
@@ -95,62 +97,62 @@ export function PresetDialog() {
         </div>
 
         <div className="grid2">
-          <F label="Nome" wide><input ref={nameRef} autoFocus value={p.name} placeholder="ex.: Porcelanato 60×60 retificado" onChange={(e) => up({ name: e.target.value })} /></F>
-          <F label="Grupo / disciplina">
+          <F label={t('presetdialog.nome')} wide><input ref={nameRef} autoFocus value={p.name} placeholder={t('presetdialog.ex_porcelanato_60_60_retificado')} onChange={(e) => up({ name: e.target.value })} /></F>
+          <F label={t('presetdialog.grupo_disciplina')}>
             <input value={p.group} list="preset-groups" onChange={(e) => up({ group: e.target.value })} />
             <datalist id="preset-groups">{groups.map((g) => <option key={g} value={g} />)}</datalist>
           </F>
-          <F label="Código (SINAPI, próprio…)"><input value={p.code} onChange={(e) => up({ code: e.target.value })} /></F>
-          <F label="Tipo de medida">
+          <F label={t('presetdialog.codigo_sinapi_proprio')}><input value={p.code} onChange={(e) => up({ code: e.target.value })} /></F>
+          <F label={t('presetdialog.tipo_de_medida')}>
             <select value={p.measure} onChange={(e) => { const m = e.target.value as Preset['measure']; up({ measure: m, resultUnit: p.resultUnit === UNIT[p.measure] ? UNIT[m] : p.resultUnit }) }}>
-              <option value="area">Área</option><option value="length">Comprimento</option><option value="count">Contagem</option>
+              <option value="area">{t('presetdialog.area')}</option><option value="length">{t('presetdialog.comprimento')}</option><option value="count">{t('presetdialog.contagem')}</option>
             </select>
           </F>
-          <F label="Cor"><input type="color" value={p.color} onChange={(e) => up({ color: e.target.value })} /></F>
+          <F label={t('presetdialog.cor')}><input type="color" value={p.color} onChange={(e) => up({ color: e.target.value })} /></F>
           {p.measure !== 'count' ? (
             <>
-              <F label="Espessura do traço"><input type="number" min={0.25} step={0.25} value={p.width} onChange={(e) => up({ width: Number(e.target.value) })} /></F>
-              <F label="Estilo do traço">
+              <F label={t('presetdialog.espessura_do_traco')}><input type="number" min={0.25} step={0.25} value={p.width} onChange={(e) => up({ width: Number(e.target.value) })} /></F>
+              <F label={t('presetdialog.estilo_do_traco')}>
                 <select value={p.dash} onChange={(e) => up({ dash: e.target.value as Preset['dash'] })}>
-                  <option value="solid">Contínuo</option><option value="dash">Tracejado</option><option value="dot">Pontilhado</option>
+                  <option value="solid">{t('presetdialog.continuo')}</option><option value="dash">{t('presetdialog.tracejado')}</option><option value="dot">{t('presetdialog.pontilhado')}</option>
                 </select>
               </F>
             </>
           ) : (
             <>
-              <F label="Símbolo">
+              <F label={t('presetdialog.simbolo')}>
                 <select value={p.symbol} onChange={(e) => up({ symbol: e.target.value as Preset['symbol'] })}>
-                  <option value="circle">Círculo</option><option value="square">Quadrado</option><option value="triangle">Triângulo</option><option value="diamond">Losango</option><option value="cross">Xis</option><option value="letter">Letra</option>
+                  <option value="circle">{t('presetdialog.circulo')}</option><option value="square">{t('presetdialog.quadrado')}</option><option value="triangle">{t('presetdialog.triangulo')}</option><option value="diamond">{t('presetdialog.losango')}</option><option value="cross">{t('presetdialog.xis')}</option><option value="letter">{t('presetdialog.letra')}</option>
                 </select>
               </F>
-              <F label="Letra"><input maxLength={2} value={p.letter} onChange={(e) => up({ letter: e.target.value.toUpperCase() })} /></F>
+              <F label={t('presetdialog.letra')}><input maxLength={2} value={p.letter} onChange={(e) => up({ letter: e.target.value.toUpperCase() })} /></F>
             </>
           )}
           {p.measure === 'area' && (
             <>
-              <F label="Hachura">
+              <F label={t('presetdialog.hachura')}>
                 <select value={p.pattern} onChange={(e) => up({ pattern: e.target.value as Preset['pattern'] })}>
-                  <option value="solid">Sólida</option><option value="hatch">Diagonal</option><option value="cross">Xadrez</option><option value="dots">Pontos</option><option value="none">Sem preenchimento</option>
+                  <option value="solid">{t('presetdialog.solida')}</option><option value="hatch">{t('presetdialog.diagonal')}</option><option value="cross">{t('presetdialog.xadrez')}</option><option value="dots">{t('presetdialog.pontos')}</option><option value="none">{t('presetdialog.sem_preenchimento')}</option>
                 </select>
               </F>
-              <F label={`Opacidade ${Math.round(p.opacity * 100)}%`}><input type="range" min={0} max={0.9} step={0.05} value={p.opacity} onChange={(e) => up({ opacity: Number(e.target.value) })} /></F>
+              <F label={t('presetdialog.opacidade', { round: Math.round(p.opacity * 100) })}><input type="range" min={0} max={0.9} step={0.05} value={p.opacity} onChange={(e) => up({ opacity: Number(e.target.value) })} /></F>
             </>
           )}
-          <F label="Fator H"><input type="number" step={0.01} value={p.factor} onChange={(e) => up({ factor: Number(e.target.value) })} /></F>
-          <F label="O que é o fator"><input value={p.factorLabel} placeholder="ex.: pé-direito (m)" onChange={(e) => up({ factorLabel: e.target.value })} /></F>
-          <F label="Fórmula (opcional)" wide>
-            <input className={err ? 'invalid' : ''} value={p.formula} placeholder={p.measure === 'area' ? 'ex.: A + P*H   (A área, P perímetro, H fator)' : p.measure === 'length' ? 'ex.: L * 1,05' : 'ex.: ceil(N/10)'} onChange={(e) => up({ formula: e.target.value })} />
+          <F label={t('presetdialog.fator_h')}><input type="number" step={0.01} value={p.factor} onChange={(e) => up({ factor: Number(e.target.value) })} /></F>
+          <F label={t('presetdialog.o_que_e_o_fator')}><input value={p.factorLabel} placeholder={t('presetdialog.ex_pe_direito_m')} onChange={(e) => up({ factorLabel: e.target.value })} /></F>
+          <F label={t('presetdialog.formula_opcional')} wide>
+            <input className={err ? 'invalid' : ''} value={p.formula} placeholder={p.measure === 'area' ? t('presetdialog.ex_a_p_h_a') : p.measure === 'length' ? 'ex.: L * 1,05' : t('presetdialog.ex_ceil_n_10')} onChange={(e) => up({ formula: e.target.value })} />
           </F>
-          <div className="hint span2">{err ? <span className="warn">{err}</span> : <>Variáveis: <b>L</b> comprimento · <b>A</b> área · <b>P</b> perímetro · <b>N</b> contagem · <b>H</b> fator. Vazio = medida × H.</>}</div>
-          <F label="Unidade final"><input value={p.resultUnit} onChange={(e) => up({ resultUnit: e.target.value })} /></F>
-          <F label="Preço unitário (R$)"><input type="number" step={0.01} value={p.unitPrice} onChange={(e) => up({ unitPrice: Number(e.target.value) })} /></F>
-          <label className="check span2"><input type="checkbox" checked={p.showLabel} onChange={(e) => up({ showLabel: e.target.checked })} /> Mostrar o valor medido na prancha</label>
+          <div className="hint span2">{err ? <span className="warn">{err}</span> : <Rich k="presetdialog.variaveis_ajuda" />}</div>
+          <F label={t('presetdialog.unidade_final')}><input value={p.resultUnit} onChange={(e) => up({ resultUnit: e.target.value })} /></F>
+          <F label={t('presetdialog.preco_unitario_r')}><input type="number" step={0.01} value={p.unitPrice} onChange={(e) => up({ unitPrice: Number(e.target.value) })} /></F>
+          <label className="check span2"><input type="checkbox" checked={p.showLabel} onChange={(e) => up({ showLabel: e.target.checked })} /> {t('presetdialog.mostrar_o_valor_medido_na')}</label>
         </div>
 
         <div className="modal-actions">
-          {!base && <span className="muted small grow"><Database size={12} /> Sem base de preços importada</span>}
-          <button className="btn ghost" onClick={close}>Cancelar</button>
-          <button className="btn primary" disabled={!p.name.trim() || !!err} onClick={save}>{original ? 'Salvar' : 'Criar marcador'}</button>
+          {!base && <span className="muted small grow"><Database size={12} /> {t('presetdialog.sem_base_de_precos_importada')}</span>}
+          <button className="btn ghost" onClick={close}>{t('presetdialog.cancelar')}</button>
+          <button className="btn primary" disabled={!p.name.trim() || !!err} onClick={save}>{original ? t('presetdialog.salvar') : t('presetdialog.criar_marcador')}</button>
         </div>
       </div>
     </div>

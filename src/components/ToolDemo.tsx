@@ -9,6 +9,7 @@ import { DEMO_H, DEMO_W } from '../toolInfo'
 import type { DemoShape, DemoSpec, Pt2 } from '../toolInfo'
 import { DRAW_FROM, DRAW_TO, DUR, HOLD, appearKeys, cursorTimes, toolVideo } from '../demoTiming'
 import { SceneArt } from './DemoScenes'
+import { t } from '../i18n'
 
 const f = (n: number) => +n.toFixed(3)
 const times = (...n: number[]) => n.map(f).join(';')
@@ -278,7 +279,7 @@ export function ToolDemo({ demo, id }: { demo: DemoSpec; id: string }) {
   const tt = demo.cursorTimes ?? cursorTimes(cur, f0, f1)
   const g = demo.ghost
   return (
-    <svg className="tool-demo" viewBox={`0 0 ${DEMO_W} ${DEMO_H}`} role="img" aria-label="Demonstração animada">
+    <svg className="tool-demo" viewBox={`0 0 ${DEMO_W} ${DEMO_H}`} role="img" aria-label={t('tooldemo.demonstracao_animada')}>
       <g>
         {demo.panBy && (
           <animateTransform attributeName="transform" type="translate" values={`0 0;0 0;${demo.panBy[0]} ${demo.panBy[1]};${demo.panBy[0]} ${demo.panBy[1]};0 0`} keyTimes={times(0, DRAW_FROM, DRAW_TO, HOLD, 1)} {...loop} />

@@ -177,6 +177,16 @@ export const fmt = (n: number, d = 2) =>
 /** Escala de papel 1:N → metros por pt. 1 pt = 1/72 pol. */
 export const paperScale = (n: number) => (0.0254 / 72) * n
 
+/**
+ * Confere a escala da folha com a escrita no carimbo. Devolve a escala equivalente (1:N) quando ela difere
+ * da do carimbo em mais de 2%, senão null. Escala calibrada por cota pode diferir de verdade: o aviso é só informativo.
+ */
+export function scaleMismatch(metersPerUnit: number, stampN: number): number | null {
+  if (!(metersPerUnit > 0) || !(stampN > 0)) return null
+  const n = metersPerUnit / paperScale(1)
+  return Math.abs(n - stampN) / stampN > 0.02 ? Math.round(n) : null
+}
+
 /** Substitui variáveis de carimbo. */
 export function stampText(t: string, ctx: { n: number; total: number; label: string; file: string; author: string }) {
   const d = new Date()

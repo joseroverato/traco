@@ -83,9 +83,9 @@ export function Viewer({ onOpen }: { onOpen: () => void }) {
 
   useZoomControls({ box, hasDoc, info, doc, page, size, zoom, layoutFor })
 
-  // escala escrita no carimbo da folha (para o aviso "folha sem escala")
+  // escala escrita no carimbo da folha (para os avisos "folha sem escala" e "escala diferente do carimbo")
   useEffect(() => {
-    if (!sheet || s.scales[sheet.id]) return
+    if (!sheet) return
     let alive = true
     detectScales(s.sources[sheet.src], sheet.srcIndex).then((f) => alive && setFound({ sheet: sheet.id, n: f[0] ?? null, hidden: false }))
     return () => {
@@ -637,7 +637,7 @@ export function Viewer({ onOpen }: { onOpen: () => void }) {
           {editing && editing.page === page && <TextEditor m={editing} zoom={zoom} left={L.left} top={L.top} />}
         </div>
       </div>
-        {sheet && !s.scales[sheet.id] && found?.sheet === sheet.id && !found.hidden && <ScaleBanner sheetId={sheet.id} detected={found.n} onHide={() => setFound({ ...found, hidden: true })} />}
+        {sheet && found?.sheet === sheet.id && !found.hidden && <ScaleBanner sheetId={sheet.id} detected={found.n} current={s.scales[sheet.id]} onHide={() => setFound({ ...found, hidden: true })} />}
         <div className="view-tools" onPointerDown={(e) => e.stopPropagation()}>
           <button className={s.snap ? 'on' : ''} onClick={() => { const v = !s.snap; s.set({ snap: v }); try { localStorage.setItem('traco.snap', JSON.stringify(v)) } catch { /* */ } }} data-tip="Snap na geometria do PDF  F3 (Alt desliga ao segurar)">
             <Magnet size={14} /> Snap{s.snap && snapState === 'loading' ? '…' : ''}

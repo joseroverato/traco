@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { measureOf, paperScale, polyArea, polyLength, scaleFor } from './geometry'
+import { measureOf, paperScale, polyArea, polyLength, scaleFor, scaleMismatch } from './geometry'
 import { solidMetrics, wallRings } from './solids'
 import { summarize } from './summary'
 import { mk, preset, sheet } from './testUtils'
@@ -25,6 +25,16 @@ describe('escala de papel', () => {
   })
   it('escala maior (1:25) dá metade da medida de 1:50 para os mesmos pontos', () => {
     expect(paperScale(25) * 2).toBeCloseTo(paperScale(50), 12)
+  })
+})
+
+describe('escala da folha x carimbo', () => {
+  it('igual ao carimbo: sem aviso', () => expect(scaleMismatch(paperScale(50), 50)).toBeNull())
+  it('dentro de 2%: sem aviso (arredondamento de calibração)', () => expect(scaleMismatch(paperScale(50) * 1.015, 50)).toBeNull())
+  it('1:75 numa folha que diz 1:50: avisa com a escala equivalente', () => expect(scaleMismatch(paperScale(75), 50)).toBe(75))
+  it('sem escala ou sem carimbo: nada a comparar', () => {
+    expect(scaleMismatch(0, 50)).toBeNull()
+    expect(scaleMismatch(paperScale(50), 0)).toBeNull()
   })
 })
 

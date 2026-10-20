@@ -9,6 +9,7 @@ import { bbox, centroid, fmt, measureOf, paperScale, scaleFor } from './geometry
 import { summarize } from './summary'
 import type { GroupBy } from './summary'
 import { spaceOf } from './columns'
+import { findPreset } from './presetLookup'
 import type { ToolContent } from './platform'
 import type { Markup, MarkupKind, Preset, Sheet } from './types'
 
@@ -44,10 +45,7 @@ function sheetOf(ref: unknown): Sheet {
 }
 
 function presetOf(ref: unknown): Preset | undefined {
-  if (!ref) return undefined
-  const s = st()
-  const str = String(ref).toLowerCase()
-  return s.presets.find((p) => p.id === ref) ?? s.presets.find((p) => p.name.toLowerCase() === str) ?? s.presets.find((p) => p.name.toLowerCase().includes(str))
+  return findPreset(st().presets, ref)
 }
 
 function describe(m: Markup, withPoints = false) {

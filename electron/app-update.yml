@@ -1,5 +1,5 @@
 owner: joseroverato
 repo: traco
 provider: github
-private: true
+private: false
 updaterCacheDirName: traco-updater

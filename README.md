@@ -1,7 +1,49 @@
-# Traço — revisão e quantitativo de pranchas (nome provisório)
+# Traço
 
-App próprio da Lottos para marcar, revisar e levantar quantitativos em pranchas PDF.
-Versão web e app de PC usam o mesmo código (React + TypeScript + PDF.js).
+**Marque, revise e quantifique pranchas em PDF.** Gratuito e de código aberto, feito por engenheiro, para engenheiros.
+
+![Demonstração do Traço: escala pelo carimbo, medição, ambientes, 3D ao vivo e puxar a altura de um sólido](docs/demo.gif)
+
+O Traço abre a prancha em PDF e deixa você medir em cima dela: comprimento, área e contagem, com escala por folha ou por região. O quantitativo se monta sozinho, com fórmulas, ambientes e pavimentos, e sai em Excel. Um modo 3D, ao estilo SketchUp, mostra em volume o que foi medido.
+
+## O que ele faz
+
+- **Medir em cima da planta:** comprimento, área, contagem e vazios (fosso, shaft, pilar). Clique dentro do ambiente e o contorno sai das linhas do PDF.
+- **Contagem automática:** envolva um símbolo e o Traço acha os iguais, inclusive girados, nesta folha ou em todas.
+- **Quantitativo na hora:** marcadores com fórmulas (`A + P*H`, `L * 1,10`, `ceil(N/10)`…), agrupamento por serviço, ambiente, pavimento, folha ou status, base de preços SINAPI com BDI e exportação para Excel.
+- **3D:** desenhe a base de um sólido na planta e puxe a altura com o mouse. Paredes, ambientes e lajes medidos aparecem em volume. Tela dividida (planta e 3D ao vivo) e navegação estilo Revit.
+- **Revisão e compatibilização:** nuvens, itens numerados com responsável, prioridade e prazo, relatório em PDF e Excel, comparação entre revisões e sobreposição de disciplinas.
+- **Gestão de pranchas:** reordenar, girar, duplicar, extrair, dividir, renomear pelo carimbo, carimbos em lote e OCR em português.
+- **Tarja definitiva:** o texto e a imagem sob a tarja somem do PDF de verdade, e o desenho vetorial é preservado para as medições (app de PC).
+- **Claude (opcional):** painel com a sua chave da API e servidor MCP para usar com o Claude Desktop.
+
+## Instalar
+
+1. Baixe o instalador `Traco-Setup-…exe` na página de [**Releases**](https://github.com/joseroverato/traco/releases/latest).
+2. Execute. No Windows pode aparecer um aviso de **"editor desconhecido"**, porque o app ainda não tem assinatura digital: clique em *Mais informações* e *Executar assim mesmo*.
+3. Abra um PDF ou um projeto `.traco`.
+
+Também há uma **versão web** (`Traco-Web-…zip`, com Docker) para rodar num servidor. As atualizações do app de PC são verificadas ao abrir (Configurações › Sobre).
+
+## Privacidade
+
+Tudo roda no seu computador: os PDFs não são enviados a lugar nenhum. As únicas conexões são a verificação de atualização (consulta as releases no GitHub) e, **só se você usar o painel do Claude**, o envio das folhas que você pedir à API da Anthropic, com a sua chave (guardada criptografada no PC).
+
+## Feito com IA
+
+O Traço foi construído com ajuda de inteligência artificial (Claude). A visão do que um engenheiro precisa, os testes em planta real e as decisões são humanos; a IA ajudou a escrever, testar e corrigir o código. Os testes automatizados cobrem os cálculos (medições, fórmulas, quantitativo, formato do projeto e regras do 3D).
+
+## Contribuir
+
+Achou um erro, falta uma função ou tem uma ideia? Abra uma [issue](https://github.com/joseroverato/traco/issues). Veja [CONTRIBUTING.md](CONTRIBUTING.md) para rodar o projeto e enviar mudanças.
+
+## Licença
+
+[MIT](LICENSE). As bibliotecas de terceiros e suas licenças estão em [THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md).
+
+---
+
+# Para desenvolvedores
 
 ## Rodar em desenvolvimento
 Requer Node.js 22 ou superior.
@@ -30,13 +72,11 @@ Requer Node.js 22 ou superior.
   extrair, dividir (.zip), renomear por padrão ou detectando o número no carimbo
 - **Comparar**: sobrepõe duas revisões (vermelho = removido, azul = acrescentado),
   detecta as regiões alteradas e cria nuvens automaticamente na revisão nova
-
 - **3D**: mostra em volume o que foi medido na folha (sólidos, ambientes, paredes, lajes e contagens),
   com resumo em m³ por camada, tooltip ao passar o mouse e seleção. O **sólido** (tecla U) é desenhado
   na planta (base) e a altura é ajustada nas propriedades ou **puxando/empurrando a seta laranja** no 3D
   (Alt = passo de 1 cm). Volume (m³) entra no quantitativo; variáveis de fórmula: `VOL`, `AL` (área lateral
   / da parede) e `ALT`. Código: `src/solids.ts` (puro, testado), `src/scene3d.ts` (three.js) e `src/components/View3D.tsx`.
-
 - **Navegação no 3D (estilo Revit)**: roda = zoom no cursor · botão do meio = mover · Shift + botão do meio = girar.
   **Dividir a tela** (barra superior): planta e 3D lado a lado, ao vivo.
 - **Dicas das ferramentas**: texto e animação em `src/toolInfo.ts` (desenho em `components/ToolDemo.tsx`).
@@ -53,10 +93,11 @@ paredes + teto a partir de uma área), `P` (rodapé), `L * 1,10` (perda de 10%),
 ## Atalhos
 V selecionar · H mover vista (ou segurar Espaço / botão do meio) · C nuvem · R retângulo · E elipse
 A seta · I linha · T texto · B carimbo · P imagem · L comprimento · K área · N contagem
-X viewport (escala própria) · S calibrar escala
+U sólido 3D · X viewport (escala própria) · S calibrar escala
 Roda do mouse = zoom no cursor · 0 folha inteira · W largura · PageUp/PageDown troca de folha
 Enter / duplo clique finaliza medição · Backspace desfaz vértice · Shift trava ângulo
 Ctrl+Z/Y desfazer/refazer · Ctrl+S salvar projeto (.traco) · Del exclui
+Ctrl+1/2/3 ocultam o painel lateral, o quantitativo e o painel da direita
 
 ## Estrutura
 src/components  Viewer (render + desenho), painéis, barra
@@ -66,7 +107,15 @@ src/project.ts  salvar/abrir projeto .traco (PDF + marcações em um arquivo)
 src/projectFormat.ts  formato do .traco: v3 = ZIP (project.json + PDFs em binário); abre também o v2 (JSON/base64). Mudou o formato? suba PROJECT_VERSION e escreva a migração em MIGRATIONS
 
 ## Testes
-    npm test           # Vitest: fórmulas, geometria, quantitativo, histórico, formato do projeto
+    npm test           # Vitest: fórmulas, geometria, quantitativo, histórico, formato do projeto, 3D
+
+## Publicar uma versão nova (atualização automática)
+
+1. Suba o número em `package.json` (ex.: `1.3.1`) e escreva `docs/notas/v1.3.1.md`.
+2. `git commit -am "1.3.1" && git push` (na branch `main`).
+3. Ao ver o número novo em `package.json`, o GitHub Actions (`.github/workflows/release.yml`) roda tipos, lint e testes, gera `Traco-Setup-1.3.1.exe`, `latest.yml` e `Traco-Web-1.3.1.zip` e cria a Release `v1.3.1`. Se a versão já foi publicada, ele não faz nada.
+
+O app verifica a release mais recente ao abrir e avisa quando houver versão nova (Configurações › Sobre). Para uma cópia **privada** do repositório, cole em Configurações › Atualizações um token *fine-grained* com **Contents: Read-only**; ele fica criptografado no PC.
 
 ## Roadmap
 - [x] Fase 1: layout, visualizador, marcações, escala, quantitativo, Excel, projeto
@@ -74,13 +123,5 @@ src/projectFormat.ts  formato do .traco: v3 = ZIP (project.json + PDFs em binár
       carimbos em lote, comparação de revisões
 - [x] Fase 3: integração com Claude (painel com API + servidor MCP para o Claude Desktop)
 - [x] Fase 4: app de PC (Electron, motor completo) e versão web leve com Docker
-
-## Publicar uma versão nova (atualização automática)
-
-O código fica no repositório privado `joseroverato/traco`. Para lançar:
-
-1. Suba o número em `package.json` (ex.: `1.2.1`) e, se quiser, escreva `docs/notas/v1.2.1.md`.
-2. `git commit -am "1.2.1" && git push` (na branch `main`).
-3. Ao ver o número novo em `package.json`, o GitHub Actions (`.github/workflows/release.yml`) gera `Traco-Setup-1.2.1.exe`, `latest.yml` e `Traco-Web-1.2.1.zip` e cria a Release `v1.2.1`. Se a versão já foi publicada, ele não faz nada.
-
-Em cada PC, uma vez: Traço › Configurações (engrenagem) › Atualizações › colar um token *fine-grained* do GitHub com acesso só a este repositório e **Contents: Read-only**. O token fica criptografado no PC (Windows DPAPI). Depois disso o Traço verifica ao abrir, baixa e instala com um clique.
+- [x] Fase 5: modo 3D (sólidos, tela dividida, navegação estilo Revit)
+- [ ] Próximos: pavimentos empilhados no 3D, formas prontas (cilindro, prisma), assinatura digital do instalador

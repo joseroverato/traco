@@ -382,7 +382,7 @@ export function ColumnsDialog() {
   )
 }
 
-// ---------------------------------------------------------------- Atualizações (GitHub privado)
+// ---------------------------------------------------------------- Atualizações (GitHub Releases)
 const UPDATE_TEXT: Record<UpdateState['status'], string> = {
   idle: 'Ainda não verificado.',
   checking: 'Procurando atualização…',
@@ -415,12 +415,12 @@ function UpdatesPanel({ st, setSt }: { st: UpdateState; setSt: React.Dispatch<Re
             {st.status === 'downloading' && <div className="progress"><div style={{ width: `${st.percent ?? 0}%` }} /></div>}
             {st.status === 'error' && st.error && <span className="warn small">{st.error}</span>}
             <div className="row">
-              <button className="btn sm" disabled={!st.configured || st.status === 'checking' || st.status === 'downloading'} onClick={() => up.check()}>Verificar agora</button>
+              <button className="btn sm" disabled={st.status === 'checking' || st.status === 'downloading'} onClick={() => up.check()}>Verificar agora</button>
               {st.status === 'available' && <button className="btn sm primary" onClick={() => up.download()}>Baixar {st.version}</button>}
               {st.status === 'ready' && <button className="btn sm primary" onClick={() => up.install()}>Reiniciar e instalar</button>}
             </div>
           </div>
-          <label className="field"><span>Token de leitura do GitHub {st.configured ? '(configurado ✓)' : '(não configurado)'}</span>
+          <label className="field"><span>Token de leitura do GitHub (opcional) {st.configured ? '· configurado ✓' : ''}</span>
             <input type="password" autoComplete="off" value={token} placeholder={st.configured ? 'Colar outro token para trocar' : 'github_pat_…'} onChange={(e) => { setToken(e.target.value); setSaved(false) }} />
           </label>
           <div className="row">
@@ -428,7 +428,7 @@ function UpdatesPanel({ st, setSt }: { st: UpdateState; setSt: React.Dispatch<Re
             {st.configured && <button className="btn sm ghost" onClick={async () => { await desktop!.setSecret('github-token', ''); setSt((o) => ({ ...o, configured: false })) }}>Remover token</button>}
             {saved && <span className="muted small">Salvo (criptografado neste PC).</span>}
           </div>
-          <p className="muted small">O repositório é privado (joseroverato/traco). Use um token “fine-grained” só com <b>Contents: Read-only</b> nesse repositório. Ele fica guardado criptografado neste computador e nunca vai para o código nem para o projeto. O Traço verifica sozinho ao abrir e avisa quando houver versão nova.</p>
+          <p className="muted small">O Traço consulta as releases públicas de joseroverato/traco e não precisa de token. O token só é necessário numa cópia <b>privada</b> do repositório: use um token “fine-grained” só com <b>Contents: Read-only</b>. Ele fica guardado criptografado neste computador e nunca vai para o código nem para o projeto.</p>
         </div>
       )}
     </>
@@ -450,18 +450,12 @@ function AboutPanel({ st, goUpdates }: { st: UpdateState; goUpdates: () => void 
             <div className="kv"><span>Atualização</span><b>{UPDATE_TEXT[st.status]}{newer ? ` (${st.version})` : ''}</b></div>
             {st.status === 'downloading' && <div className="progress"><div style={{ width: `${st.percent ?? 0}%` }} /></div>}
             {st.status === 'error' && st.error && <span className="warn small">{st.error}</span>}
-            {!st.configured ? (
-              <div className="row">
-                <span className="muted small">Para atualizar pelo GitHub, cole o token de leitura.</span>
-                <button className="btn sm" onClick={goUpdates}>Configurar token</button>
-              </div>
-            ) : (
-              <div className="row">
-                <button className="btn sm" disabled={busy} onClick={() => up.check()}>Verificar atualização</button>
-                {st.status === 'available' && <button className="btn sm primary" onClick={() => up.download()}>Baixar {st.version}</button>}
-                {st.status === 'ready' && <button className="btn sm primary" onClick={() => up.install()}>Reiniciar e instalar</button>}
-              </div>
-            )}
+            <div className="row">
+              <button className="btn sm" disabled={busy} onClick={() => up.check()}>Verificar atualização</button>
+              {st.status === 'available' && <button className="btn sm primary" onClick={() => up.download()}>Baixar {st.version}</button>}
+              {st.status === 'ready' && <button className="btn sm primary" onClick={() => up.install()}>Reiniciar e instalar</button>}
+              <button className="btn sm ghost" onClick={goUpdates} data-tip="Só para cópia privada do repositório">Token (opcional)</button>
+            </div>
           </>
         ) : (
           <p className="muted small">A versão web é atualizada no servidor (docker compose pull / up). A atualização automática é do app de PC.</p>
@@ -486,8 +480,8 @@ export function SettingsDialog() {
     if (!up) return
     up.state().then((x) => {
       setSt(x)
-      // ao abrir, já procura atualização se o token estiver configurado
-      if (x.configured && x.status === 'idle') up.check()
+      // ao abrir, já procura atualização
+      if (x.status === 'idle') up.check()
     })
     up.onState((x) => setSt((o) => ({ ...o, ...x })))
   }, [up])

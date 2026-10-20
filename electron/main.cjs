@@ -158,8 +158,9 @@ ipcMain.handle('app:open-external', (_e, url) => {
 ipcMain.on('app:quit', () => win?.close())
 ipcMain.on('app:fullscreen', () => win?.setFullScreen(!win.isFullScreen()))
 
-// ---------------- atualização automática (GitHub privado) ----------------
+// ---------------- atualização automática (GitHub Releases; token só para repositório privado) ----------------
 const UPDATE_REPO = { owner: 'joseroverato', repo: 'traco' }
+const { feedFor } = require('./update-feed.cjs')
 let updater = null
 let updateState = { status: 'idle' }
 const sendUpdate = (patch) => {
@@ -177,8 +178,7 @@ function getSecretSync(k) {
 }
 function getUpdater() {
   if (!app.isPackaged) return null
-  const token = getSecretSync('github-token')
-  if (!token) return null
+  const token = getSecretSync('github-token') // opcional: só é preciso se o repositório for privado
   if (!updater) {
     updater = require('electron-updater').autoUpdater
     updater.autoDownload = false
@@ -190,14 +190,15 @@ function getUpdater() {
     updater.on('update-downloaded', (i) => sendUpdate({ status: 'ready', version: i.version }))
     updater.on('error', (e) => sendUpdate({ status: 'error', error: String(e?.message ?? e).split('\n')[0] }))
   }
-  updater.setFeedURL({ provider: 'github', ...UPDATE_REPO, private: true, token })
-  process.env.GH_TOKEN = token
+  updater.setFeedURL(feedFor(UPDATE_REPO, token))
+  if (token) process.env.GH_TOKEN = token
+  else delete process.env.GH_TOKEN
   return updater
 }
 ipcMain.handle('update:state', () => ({ ...updateState, version: updateState.version, current: app.getVersion(), configured: !!getSecretSync('github-token'), packaged: app.isPackaged }))
 ipcMain.handle('update:check', async () => {
   const u = getUpdater()
-  if (!u) return sendUpdate({ status: 'error', error: app.isPackaged ? 'Cole o token do GitHub para ativar as atualizações.' : 'Atualização só funciona no app instalado.' })
+  if (!u) return sendUpdate({ status: 'error', error: 'Atualização só funciona no app instalado.' })
   try {
     await u.checkForUpdates()
   } catch (e) {
@@ -396,7 +397,7 @@ app.whenReady().then(() => {
   Menu.setApplicationMenu(null)
   startBridge()
   createWindow()
-  // verifica atualização alguns segundos depois de abrir (se o token estiver configurado)
+  // verifica atualização alguns segundos depois de abrir
   setTimeout(() => {
     const u = getUpdater()
     if (u) u.checkForUpdates().catch(() => {})

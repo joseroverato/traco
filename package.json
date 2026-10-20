@@ -17,7 +17,8 @@
     "dist:win-linux": "npm run build:desktop && electron-builder --win dir --x64 && node scripts/set-exe-icon.mjs && cd deploy && makensis -DVERSION=$npm_package_version installer.nsi",
     "test": "vitest run",
     "test:watch": "vitest",
-    "licenses": "node scripts/third-party.mjs"
+    "licenses": "node scripts/third-party.mjs",
+    "test:e2e": "node e2e/fluxo.mjs"
   },
   "dependencies": {
     "@embedpdf/pdfium": "^2.15.1",
@@ -46,6 +47,7 @@
     "pdf-lib": "^1.17.1",
     "pdfjs-dist": "^4.10.38",
     "pe-library": "^1.0.1",
+    "playwright-core": "^1.64.1",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "resedit": "^2.0.3",

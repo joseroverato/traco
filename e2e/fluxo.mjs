@@ -89,6 +89,62 @@ ok(near(qt(q2, 'Alvenaria E2E'), 87.08), 'após reabrir: Alvenaria = 87,08 m²',
 ok(near(qt(q2, 'Piso E2E'), 58.5), 'após reabrir: Piso = 58,50 m²', String(qt(q2, 'Piso E2E')))
 const ms = await cmd(page, 'list_markups')
 ok((ms.data?.markups ?? ms.data ?? []).length === 3, 'após reabrir: 3 marcações', ms.text?.slice(0, 120))
+
+// ---------- exportações ----------
+console.log('Exportações: PDF com tarja definitiva e planilha Excel')
+const pdfjs = await import('pdfjs-dist/legacy/build/pdf.mjs')
+const XLSX = await import('xlsx')
+const textosDe = async (file) => {
+  const doc = await pdfjs.getDocument({ data: new Uint8Array(readFileSync(file)), useSystemFonts: true }).promise
+  const out = []
+  for (let i = 1; i <= doc.numPages; i++) out.push(...(await (await doc.getPage(i)).getTextContent()).items.map((t) => t.str))
+  return out.join(' ')
+}
+const originalTxt = await textosDe(pdf)
+ok(originalTxt.includes('QUARTO 2') && originalTxt.includes('QUARTO 1'), 'PDF original tem "QUARTO 1" e "QUARTO 2"')
+
+// tarja sobre "QUARTO 2" (posição lida do próprio app); "QUARTO 1" e "BANHO" ficam de fora
+const pos = (await cmd(page, 'find_text', { query: 'QUARTO 2' })).data.matches[0]
+const tj = await cmd(page, 'add_markups', { markups: [{ kind: 'redact', points: [[pos.x - 4, pos.y - 4], [pos.x + 70, pos.y + 16]] }] })
+ok(!tj.error && !JSON.parse(tj.text).errors, 'tarja criada sobre "QUARTO 2"', tj.text)
+
+const antes = new Set(readdirSync(saveDir))
+await page.locator('header.topbar button[data-tip^="Exportar PDF"]').click()
+await page.locator('button.btn.primary', { hasText: /^Exportar$/ }).click()
+const novoArquivo = async (ext) => {
+  for (let i = 0; i < 80; i++) {
+    const f = readdirSync(saveDir).find((x) => !antes.has(x) && x.endsWith(ext))
+    if (f) return path.join(saveDir, f)
+    await page.waitForTimeout(250)
+  }
+  return null
+}
+const pdfOut = await novoArquivo('.pdf')
+ok(!!pdfOut, 'PDF exportado em disco')
+if (pdfOut) {
+  const t = await textosDe(pdfOut)
+  ok(!t.includes('QUARTO 2'), 'texto "QUARTO 2" removido do arquivo (não só coberto)', t.slice(0, 200))
+  ok(t.includes('QUARTO 1') && t.includes('BANHO') && t.includes('SALA'), 'textos vizinhos preservados (QUARTO 1, BANHO, SALA)')
+  const b = readFileSync(pdfOut)
+  ok(b.subarray(0, 5).toString() === '%PDF-', 'arquivo começa com %PDF-')
+}
+
+await page.keyboard.press('Escape')
+await page.getByRole('button', { name: /Planilha/ }).first().click()
+const xlsxOut = await novoArquivo('.xlsx')
+ok(!!xlsxOut, 'planilha Excel exportada em disco')
+if (xlsxOut) {
+  const wb = XLSX.read(readFileSync(xlsxOut))
+  ok(wb.SheetNames.includes('Quantitativo') && wb.SheetNames.includes('Marcações'), 'abas Quantitativo e Marcações', wb.SheetNames.join(','))
+  const rows = XLSX.utils.sheet_to_json(wb.Sheets['Quantitativo'])
+  const al = rows.find((r) => r['Serviço'] === 'Alvenaria E2E'), pi = rows.find((r) => r['Serviço'] === 'Piso E2E')
+  ok(al && near(al['Quantidade'], 87.08) && al['Unidade'] === 'm²', 'Excel: Alvenaria = 87,08 m²', JSON.stringify(al))
+  ok(al && near(al['Total (R$)'], 8708, 0.5), 'Excel: total da alvenaria R$ 8.708,00 (87,08 × 100)', JSON.stringify(al))
+  ok(pi && near(pi['Quantidade'], 58.5), 'Excel: Piso = 58,50 m²', JSON.stringify(pi))
+  const marc = XLSX.utils.sheet_to_json(wb.Sheets['Marcações'])
+  ok(marc.length >= 3, `Excel: aba Marcações com ${marc.length} linhas`)
+}
+
 ok(errors.length === 0, 'sem erros de JavaScript na sessão 2', errors.join(' | '))
 await app.close()
 

@@ -639,7 +639,7 @@ export function Viewer({ onOpen }: { onOpen: () => void }) {
           {editing && editing.page === page && <TextEditor m={editing} zoom={zoom} left={L.left} top={L.top} />}
         </div>
       </div>
-        {sheet && found?.sheet === sheet.id && !found.hidden && <ScaleBanner sheetId={sheet.id} detected={found.n} current={s.scales[sheet.id]} onHide={() => setFound({ ...found, hidden: true })} />}
+        {sheet && (s.tour === null || s.tour === 0) && found?.sheet === sheet.id && !found.hidden && <ScaleBanner sheetId={sheet.id} detected={found.n} current={s.scales[sheet.id]} onHide={() => setFound({ ...found, hidden: true })} />}
         <div className="view-tools" onPointerDown={(e) => e.stopPropagation()}>
           <button className={s.snap ? 'on' : ''} onClick={() => { const v = !s.snap; s.set({ snap: v }); try { localStorage.setItem('traco.snap', JSON.stringify(v)) } catch { /* */ } }} data-tip="Snap na geometria do PDF  F3 (Alt desliga ao segurar)">
             <Magnet size={14} /> Snap{s.snap && snapState === 'loading' ? '…' : ''}

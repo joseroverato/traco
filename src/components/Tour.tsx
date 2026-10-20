@@ -6,6 +6,7 @@ import { TOUR_STEPS, markTourDone, nextStep } from '../tour'
 export function Tour() {
   const step = useStore((s) => s.tour)
   const hasDoc = useStore((s) => s.sheets.length > 0)
+  const hasScale = useStore((s) => { const sh = s.sheets[s.page]; return !!sh && !!s.scales[sh.id] })
   const set = useStore((s) => s.set)
   const [box, setBox] = useState<DOMRect | null>(null)
   const [tick, setTick] = useState(0)
@@ -23,6 +24,13 @@ export function Tour() {
     const t = setTimeout(() => { if (!TOUR_STEPS[step].find()) go(step + 1, 1) }, 400)
     return () => clearTimeout(t)
   }, [step, hasDoc]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // passo 1 (escala): assim que a folha ganha escala, segue para o próximo
+  useEffect(() => {
+    if (step !== 0 || !hasScale) return
+    const t = setTimeout(() => go(1, 1), 700)
+    return () => clearTimeout(t)
+  }, [step, hasScale]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useLayoutEffect(() => {
     if (step === null) return setBox(null)

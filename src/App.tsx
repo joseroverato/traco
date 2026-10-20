@@ -8,6 +8,7 @@ import { RightPanel } from './components/RightPanel'
 import { BottomPanel } from './components/BottomPanel'
 import { Viewer } from './components/Viewer'
 import { ScaleDialog } from './components/ScaleDialog'
+import { Tour } from './components/Tour'
 // módulos pesados (pdf-lib, comparação, diálogos) só carregam quando usados
 const PagesView = lazy(() => import('./components/PagesView').then((m) => ({ default: m.PagesView })))
 const View3D = lazy(() => import('./components/View3D').then((m) => ({ default: m.View3D })))
@@ -178,6 +179,7 @@ export default function App() {
         {s.dialog === 'recover' && <RecoverDialog />}
         {s.presetDialog && <PresetDialog />}
       </Suspense>
+      <Tour />
       {s.toast && <div className="toast">{s.toast}</div>}
       <input
         ref={input}

@@ -89,6 +89,7 @@ export interface State {
   past: Snapshot[]
   future: Snapshot[]
   calibrating: { page: string; length: number; viewport?: string; prompt?: boolean } | null
+  tour: number | null // passo do passo a passo (null = fechado)
   resumeTool: Tool | null
   editingText: string | null
   panels: { left: boolean; right: boolean; bottom: boolean }
@@ -164,6 +165,7 @@ export const useStore = create<State>((set, get) => ({
   past: [],
   future: [],
   calibrating: null,
+  tour: null,
   resumeTool: null,
   editingText: null,
   panels: { left: true, right: true, bottom: true },

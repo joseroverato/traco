@@ -12,6 +12,7 @@ import type { CustomColumn, Markup, StatusDef } from '../types'
 import { clearBase, importPriceFile, loadBase } from '../sinapi'
 import type { PriceBase } from '../sinapi'
 import { checkFormula } from '../formula'
+import { startTour } from '../tour'
 import { APP_VERSION, REPO_URL, THIRD_PARTY, releaseUrl, releasesUrl } from '../about'
 
 function Modal({ title, children, onClose, actions, wide }: { title: string; children: React.ReactNode; onClose: () => void; actions: React.ReactNode; wide?: boolean }) {
@@ -464,6 +465,7 @@ function AboutPanel({ st, goUpdates }: { st: UpdateState; goUpdates: () => void 
       </div>
       <div className="row">
         <a className="btn sm" href={REPO_URL} target="_blank" rel="noreferrer">Repositório no GitHub</a>
+        <button className="btn sm" onClick={() => { useStore.setState({ dialog: null }); startTour() }}>Rever o passo a passo</button>
         <a className="btn sm" href={newer && st.version ? releaseUrl(st.version) : releasesUrl()} target="_blank" rel="noreferrer">Versões e notas</a>
       </div>
       <p className="muted small">Traço — Lottos Engenharia. Usa {THIRD_PARTY.map(([n, l]) => `${n} (${l})`).join(', ')}.</p>

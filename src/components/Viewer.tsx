@@ -17,6 +17,7 @@ import { findSnap, snapIndexFor } from '../snap'
 import { SnapMarker } from './SnapMarker'
 import { ViewerHints } from './ViewerHints'
 import { ScaleBanner } from './ScaleBanner'
+import { openSample } from '../tour'
 import { TextEditor } from './TextEditor'
 import { filterHoles, refineRing } from '../regions'
 import type { SnapHit, SnapIndex } from '../snap'
@@ -523,6 +524,7 @@ export function Viewer({ onOpen }: { onOpen: () => void }) {
           <h2>Abra uma prancha para começar</h2>
           <p>Arraste um PDF aqui ou</p>
           <button className="btn primary" onClick={onOpen}>Abrir PDF</button>
+          <button className="btn ghost" onClick={() => openSample()} data-tip="Uma planta pronta para testar, com um passo a passo">Experimentar com uma planta de exemplo</button>
           <div className="kbd-hint"><kbd>Ctrl</kbd>+<kbd>O</kbd></div>
         </div>
       </div>

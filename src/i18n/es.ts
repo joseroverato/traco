@@ -30,7 +30,7 @@ const catalog: Catalog = {
   "topbar.tema_claro": "Tema claro",
   "topbar.tema_escuro": "Tema oscuro",
   "navbar.paginas": "Páginas",
-  "navbar.editar_pdf": "Editar PDF",
+  "navbar.editar_pdf": "Editar",
   "navbar.medir": "Medir",
   "navbar.camadas": "Capas",
   "navbar.sobrepor": "Superponer",

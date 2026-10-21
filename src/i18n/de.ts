@@ -30,7 +30,7 @@ const catalog: Catalog = {
   "topbar.tema_claro": "Helles Design",
   "topbar.tema_escuro": "Dunkles Design",
   "navbar.paginas": "Seiten",
-  "navbar.editar_pdf": "PDF bearbeiten",
+  "navbar.editar_pdf": "Bearbeiten",
   "navbar.medir": "Messen",
   "navbar.camadas": "Ebenen",
   "navbar.sobrepor": "Überlagern",

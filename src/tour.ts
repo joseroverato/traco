@@ -1,6 +1,7 @@
 import { loadFile } from './project'
 import { useStore } from './store'
 import { getLang, t } from './i18n'
+import { isMobileNow } from './mobile'
 
 export interface TourStep {
   title: string
@@ -39,7 +40,8 @@ export async function openSample() {
     const res = await fetch(`${import.meta.env.BASE_URL}exemplo/planta-exemplo${lang === 'pt' ? '' : `.${lang === 'zh' ? 'en' : lang}`}.pdf`)
     if (!res.ok) throw new Error(String(res.status))
     const file = new File([await res.blob()], t('tour.nome_da_planta'), { type: 'application/pdf' })
-    if (await loadFile(file)) startTour()
+    // o passo a passo aponta para elementos do layout de PC; no celular ele não é iniciado
+    if (await loadFile(file) && !isMobileNow()) startTour()
   } catch (e) {
     console.error(e)
     st.notify(t('tour.nao_foi_possivel_abrir_a'))

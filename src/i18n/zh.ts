@@ -1009,5 +1009,8 @@ const catalog: Catalog = {
   "dialogs.unidades_metrico": "公制（m、m²、m³）",
   "dialogs.unidades_imperial": "英制（ft、ft²、yd³）",
   "dialogs.unidades_ajuda": "仅改变测量值的显示和输入方式。项目内部一律以米保存；分项的公式和系数仍以米为单位，金额合计不变。",
+  "mobile.mais": "更多",
+  "mobile.voltar_a_folha": "返回图纸",
+  "mobile.ferramentas": "工具",
 }
 export default catalog

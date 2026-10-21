@@ -431,7 +431,7 @@ input.invalid { border-color: var(--danger) !important; box-shadow: 0 0 0 3px rg
 .nav-btn.active { background: var(--panel); color: var(--text); box-shadow: inset 0 0 0 1px var(--line-soft); }
 .nav-btn.active::before { content: ''; position: absolute; left: -6px; top: 10px; bottom: 10px; width: 3px; border-radius: 0 3px 3px 0; background: var(--accent); }
 .nav-btn.active svg { color: var(--accent-text); }
-.nav-btn.claude svg { color: #d97757; }
+.nav-btn.claude-nav svg { color: #d97757; }
 .nav-btn:disabled { opacity: 0.35; cursor: default; }
 .nav-sep { height: 1px; background: var(--line); margin: 6px 8px; }
 .navbar .grow { flex: 1; }

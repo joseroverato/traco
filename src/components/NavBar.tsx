@@ -44,7 +44,7 @@ export function NavBar() {
         <Columns2 size={19} strokeWidth={1.7} />
         <span>{t('navbar.comparar')}</span>
       </button>
-      <button className={`nav-btn ${s.mode === 'review' && s.panels.right && s.rightTab === 'claude' && !s.focus ? 'active claude' : 'claude'}`} onClick={() => s.set({ mode: 'review', rightTab: 'claude', panels: { ...s.panels, right: true }, focus: false })}>
+      <button className={`nav-btn ${s.mode === 'review' && s.panels.right && s.rightTab === 'claude' && !s.focus ? 'active claude-nav' : 'claude-nav'}`} onClick={() => s.set({ mode: 'review', rightTab: 'claude', panels: { ...s.panels, right: true }, focus: false })}>
         <Sparkles size={19} strokeWidth={1.7} />
         <span>{t('navbar.claude')}</span>
       </button>

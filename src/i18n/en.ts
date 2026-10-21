@@ -1012,5 +1012,9 @@ const catalog: Catalog = {
   "mobile.mais": "More",
   "mobile.voltar_a_folha": "Back to sheet",
   "mobile.ferramentas": "Tools",
+  "mobile.adicionar_ponto": "Add point",
+  "mobile.desfazer_ponto": "Undo point",
+  "mobile.dica_mira": "Move the sheet under the crosshair and tap Add point",
+  "mobile.sair_da_medicao": "Leave measuring",
 }
 export default catalog

@@ -25,6 +25,8 @@ import { TextEditor } from './TextEditor'
 import { filterHoles, refineRing } from '../regions'
 import type { SnapHit, SnapIndex } from '../snap'
 import { t } from '../i18n'
+import { useIsMobile } from '../mobile'
+import { isMiraTool, useMira } from '../mira'
 
 
 type Drag =
@@ -67,6 +69,11 @@ export function Viewer({ onOpen }: { onOpen: () => void }) {
   const panRaf = useRef(0)
   const [found, setFound] = useState<{ sheet: string; n: number | null; hidden: boolean } | null>(null)
   const prompted = useRef(new Set<string>())
+  const mobile = useIsMobile()
+  // celular: ferramentas de medição usam a mira fixa no centro (ver mira.ts)
+  const mira = mobile && isMiraTool(tool)
+  const [calStart, setCalStart] = useState<Pt | null>(null)
+  const miraPt = useRef<Pt | null>(null)
 
   // ---------- layout ----------
   const hasDoc = !!doc
@@ -86,7 +93,7 @@ export function Viewer({ onOpen }: { onOpen: () => void }) {
     }
   }, [doc, page, sheet?.rot]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  useZoomControls({ box, hasDoc, info, doc, page, size, zoom, layoutFor })
+  const { zoomAt } = useZoomControls({ box, hasDoc, info, doc, page, size, zoom, layoutFor })
 
   // escala escrita no carimbo da folha (para os avisos "folha sem escala" e "escala diferente do carimbo")
   useEffect(() => {
@@ -241,12 +248,13 @@ export function Viewer({ onOpen }: { onOpen: () => void }) {
   useEffect(() => {
     setPoly(null)
     setDraft(null)
+    setCalStart(null)
     countId.current = null
   }, [tool, s.activePreset])
 
   // ---------- pan (botão do meio, Espaço ou ferramenta Mão) ----------
   const onPanDown = (e: React.PointerEvent) => {
-    if (!(e.button === 1 || (e.button === 0 && (space.current || tool === 'pan')))) return
+    if (!(e.button === 1 || (e.button === 0 && (space.current || tool === 'pan' || mira)))) return
     e.preventDefault()
     e.stopPropagation()
     const el = box.current!
@@ -267,10 +275,29 @@ export function Viewer({ onOpen }: { onOpen: () => void }) {
     })
   }
   const onPanUp = (e: React.PointerEvent) => {
-    if (drag.current?.type !== 'pan') return
+    const d = drag.current
+    if (d?.type !== 'pan') return
     drag.current = null
-    box.current?.releasePointerCapture(e.pointerId)
+    try {
+      box.current?.releasePointerCapture(e.pointerId)
+    } catch {
+      /* o ponteiro já foi solto */
+    }
     box.current?.classList.remove('panning')
+    // celular, mão selecionada: um toque (sem arrastar) numa marcação a seleciona; num vazio, limpa a seleção
+    if (mobile && tool === 'pan' && e.button === 0 && Math.hypot(e.clientX - d.sx, e.clientY - d.sy) < 8) {
+      // a ponta do dedo não acerta uma linha fina: testa o ponto e anéis de até ~16 px ao redor (do mais perto para o mais longe)
+      const probes: [number, number][] = [[0, 0]]
+      for (const r of [5, 10, 16]) for (let a = 0; a < 12; a++) probes.push([Math.cos((a * Math.PI) / 6) * r, Math.sin((a * Math.PI) / 6) * r])
+      let hit: SVGElement | null = null
+      for (const [dx, dy] of probes) {
+        hit = (document.elementsFromPoint(e.clientX + dx, e.clientY + dy).map((n) => n.closest('[data-id]') as SVGElement | null).find((n) => n && n.dataset.id !== '__draft') ?? null)
+        if (hit) break
+      }
+      const st = useStore.getState()
+      if (hit) st.set({ selected: [hit.dataset.id!] })
+      else if (st.selected.length) st.set({ selected: [] })
+    }
   }
 
   // ---------- ponteiro ----------
@@ -517,6 +544,129 @@ export function Viewer({ onOpen }: { onOpen: () => void }) {
     if (f) window.dispatchEvent(new CustomEvent('traco:file', { detail: f }))
   }
 
+  /** Ponto da folha sob a mira (centro da área visível). */
+  const miraPoint = (): Pt | null => {
+    const el = box.current, svg = svgRef.current
+    if (!el || !svg) return null
+    const b = el.getBoundingClientRect(), r = svg.getBoundingClientRect()
+    return { x: (b.left + b.width / 2 - r.left) / zoom, y: (b.top + b.height / 2 - r.top) / zoom }
+  }
+  /** Recalcula o ponto da mira (com snap) e o traço elástico até ele. */
+  const updateMira = () => {
+    if (!mira) return
+    const raw = miraPoint()
+    if (!raw) return
+    const last = tool === 'calibrate' ? calStart ?? undefined : poly?.points[poly.points.length - 1]
+    const q = resolve(raw, { shiftKey: false, altKey: false }, last)
+    miraPt.current = q
+    if (poly && (!poly.hover || poly.hover.x !== q.x || poly.hover.y !== q.y)) setPoly({ ...poly, hover: q })
+    if (tool === 'calibrate' && calStart) setDraft(mkDraft('calibrate', [calStart, q]))
+  }
+  const handleScroll = () => {
+    onScroll()
+    if (mira) updateMira()
+  }
+  useEffect(() => {
+    if (!mira) return
+    const id = requestAnimationFrame(updateMira)
+    return () => cancelAnimationFrame(id)
+  }, [mira, zoom, size, poly?.points.length, calStart, snapState]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // botões da mira (Adicionar ponto, Desfazer, Concluir, Cancelar) vêm da barra do celular
+  useEffect(() => {
+    if (!mira) return
+    const h = (e: Event) => {
+      const cmd = (e as CustomEvent<string>).detail
+      const q = miraPt.current ?? miraPoint()
+      if (cmd === 'add' && q) {
+        if (tool === 'calibrate') {
+          if (!calStart) return setCalStart(q)
+          setCalStart(null)
+          setDraft(null)
+          return commitDraw('calibrate', page, calStart, q)
+        }
+        if (poly && poly.kind === tool) {
+          if (tool !== 'length' && poly.points.length >= 3 && dist(q, poly.points[0]) < 12 / zoom) return finishPoly()
+          setPoly({ ...poly, points: [...poly.points, q] })
+        } else setPoly({ kind: tool as 'length' | 'area' | 'hole' | 'space' | 'solid', points: [q], hover: q })
+      } else if (cmd === 'undo') {
+        if (tool === 'calibrate') {
+          setCalStart(null)
+          setDraft(null)
+        } else if (poly) setPoly(poly.points.length <= 1 ? null : { ...poly, points: poly.points.slice(0, -1) })
+      } else if (cmd === 'done') finishPoly()
+      else if (cmd === 'cancel') {
+        setPoly(null)
+        setCalStart(null)
+        setDraft(null)
+      }
+    }
+    window.addEventListener('traco:mira', h)
+    return () => window.removeEventListener('traco:mira', h)
+  }, [mira, tool, poly, calStart, zoom, page, finishPoly]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (!mira) return useMira.setState({ n: 0, min: 2 })
+    useMira.setState(tool === 'calibrate' ? { n: calStart ? 1 : 0, min: 99 } : { n: poly?.points.length ?? 0, min: minVertices(tool as 'length' | 'area' | 'hole' | 'space' | 'solid') })
+  }, [mira, tool, poly?.points.length, calStart])
+
+  // celular: pinça (zoom na folha, não na página) e arrastar com dois dedos.
+  // O ouvinte fica no document (captura) para agir antes dos tratadores do React e cancelar o gesto de um dedo que já tinha começado.
+  useEffect(() => {
+    const el = box.current
+    if (!mobile || !el) return
+    const pts = new Map<number, { x: number; y: number }>()
+    let g: { d0: number; z0: number; px: number; py: number } | null = null
+    const inside = (e: PointerEvent) => e.pointerType === 'touch' && el.contains(e.target as Node)
+    const two = () => {
+      const [a, b] = [...pts.values()]
+      const r = el.getBoundingClientRect()
+      return { d: Math.hypot(a.x - b.x, a.y - b.y) || 1, cx: (a.x + b.x) / 2 - r.left, cy: (a.y + b.y) / 2 - r.top }
+    }
+    const down = (e: PointerEvent) => {
+      if (!inside(e)) return
+      pts.set(e.pointerId, { x: e.clientX, y: e.clientY })
+      if (pts.size < 2) return
+      // o primeiro dedo já podia ter começado um desenho, uma seleção ou o arrastar da mão
+      drag.current = null
+      el.classList.remove('panning')
+      setDraft(null)
+      setMarquee(null)
+      setSymRect(null)
+      const { d, cx, cy } = two()
+      const z0 = useStore.getState().zoom
+      const l = layoutFor(z0)
+      g = { d0: d, z0, px: (el.scrollLeft + cx - l.left) / z0, py: (el.scrollTop + cy - l.top) / z0 }
+      e.stopPropagation()
+      e.preventDefault()
+    }
+    const move = (e: PointerEvent) => {
+      if (!pts.has(e.pointerId)) return
+      pts.set(e.pointerId, { x: e.clientX, y: e.clientY })
+      if (!g || pts.size < 2) return
+      e.stopPropagation()
+      e.preventDefault()
+      const { d, cx, cy } = two()
+      zoomAt(g.z0 * (d / g.d0), g.px, g.py, cx, cy)
+    }
+    const up = (e: PointerEvent) => {
+      if (!pts.has(e.pointerId)) return
+      if (g) e.stopPropagation()
+      pts.delete(e.pointerId)
+      if (pts.size < 2) g = null
+    }
+    document.addEventListener('pointerdown', down, true)
+    document.addEventListener('pointermove', move, true)
+    document.addEventListener('pointerup', up, true)
+    document.addEventListener('pointercancel', up, true)
+    return () => {
+      document.removeEventListener('pointerdown', down, true)
+      document.removeEventListener('pointermove', move, true)
+      document.removeEventListener('pointerup', up, true)
+      document.removeEventListener('pointercancel', up, true)
+    }
+  }, [mobile, hasDoc, layoutFor, zoomAt])
+
   if (!doc || !info) {
     return <ViewerEmpty boxRef={box} dragOver={dragOver} setDragOver={setDragOver} onDrop={onDrop} onOpen={onOpen} onSample={() => openSample()} />
   }
@@ -535,7 +685,7 @@ export function Viewer({ onOpen }: { onOpen: () => void }) {
       <div
         className={`viewer ${dragOver ? 'drag' : ''}`}
         ref={box}
-        onScroll={onScroll}
+        onScroll={handleScroll}
         onPointerDownCapture={onPanDown}
         onPointerMove={onPanMove}
         onPointerUp={onPanUp}
@@ -602,7 +752,8 @@ export function Viewer({ onOpen }: { onOpen: () => void }) {
             <Move size={14} /> {t('viewer.orto')}</button>
         </div>
         {symFound && <SymbolResult found={symFound} sheetId={page} onClose={() => setSymFound(null)} />}
-        <ViewerHints tool={tool} busy={busy} poly={poly} symFound={!!symFound} aligning={s.aligning} fillGap={s.fillGap} />
+        {mira && <div className="mira" aria-hidden />}
+        {!mira && <ViewerHints tool={tool} busy={busy} poly={poly} symFound={!!symFound} aligning={s.aligning} fillGap={s.fillGap} />}
     </div>
   )
 }

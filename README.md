@@ -4,6 +4,8 @@
 
 🇬🇧 [Read in English](README.en.md) · O app fala **português, inglês, espanhol, francês, alemão, italiano e chinês (simplificado)**.
 
+🌐 **Experimente agora, sem instalar nada: [tracopdf.lottos.workers.dev](https://tracopdf.lottos.workers.dev)**
+
 ![Demonstração do Traço: escala pelo carimbo, medição, ambientes, 3D ao vivo e puxar a altura de um sólido](docs/demo.gif)
 
 O Traço abre a prancha em PDF e deixa você medir em cima dela: comprimento, área e contagem, com escala por folha ou por região. O quantitativo se monta sozinho, com fórmulas, ambientes e pavimentos, e sai em Excel. Um modo 3D, ao estilo SketchUp, mostra em volume o que foi medido.
@@ -25,7 +27,7 @@ O Traço abre a prancha em PDF e deixa você medir em cima dela: comprimento, á
 2. Execute. No Windows pode aparecer a tela azul do **SmartScreen** ("O Windows protegeu o computador"), porque o app ainda não tem assinatura digital e é novo para o Windows. Clique em *Mais informações* e depois em *Executar assim mesmo*. Para conferir que o arquivo é o original, compare o hash com o do arquivo `SHA256SUMS.txt` da mesma release (`certutil -hashfile Traco-Setup-….exe SHA256` no Prompt de Comando).
 3. Abra um PDF ou um projeto `.traco`.
 
-Também há uma **versão web** (`Traco-Web-…zip`, com Docker) para rodar num servidor. As atualizações do app de PC são verificadas ao abrir (Configurações › Sobre).
+Também há uma **versão web**, que você pode usar direto em [tracopdf.lottos.workers.dev](https://tracopdf.lottos.workers.dev) ou hospedar num servidor (`Traco-Web-…zip`, com Docker). Na versão web os PDFs também são processados no seu navegador, e a chave do Claude, se você usar o painel, fica salva só nele. As atualizações do app de PC são verificadas ao abrir (Configurações › Sobre).
 
 ## Idiomas
 

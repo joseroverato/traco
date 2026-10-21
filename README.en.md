@@ -4,6 +4,8 @@
 
 🇧🇷 [Leia em português](README.md) · The app speaks Portuguese, English, Spanish, French, German, Italian and Chinese (Simplified).
 
+🌐 **Try it now, nothing to install: [tracopdf.lottos.workers.dev](https://tracopdf.lottos.workers.dev)**
+
 ![Traço demo: scale from the title block, measuring, rooms, live 3D and pulling the height of a solid](docs/demo.gif)
 
 Traço opens a PDF drawing and lets you measure right on it: length, area and count, with a scale per sheet or per region. The takeoff builds itself, with formulas, rooms and levels, and exports to Excel. A SketchUp-style 3D mode shows what you measured as volume.
@@ -25,7 +27,7 @@ Traço opens a PDF drawing and lets you measure right on it: length, area and co
 2. Run it. Windows may show the blue **SmartScreen** screen ("Windows protected your PC"), because the app is not digitally signed yet and is new to Windows. Click *More info*, then *Run anyway*. To check the file is the original, compare its hash with the one in `SHA256SUMS.txt` on the same release (`certutil -hashfile Traco-Setup-….exe SHA256` in Command Prompt).
 3. Open a PDF or a `.traco` project.
 
-There is also a **web version** (`Traco-Web-…zip`, with Docker) to run on a server. The desktop app checks for updates on launch (Settings › About).
+There is also a **web version** you can use right away at [tracopdf.lottos.workers.dev](https://tracopdf.lottos.workers.dev) or host on a server (`Traco-Web-…zip`, with Docker). In the web version PDFs are also processed in your browser, and the Claude key, if you use that panel, is stored only there. The desktop app checks for updates on launch (Settings › About).
 
 ## Language
 

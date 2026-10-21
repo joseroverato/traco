@@ -18,11 +18,18 @@ import { LANGS, localeOf, setLang, t, useLang } from '../i18n'
 import type { Lang } from '../i18n'
 import { Rich } from './Rich'
 import { stampText } from '../geometry'
+import { TOOLS } from '../railTools'
+import { hasCustomKeys, resetKeys, setKey, useKeymap, validKey } from '../hotkeys'
+import { copyDiagnostic } from '../diagnostics'
+import { setUnits, useUnits } from '../units'
+import type { UnitSystem } from '../units'
+import { useDialogA11y } from '../dialogA11y'
 
 function Modal({ title, children, onClose, actions, wide }: { title: string; children: React.ReactNode; onClose: () => void; actions: React.ReactNode; wide?: boolean }) {
+  const a11y = useDialogA11y(onClose)
   return (
     <div className="modal-back" onMouseDown={onClose}>
-      <div className={`modal ${wide ? 'wide' : ''}`} onMouseDown={(e) => e.stopPropagation()}>
+      <div className={`modal ${wide ? 'wide' : ''}`} onMouseDown={(e) => e.stopPropagation()} {...a11y}>
         <h3>{title}</h3>
         {children}
         <div className="modal-actions">{actions}</div>
@@ -436,8 +443,52 @@ function UpdatesPanel({ st, setSt }: { st: UpdateState; setSt: React.Dispatch<Re
   )
 }
 
+/** Letras de atalho das ferramentas: clicar numa ferramenta e apertar a nova letra. */
+function KeysPanel() {
+  useKeymap()
+  const [listening, setListening] = useState<string | null>(null)
+  const [msg, setMsg] = useState('')
+  useEffect(() => {
+    if (!listening) return
+    const h = (e: KeyboardEvent) => {
+      e.preventDefault()
+      e.stopPropagation() // senão o atalho global também dispararia
+      if (e.key === 'Escape') return setListening(null)
+      if (e.key.length !== 1 || !validKey(e.key)) return setMsg(t('dialogs.atalho_invalido'))
+      const owner = setKey(listening, e.key)
+      if (owner) return setMsg(t('dialogs.atalho_em_uso', { key: e.key.toUpperCase(), tool: TOOLS.find((x) => x.id === owner)?.label ?? owner }))
+      setMsg('')
+      setListening(null)
+    }
+    window.addEventListener('keydown', h, true)
+    return () => window.removeEventListener('keydown', h, true)
+  }, [listening])
+  return (
+    <div className="stack">
+      <p className="muted small">{t('dialogs.atalhos_ajuda')}</p>
+      <div className="keys-grid">
+        {TOOLS.map((x) => {
+          const I = x.icon
+          return (
+            <div key={x.id} className="keys-row">
+              <I size={15} />
+              <span>{x.label}</span>
+              <button className={`btn sm keys-btn ${listening === x.id ? 'active' : ''}`} onClick={() => { setMsg(''); setListening(listening === x.id ? null : x.id) }} aria-label={`${x.label}: ${x.key}`}>
+                {listening === x.id ? t('dialogs.atalho_aperte') : <kbd>{x.key}</kbd>}
+              </button>
+            </div>
+          )
+        })}
+      </div>
+      {msg && <span className="warn small" role="status">{msg}</span>}
+      <div className="row"><button className="btn sm ghost" disabled={!hasCustomKeys()} onClick={() => { resetKeys(); setMsg('') }}>{t('dialogs.atalhos_restaurar')}</button></div>
+    </div>
+  )
+}
+
 function AboutPanel({ st, goUpdates }: { st: UpdateState; goUpdates: () => void }) {
   const lang = useLang()
+  const units = useUnits()
   const up = desktop?.update
   const version = st.current ?? APP_VERSION
   const busy = st.status === 'checking' || st.status === 'downloading'
@@ -448,6 +499,13 @@ function AboutPanel({ st, goUpdates }: { st: UpdateState; goUpdates: () => void 
         <select value={lang} onChange={(e) => void setLang(e.target.value as Lang)}>
           {LANGS.map((l) => <option key={l.id} value={l.id}>{l.name}</option>)}
         </select>
+      </label>
+      <label className="field"><span>{t('dialogs.unidades')}</span>
+        <select value={units} onChange={(e) => setUnits(e.target.value as UnitSystem)}>
+          <option value="metric">{t('dialogs.unidades_metrico')}</option>
+          <option value="imperial">{t('dialogs.unidades_imperial')}</option>
+        </select>
+        <small className="muted">{t('dialogs.unidades_ajuda')}</small>
       </label>
       <div className="card">
         <div className="kv"><span>Traço</span><b>{IS_DESKTOP ? t('dialogs.app_de_pc') : t('dialogs.versao_web')}</b></div>
@@ -474,6 +532,9 @@ function AboutPanel({ st, goUpdates }: { st: UpdateState; goUpdates: () => void 
         <button className="btn sm" onClick={() => { useStore.setState({ dialog: null }); startTour() }}>{t('dialogs.rever_o_passo_a_passo')}</button>
         <a className="btn sm" href={newer && st.version ? releaseUrl(st.version) : releasesUrl()} target="_blank" rel="noreferrer">{t('dialogs.versoes_e_notas')}</a>
       </div>
+      <div className="row">
+        <button className="btn sm" onClick={async () => useStore.getState().notify((await copyDiagnostic()) ? t('dialogs.diagnostico_copiado') : t('dialogs.diagnostico_falhou'))} data-tip={t('dialogs.diagnostico_explicacao')}>{t('dialogs.copiar_diagnostico')}</button>
+      </div>
       <p className="muted small">{t('dialogs.traco_lottos_engenharia_usa', { join: THIRD_PARTY.map(([n, l]) => `${n} (${l})`).join(', ') })}</p>
     </div>
   )
@@ -481,7 +542,7 @@ function AboutPanel({ st, goUpdates }: { st: UpdateState; goUpdates: () => void 
 
 /** Configurações: aba Sobre (versão e atualização) e aba Atualizações (token do GitHub). */
 export function SettingsDialog() {
-  const [tab, setTab] = useState<'about' | 'updates'>('about')
+  const [tab, setTab] = useState<'about' | 'keys' | 'updates'>('about')
   const [st, setSt] = useState<UpdateState>({ status: 'idle', current: APP_VERSION })
   const up = desktop?.update
   useEffect(() => {
@@ -494,12 +555,13 @@ export function SettingsDialog() {
     up.onState((x) => setSt((o) => ({ ...o, ...x })))
   }, [up])
   return (
-    <Modal title={t('dialogs.configuracoes')} onClose={close} actions={<><div className="spacer" /><button className="btn ghost" onClick={close}>{t('dialogs.fechar')}</button></>}>
+    <Modal wide={tab === 'keys'} title={t('dialogs.configuracoes')} onClose={close} actions={<><div className="spacer" /><button className="btn ghost" onClick={close}>{t('dialogs.fechar')}</button></>}>
       <div className="tabs">
         <button className={tab === 'about' ? 'active' : ''} onClick={() => setTab('about')}>{t('dialogs.sobre')}</button>
+        <button className={tab === 'keys' ? 'active' : ''} onClick={() => setTab('keys')}>{t('dialogs.atalhos')}</button>
         <button className={tab === 'updates' ? 'active' : ''} onClick={() => setTab('updates')}>{t('dialogs.atualizacoes')}</button>
       </div>
-      {tab === 'about' ? <AboutPanel st={st} goUpdates={() => setTab('updates')} /> : <UpdatesPanel st={st} setSt={setSt} />}
+      {tab === 'about' ? <AboutPanel st={st} goUpdates={() => setTab('updates')} /> : tab === 'keys' ? <KeysPanel /> : <UpdatesPanel st={st} setSt={setSt} />}
     </Modal>
   )
 }

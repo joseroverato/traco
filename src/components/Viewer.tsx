@@ -200,6 +200,12 @@ export function Viewer({ onOpen }: { onOpen: () => void }) {
     const down = (e: KeyboardEvent) => {
       const t = e.target as HTMLElement
       if (t.closest('input,textarea,select,[contenteditable]')) return
+      // como no AutoCAD: com um traçado em andamento, Espaço = Enter (termina o polígono/medição); sem traçado, segurar Espaço move a vista
+      if (e.code === 'Space' && poly && poly.points.length) {
+        e.preventDefault()
+        if (!e.repeat) finishPoly()
+        return
+      }
       if (e.code === 'Space' && !space.current) {
         space.current = true
         force((n) => n + 1)

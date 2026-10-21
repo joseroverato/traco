@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { summarize } from './summary'
+import { displayRows, summarize } from './summary'
+import { setUnits } from './units'
 import { columnValue, levelOf, spaceOf } from './columns'
 import { measureOf } from './geometry'
 import { mk, preset, sheet, square } from './testUtils'
@@ -144,5 +145,41 @@ describe('spaceOf / levelOf', () => {
   it('levelOf devolve o pavimento da folha ou "Sem pavimento"', () => {
     expect(levelOf(mk({ page: 's1' }), sheets)).toBe('Térreo')
     expect(levelOf(mk({ page: 's2' }), sheets)).toBe('Sem pavimento')
+  })
+})
+
+describe('displayRows (unidades de exibição)', () => {
+  it('métrico devolve as mesmas linhas', () => {
+    setUnits('metric')
+    const rows = summarize([line(100)], [wall], scales, sheets)
+    expect(displayRows(rows)).toEqual(rows)
+  })
+
+  it('imperial converte quantidade e unidade, mas o total em dinheiro continua igual', () => {
+    const rows = summarize([line(100), line(200)], [wall], scales, sheets)
+    setUnits('imperial')
+    try {
+      const [m] = rows
+      const [r] = displayRows(rows)
+      expect(r.unit).toBe('ft²')
+      expect(r.rawUnit).toBe('ft')
+      expect(r.qty).toBeCloseTo(m.qty * 10.7639104, 4)
+      expect(r.raw).toBeCloseTo(m.raw * 3.28084, 4)
+      expect(r.qty * r.price).toBeCloseTo(m.total, 9)
+      expect(r.total).toBe(m.total)
+    } finally {
+      setUnits('metric')
+    }
+  })
+
+  it('unidades sem conversão (un, kg) ficam como estão', () => {
+    const un = preset({ id: 'un', measure: 'count', resultUnit: 'un', unitPrice: 5 })
+    const rows = summarize([mk({ kind: 'count', presetId: 'un', points: [{ x: 1, y: 1 }, { x: 2, y: 2 }] })], [un], scales, sheets)
+    setUnits('imperial')
+    try {
+      expect(displayRows(rows)).toEqual(rows)
+    } finally {
+      setUnits('metric')
+    }
   })
 })

@@ -31,9 +31,11 @@ import { togglePanel } from './panels'
 import { ChevronLeft, ChevronUp } from 'lucide-react'
 import { readRecoveryInfo, startAutosave } from './autosave'
 import { t, useLang } from './i18n'
+import { useUnits } from './units'
 
 export default function App() {
   const s = useStore()
+  const units = useUnits() // idem para as unidades (m ↔ ft)
   const lang = useLang() // trocar o idioma refaz a tela inteira (textos que ficaram em cache dentro de componentes)
   const input = useRef<HTMLInputElement>(null)
   const imgInput = useRef<HTMLInputElement>(null)
@@ -133,7 +135,7 @@ export default function App() {
   const rightW = s.rightTab === 'claude' ? Math.max(390, s.rightW) : s.rightW
   const cols = `${showLeft ? '240px' : '0px'} 48px 1fr ${showRight ? `${rightW}px` : '0px'}`
   return (
-    <div className="app" key={lang}>
+    <div className="app" key={`${lang}-${units}`}>
       <TopBar onOpen={open} />
       <div className="shell">
         <NavBar />

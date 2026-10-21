@@ -1,4 +1,4 @@
-// Motor completo do app de PC (processo principal): PDFium (tarja definitiva) + OCR em português.
+// Motor completo do app de PC (processo principal): PDFium (tarja definitiva) + OCR (português e inglês embutidos; outros idiomas sob demanda).
 import path from 'node:path'
 import fs from 'node:fs'
 import { createRequire } from 'node:module'
@@ -31,19 +31,35 @@ export async function redact(bytes, items) {
 }
 
 // ---------------------------------------------------------------- OCR
-let workerP = null
-async function worker(cacheDir) {
-  if (!workerP) {
+// Português e inglês vão dentro do instalador; os demais idiomas são baixados uma vez (com a permissão da pessoa) e ficam no cache.
+const BUNDLED = { por: '@tesseract.js-data/por', eng: '@tesseract.js-data/eng' }
+const CODES = { pt: 'por', en: 'eng', es: 'spa', fr: 'fra', de: 'deu', it: 'ita', zh: 'chi_sim' }
+const workers = new Map()
+const code = (lang) => CODES[lang] ?? 'eng'
+
+/** O idioma de OCR já está disponível sem internet? Se não, `size` é o tamanho aproximado do download (MB). */
+export function ocrStatus(lang, cacheDir) {
+  const c = code(lang)
+  const ready = c in BUNDLED || ['.traineddata', '.traineddata.gz'].some((e) => fs.existsSync(path.join(cacheDir, c + e)))
+  return { ready, size: 4 }
+}
+
+async function worker(lang, cacheDir) {
+  const c = code(lang)
+  if (!workers.has(c)) {
     const { createWorker } = await import('tesseract.js')
-    const langDir = path.join(path.dirname(require.resolve('@tesseract.js-data/por/package.json')), '4.0.0')
-    workerP = createWorker('por', 1, { langPath: langDir, cachePath: cacheDir, gzip: true })
+    const opts = { cachePath: cacheDir, gzip: true }
+    if (c in BUNDLED) opts.langPath = path.join(path.dirname(require.resolve(BUNDLED[c] + '/package.json')), '4.0.0')
+    const p = createWorker(c, 1, opts)
+    p.catch(() => workers.delete(c)) // falha (ex.: sem internet): tenta de novo na próxima vez
+    workers.set(c, p)
   }
-  return workerP
+  return workers.get(c)
 }
 
 /** OCR de uma imagem PNG (folha renderizada). Retorna palavras com caixa em px. */
-export async function ocr(png, cacheDir) {
-  const w = await worker(cacheDir)
+export async function ocr(png, cacheDir, lang = 'pt') {
+  const w = await worker(lang, cacheDir)
   const { data } = await w.recognize(Buffer.from(png), {}, { blocks: true, text: true })
   const words = []
   for (const b of data.blocks ?? [])
@@ -57,5 +73,5 @@ export async function ocr(png, cacheDir) {
 }
 
 export async function shutdown() {
-  if (workerP) (await workerP).terminate()
+  for (const p of workers.values()) (await p.catch(() => null))?.terminate()
 }

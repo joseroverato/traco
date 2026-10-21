@@ -15,7 +15,7 @@ O Traço abre a prancha em PDF e deixa você medir em cima dela: comprimento, á
 - **Quantitativo na hora:** marcadores com fórmulas (`A + P*H`, `L * 1,10`, `ceil(N/10)`…), agrupamento por serviço, ambiente, pavimento, folha ou status, base de preços SINAPI com BDI e exportação para Excel.
 - **3D:** desenhe a base de um sólido na planta e puxe a altura com o mouse. Paredes, ambientes e lajes medidos aparecem em volume. Tela dividida (planta e 3D ao vivo) e navegação estilo Revit.
 - **Revisão e compatibilização:** nuvens, itens numerados com responsável, prioridade e prazo, relatório em PDF e Excel, comparação entre revisões e sobreposição de disciplinas.
-- **Gestão de pranchas:** reordenar, girar, duplicar, extrair, dividir, renomear pelo carimbo, carimbos em lote e OCR em português.
+- **Gestão de pranchas:** reordenar, girar, duplicar, extrair, dividir, renomear pelo carimbo, carimbos em lote e OCR em 7 idiomas.
 - **Tarja definitiva:** o texto e a imagem sob a tarja somem do PDF de verdade, e o desenho vetorial é preservado para as medições (no app de PC e na versão web).
 - **Claude (opcional):** painel com a sua chave da API e servidor MCP para usar com o Claude Desktop.
 
@@ -33,7 +33,7 @@ O Traço abre no idioma do sistema (ou em inglês, se não for um dos sete) e a 
 
 ## Privacidade
 
-Tudo roda no seu computador: os PDFs não são enviados a lugar nenhum. As únicas conexões são a verificação de atualização (consulta as releases no GitHub) e, **só se você usar o painel do Claude**, o envio das folhas que você pedir à API da Anthropic, com a sua chave (guardada criptografada no PC).
+Tudo roda no seu computador: os PDFs não são enviados a lugar nenhum. As únicas conexões são a verificação de atualização (consulta as releases no GitHub), o download dos dados de OCR de espanhol, francês, alemão, italiano ou chinês (1 a 4 MB, uma vez, só se você pedir OCR nesse idioma e confirmar; o português e o inglês já vêm no instalador, e suas pranchas não são enviadas) e, **só se você usar o painel do Claude**, o envio das folhas que você pedir à API da Anthropic, com a sua chave (guardada criptografada no PC).
 
 ## Feito com IA
 
@@ -76,7 +76,7 @@ Requer Node.js 22 ou superior.
 - src/ai.ts — conversa com a API da Anthropic (tool use, imagens das folhas)
 - electron/main.cjs — app de PC: arquivos nativos, chave criptografada, ponte local p/ MCP
 - shared/redact-core.mjs — tarja definitiva com PDFium/WASM (preserva o vetor), usada pelo app de PC e pela versão web (src/redactWeb.ts).
-- electron/engine.mjs — motor do PC: carrega o PDFium para o código compartilhado + Tesseract (OCR pt). Otimização de tamanho fica em src/pdfexport.ts (pdf-lib), igual na web
+- electron/engine.mjs — motor do PC: carrega o PDFium para o código compartilhado + Tesseract (OCR em 7 idiomas). Otimização de tamanho fica em src/pdfexport.ts (pdf-lib), igual na web
 - electron/mcp-server.mjs — servidor MCP (stdio) para o Claude Desktop; abre o Traço se estiver fechado
 - deploy/ — Dockerfile + nginx + compose da versão web e scripts de instalação do PC
 

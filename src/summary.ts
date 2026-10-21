@@ -2,6 +2,7 @@ import { measureOf, scaleFor } from './geometry'
 import type { CustomColumn, Markup, PageScale, Preset, Sheet } from './types'
 import { columnValue, levelOf, spaceOf } from './columns'
 import { localeOf, t } from './i18n'
+import { unitFactor, unitName } from './units'
 
 export interface SummaryRow {
   key: string
@@ -77,3 +78,15 @@ export function summarize(markups: Markup[], presets: Preset[], scales: Record<s
     .sort((a, b) => a.bucket.localeCompare(b.bucket, localeOf(), { numeric: true }) || a.group.localeCompare(b.group) || a.name.localeCompare(b.name))
 }
 
+
+/**
+ * Linhas como a pessoa vê (tabela, legenda, Excel): no modo imperial m → ft, m² → ft², m³ → yd³.
+ * O total em dinheiro não muda: o preço passa a ser por unidade exibida (preço ÷ fator), então qtd × preço dá o mesmo valor.
+ */
+export function displayRows(rows: SummaryRow[]): SummaryRow[] {
+  return rows.map((r) => {
+    const f = unitFactor(r.unit), g = unitFactor(r.rawUnit)
+    if (f === 1 && g === 1) return r
+    return { ...r, qty: r.qty * f, unit: unitName(r.unit), price: r.price / f, raw: r.raw * g, rawUnit: unitName(r.rawUnit) }
+  })
+}

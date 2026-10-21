@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import { Ruler, ScanSearch } from 'lucide-react'
 import { useStore } from '../store'
+import { useDialogA11y } from '../dialogA11y'
+import { CALIB_UNITS, IMPERIAL_SCALES, getUnits, parseLength } from '../units'
 import { fmt, paperScale } from '../geometry'
 import { detectScales } from '../pdf'
 import type { PageScale } from '../types'
@@ -12,7 +14,8 @@ export function ScaleDialog() {
   const s = useStore()
   const c = s.calibrating
   const [val, setVal] = useState('')
-  const [unit, setUnit] = useState<'m' | 'cm' | 'mm'>('m')
+  const system = getUnits()
+  const [unit, setUnit] = useState<string>(CALIB_UNITS[system][0].id)
   const [ratio, setRatio] = useState('100')
   const [all, setAll] = useState(false)
   const [found, setFound] = useState<number[]>([])
@@ -31,9 +34,10 @@ export function ScaleDialog() {
     }
   }, [sheet?.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
+  const close = () => s.set({ calibrating: null, resumeTool: null })
+  const a11y = useDialogA11y(close)
   if (!c) return null
   const vp = c.viewport ? s.markups.find((m) => m.id === c.viewport) : undefined
-  const close = () => s.set({ calibrating: null, resumeTool: null })
 
   const apply = (sc: PageScale) => {
     const resume = s.resumeTool
@@ -50,9 +54,8 @@ export function ScaleDialog() {
     s.notify(t(all ? 'scaledialog.aplicada_todas' : 'scaledialog.aplicada', { label: sc.label }) + (resume ? t('scaledialog.pode_medir') : ''))
   }
   const fromCalib = () => {
-    const n = parseFloat(val.replace(',', '.'))
-    if (!n || !c.length) return
-    const meters = unit === 'm' ? n : unit === 'cm' ? n / 100 : n / 1000
+    const meters = parseLength(val, unit as 'm')
+    if (!meters || !c.length) return
     const k = meters / c.length
     const approx = Math.round(k / paperScale(1))
     apply({ metersPerUnit: k, label: `≈1:${approx}` })
@@ -65,19 +68,19 @@ export function ScaleDialog() {
 
   return (
     <div className="modal-back" onMouseDown={close}>
-      <div className="modal" onMouseDown={(e) => e.stopPropagation()}>
+      <div className="modal" onMouseDown={(e) => e.stopPropagation()} {...a11y}>
         <h3>{vp ? t('scaledialog.escala_do', { nome: vp.text || 'viewport' }) : c.prompt ? t('scaledialog.esta_folha_ainda_nao_tem') : t('scaledialog.escala_da_folha', { label: sheet?.label ?? '' })}</h3>
         {c.length > 0 ? (
           <div className="stack">
             <p className="muted">{t('scaledialog.medida_real_do_trecho_que')}</p>
             <div className="row">
-              <input autoFocus className="grow" placeholder="ex.: 5,00" value={val} onChange={(e) => setVal(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && fromCalib()} />
-              <select value={unit} onChange={(e) => setUnit(e.target.value as 'm')}>
-                <option>m</option><option>cm</option><option>mm</option>
+              <input autoFocus className="grow" placeholder={system === 'imperial' ? `ex.: 12'-6"` : 'ex.: 5,00'} value={val} onChange={(e) => setVal(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && fromCalib()} />
+              <select value={unit} onChange={(e) => setUnit(e.target.value)}>
+                {CALIB_UNITS[system].map((u) => <option key={u.id}>{u.id}</option>)}
               </select>
             </div>
-            {val && parseFloat(val.replace(',', '.')) > 0 && (
-              <p className="muted small">{t('scaledialog.resultado_1', { n: fmt(((unit === 'm' ? 1 : unit === 'cm' ? 0.01 : 0.001) * parseFloat(val.replace(',', '.'))) / c.length / paperScale(1), 0) })}</p>
+            {(parseLength(val, unit as 'm') ?? 0) > 0 && (
+              <p className="muted small">{t('scaledialog.resultado_1', { n: fmt(parseLength(val, unit as 'm')! / c.length / paperScale(1), 0) })}</p>
             )}
           </div>
         ) : (
@@ -94,10 +97,10 @@ export function ScaleDialog() {
               </button>
             )}
             <span className="section-label">{t('scaledialog.ou_escolha_a_escala_de')}</span>
-            <div className="ratio-grid">
-              {RATIOS.map((r) => (
-                <button key={r} className={`btn sm ${ratio === String(r) ? 'primary' : ''}`} onClick={() => setRatio(String(r))}>1:{r}</button>
-              ))}
+            <div className={`ratio-grid ${system === 'imperial' ? 'imp' : ''}`}>
+              {system === 'imperial'
+                ? IMPERIAL_SCALES.map((r) => <button key={r.label} className={`btn sm ${ratio === String(r.n) ? 'primary' : ''}`} onClick={() => setRatio(String(r.n))} title={`1:${r.n}`}>{r.label}</button>)
+                : RATIOS.map((r) => <button key={r} className={`btn sm ${ratio === String(r) ? 'primary' : ''}`} onClick={() => setRatio(String(r))}>1:{r}</button>)}
             </div>
             <div className="row center">
               <span className="muted">1:</span>
@@ -111,7 +114,7 @@ export function ScaleDialog() {
           {c.length > 0 ? (
             <button className="btn primary" onClick={fromCalib}>{t('scaledialog.aplicar')}</button>
           ) : (
-            <button className="btn primary" disabled={!Number(ratio)} onClick={() => apply({ metersPerUnit: paperScale(Number(ratio)), label: `1:${ratio}` })}>{t('scaledialog.aplicar_1', { ratio: ratio || '?' })}</button>
+            <button className="btn primary" disabled={!Number(ratio)} onClick={() => apply({ metersPerUnit: paperScale(Number(ratio)), label: system === 'imperial' ? IMPERIAL_SCALES.find((r) => r.n === Number(ratio))?.label ?? `1:${ratio}` : `1:${ratio}` })}>{t('scaledialog.aplicar_1', { ratio: ratio || '?' })}</button>
           )}
         </div>
       </div>

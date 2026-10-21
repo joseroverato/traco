@@ -11,7 +11,7 @@
   --line-soft: #2c2c31;
   --text: #ececef;
   --text-2: #a9a9b2;
-  --text-3: #74747e;
+  --text-3: #8e8e99; /* contraste ≥ 4,5:1 sobre os painéis */
   --accent: #4d8dff;
   --accent-soft: rgba(77, 141, 255, 0.16);
   --accent-text: #8fb6ff;
@@ -35,7 +35,7 @@
   --line-soft: #e5e7eb;
   --text: #17181b;
   --text-2: #565a64;
-  --text-3: #8a8f99;
+  --text-3: #6b707a; /* contraste ≥ 4,5:1 sobre os painéis */
   --accent: #2f6fed;
   --accent-soft: rgba(47, 111, 237, 0.12);
   --accent-text: #2459c9;
@@ -633,3 +633,25 @@ body.resizing .workspace, body.resizing .center { transition: none !important; }
 .tour-actions { display: flex; align-items: center; gap: 6px; }
 .tour-actions .grow { flex: 1; }
 @keyframes tour-in { from { opacity: 0; transform: translateY(6px); } }
+
+/* configurações › atalhos */
+.keys-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 18px; }
+.keys-row { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.keys-row span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.keys-btn { min-width: 64px; justify-content: center; }
+.keys-btn.active { outline: 2px solid var(--accent); }
+
+/* tela de falha inesperada */
+.crash { max-width: 460px; margin: 18vh auto 0; padding: 0 24px; text-align: center; color: var(--text); }
+.crash .row { justify-content: center; margin-top: 16px; }
+
+/* quem pede menos movimento no sistema não vê as animações */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
+}
+.ratio-grid.imp { grid-template-columns: repeat(3, 1fr); }
+.ratio-grid.imp .btn { font-size: 11px; padding-inline: 4px; white-space: nowrap; }
+
+/* janelas altas rolam em vez de passar da tela; o foco da própria janela (acessibilidade) não desenha contorno */
+.modal { max-height: calc(100vh - 32px); overflow-y: auto; }
+.modal:focus { outline: none; }

@@ -89,11 +89,19 @@ export async function renderSheet(src: Source, s: Sheet, scale: number, canvas =
  * "ÉCHELLE 1:20", "MASSSTAB 1:100" / "M 1:50", "SCALA 1:50", "比例 1:50"… (os idiomas do Traço).
  */
 export function scalesIn(txt: string): number[] {
-  const re = /(?:(?<![A-Za-zÀ-ÿ])ESC(?:ALA)?|(?<![A-Za-zÀ-ÿ])SCALE|(?<![A-Za-zÀ-ÿ])SCALA|(?<![A-Za-zÀ-ÿ])[EÉ]CHELLE|(?<![A-Za-zÀ-ÿ])MA(?:SS|ß)STAB|(?<![A-Za-zÀ-ÿ])M(?=\.?\s*1\s*[:/])|比例)\.?\s*[:=–-：]?\s*1\s*[:/]\s*(\d{1,4})/gi
+  const re = /(?:(?<![A-Za-zÀ-ÿ])ESC(?:ALA)?|(?<![A-Za-zÀ-ÿ])SCALE|(?<![A-Za-zÀ-ÿ])SCALA|(?<![A-Za-zÀ-ÿ])[EÉ]CHELLE|(?<![A-Za-zÀ-ÿ])MA(?:SS|ß)STAB|(?<![A-Za-zÀ-ÿ])M(?=\.?\s*1\s*[:/])|比例)\.?\s*[:=–-：]?\s*1\s*[:/]\s*(\d{1,4})(?!\s*["”″])/gi
   const count = new Map<number, number>()
   for (const m of txt.matchAll(re)) {
     const n = Number(m[1])
     if (n >= 1 && n <= 5000) count.set(n, (count.get(n) ?? 0) + 1)
+  }
+  // escrita americana: 1/4" = 1'-0", 1-1/2" = 1'-0", 1" = 20'
+  const us = /(\d+(?:-\d+\/\d+|\/\d+)?)\s*(?:["”″]|in\b)\s*=\s*(\d+)\s*['′’]\s*(?:-?\s*0\s*["”″]?)?/gi
+  for (const m of txt.matchAll(us)) {
+    const [whole, frac] = m[1].split('-')
+    const paper = frac ? Number(whole) + Number(frac.split('/')[0]) / Number(frac.split('/')[1]) : whole.includes('/') ? Number(whole.split('/')[0]) / Number(whole.split('/')[1]) : Number(whole)
+    const n = Math.round((Number(m[2]) * 12) / paper)
+    if (paper > 0 && n >= 1 && n <= 5000) count.set(n, (count.get(n) ?? 0) + 1)
   }
   return [...count.entries()].sort((x, y) => y[1] - x[1]).map(([n]) => n)
 }

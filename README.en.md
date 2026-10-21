@@ -15,7 +15,7 @@ Traço opens a PDF drawing and lets you measure right on it: length, area and co
 - **Instant takeoff:** items with formulas (`A + P*H`, `L * 1.10`, `ceil(N/10)`…), grouping by item, room, level, sheet or status, SINAPI price database with markup (BDI) and Excel export.
 - **3D:** draw a solid's footprint on the plan and pull its height with the mouse. Measured walls, rooms and slabs show up as volume. Split screen (plan and live 3D) and Revit-style navigation.
 - **Review and coordination:** revision clouds, numbered items with assignee, priority and due date, PDF and Excel reports, revision comparison and discipline overlay.
-- **Sheet management:** reorder, rotate, duplicate, extract, split, rename from the title block, batch stamps and OCR.
+- **Sheet management:** reorder, rotate, duplicate, extract, split, rename from the title block, batch stamps and OCR in 7 languages. Units can be metric or imperial (ft, ft², yd³; scales like 1/4" = 1'-0"), and every tool shortcut can be remapped in Settings.
 - **Permanent redaction:** the text and image under a redaction bar are really removed from the PDF, while the vector linework stays intact for measuring (desktop app and web version).
 - **Claude (optional):** a panel that uses your own API key, plus an MCP server for Claude Desktop.
 
@@ -33,7 +33,7 @@ Traço picks your system language (Portuguese, English, Spanish, French, German,
 
 ## Privacy
 
-Everything runs on your computer: your PDFs are not sent anywhere. The only connections are the update check (it reads the releases on GitHub) and, **only if you use the Claude panel**, sending the sheets you ask about to the Anthropic API, with your own key (stored encrypted on the PC).
+Everything runs on your computer: your PDFs are not sent anywhere. The only connections are the update check (it reads the releases on GitHub), the download of OCR data for Spanish, French, German, Italian or Chinese (1 to 4 MB, once, only if you ask for OCR in that language and confirm; Portuguese and English ship with the installer, and your sheets are not uploaded) and, **only if you use the Claude panel**, sending the sheets you ask about to the Anthropic API, with your own key (stored encrypted on the PC).
 
 ## Built with AI
 

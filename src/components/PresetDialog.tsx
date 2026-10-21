@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { useDialogA11y } from '../dialogA11y'
 import { Database, Search } from 'lucide-react'
 import { uid, useStore } from '../store'
 import type { Preset, SinapiItem } from '../types'
@@ -41,6 +42,7 @@ export function PresetDialog() {
   const groups = Array.from(new Set(s.presets.map((x) => x.group)))
   const up = (patch: Partial<Preset>) => setP((x) => ({ ...x, ...patch }))
   const close = () => s.set({ presetDialog: null })
+  const a11y = useDialogA11y(close)
 
   useEffect(() => {
     loadBase().then(setBase)
@@ -72,7 +74,7 @@ export function PresetDialog() {
   const err = p.formula ? checkFormula(p.formula) : null
   return (
     <div className="modal-back" onMouseDown={close}>
-      <div className="modal wide preset-modal" onMouseDown={(e) => e.stopPropagation()} onKeyDown={(e) => { if (e.key === 'Enter' && (e.target as HTMLElement).tagName !== 'TEXTAREA' && !hits.length) save(); if (e.key === 'Escape') close() }}>
+      <div className="modal wide preset-modal" onMouseDown={(e) => e.stopPropagation()} {...a11y} onKeyDown={(e) => { a11y.onKeyDown(e); if (e.key === 'Enter' && (e.target as HTMLElement).tagName !== 'TEXTAREA' && !hits.length) save() }}>
         <div className="row center">
           <PresetSwatch p={p} />
           <h3 className="grow">{original ? t('presetdialog.editar_marcador') : t('presetdialog.novo_marcador_de_quantitativo')}</h3>

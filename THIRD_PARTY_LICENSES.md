@@ -6,7 +6,7 @@ Componentes que merecem destaque:
 
 - **PDFium** (via `@embedpdf/pdfium`, WebAssembly): BSD-3-Clause / Apache-2.0 (texto em `LICENSE.pdfium` dentro do pacote). Faz a tarja definitiva no app de PC.
 - **PDF.js** (`pdfjs-dist`): Apache-2.0. Abre e desenha os PDFs.
-- **Tesseract.js**: Apache-2.0. OCR em português, com os dados de idioma de `@tesseract.js-data/por` (licença no próprio pacote).
+- **Tesseract.js**: Apache-2.0. OCR em 7 idiomas: português e inglês com os dados de `@tesseract.js-data/por` e `@tesseract.js-data/eng` (licença no próprio pacote); os demais são baixados sob demanda do serviço público do Tesseract.
 - **three.js**: MIT. Modo 3D.
 - **Electron**: MIT. App de PC.
 
@@ -15,7 +15,10 @@ Componentes que merecem destaque:
 | @embedpdf/pdfium | 2.15.1 | MIT | https://github.com/embedpdf/embed-pdf-viewer |
 | @eslint/js | 9.39.5 | MIT | https://github.com/eslint/eslint |
 | @modelcontextprotocol/sdk | 1.32.1 | MIT | https://github.com/modelcontextprotocol/typescript-sdk |
+| @tesseract.js-data/eng | 1.0.0 | MIT | https://github.com/naptha/tessdata |
 | @tesseract.js-data/por | 1.0.0 | MIT | https://github.com/naptha/tessdata |
+| @testing-library/dom | 10.4.2 | MIT | https://github.com/testing-library/dom-testing-library |
+| @testing-library/react | 16.3.3 | MIT | https://github.com/testing-library/react-testing-library |
 | @types/node | 22.20.5 | MIT | https://github.com/DefinitelyTyped/DefinitelyTyped |
 | @types/react | 19.3.0 | MIT | https://github.com/DefinitelyTyped/DefinitelyTyped |
 | @types/react-dom | 19.3.0 | MIT | https://github.com/DefinitelyTyped/DefinitelyTyped |
@@ -30,10 +33,12 @@ Componentes que merecem destaque:
 | eslint-plugin-react-refresh | 0.4.26 | MIT | github:ArnaudBarre/eslint-plugin-react-refresh |
 | fflate | 0.8.3 | MIT | https://github.com/101arrowz/fflate |
 | globals | 16.5.0 | MIT | sindresorhus/globals |
+| jsdom | 30.1.3 | MIT | https://github.com/jsdom/jsdom |
 | lucide-react | 0.460.0 | ISC | https://github.com/lucide-icons/lucide |
 | pdf-lib | 1.17.1 | MIT | https://github.com/Hopding/pdf-lib |
 | pdfjs-dist | 4.10.38 | Apache-2.0 | https://github.com/mozilla/pdf.js |
 | pe-library | 1.0.1 | MIT | https://github.com/jet2jet/pe-library-js |
+| playwright-core | 1.64.1 | Apache-2.0 | https://github.com/microsoft/playwright |
 | react | 19.3.0 | MIT | https://github.com/react/react |
 | react-dom | 19.3.0 | MIT | https://github.com/react/react |
 | resedit | 2.0.3 | MIT | https://github.com/jet2jet/resedit-js |

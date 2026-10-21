@@ -24,7 +24,7 @@ Componentes que merecem destaque:
 
 - **PDFium** (via \`@embedpdf/pdfium\`, WebAssembly): BSD-3-Clause / Apache-2.0 (texto em \`LICENSE.pdfium\` dentro do pacote). Faz a tarja definitiva no app de PC.
 - **PDF.js** (\`pdfjs-dist\`): Apache-2.0. Abre e desenha os PDFs.
-- **Tesseract.js**: Apache-2.0. OCR em português, com os dados de idioma de \`@tesseract.js-data/por\` (licença no próprio pacote).
+- **Tesseract.js**: Apache-2.0. OCR em 7 idiomas: português e inglês com os dados de \`@tesseract.js-data/por\` e \`@tesseract.js-data/eng\` (licença no próprio pacote); os demais são baixados sob demanda do serviço público do Tesseract.
 - **three.js**: MIT. Modo 3D.
 - **Electron**: MIT. App de PC.
 

@@ -17,7 +17,7 @@ walk(root)
 
 let n = 0
 for (const file of files) {
-  if (IGNORE_FILES.test(file) || /commands\.ts$|presetLookup\.ts$|[/\\]ai\.ts$/.test(file)) continue // textos para o Claude, não para a tela
+  if (IGNORE_FILES.test(file) || /commands\.ts$|presetLookup\.ts$|diagnostics\.ts$|[/\\]ai\.ts$/.test(file)) continue // textos para o Claude e para issues (em inglês de propósito), não para a tela
   const src = readFileSync(file, 'utf8')
   const sf = ts.createSourceFile(file, src, ts.ScriptTarget.Latest, true, file.endsWith('x') ? ts.ScriptKind.TSX : ts.ScriptKind.TS)
   const report = (node, text) => {

@@ -1,6 +1,6 @@
 import { useStore } from './store'
 import { bbox } from './geometry'
-import { summarize } from './summary'
+import { displayRows, summarize } from './summary'
 import type { Markup } from './types'
 
 /** Linhas da legenda (também usadas na exportação para PDF). */
@@ -8,7 +8,7 @@ export function legendRows(m: Markup) {
   const s = useStore.getState()
   const scope = m.legend?.scope ?? 'sheet'
   const ms = s.markups.filter((x) => x.kind !== 'viewport' && (scope === 'all' || x.page === m.page))
-  return summarize(ms, s.presets, s.scales, s.sheets, s.markups)
+  return displayRows(summarize(ms, s.presets, s.scales, s.sheets, s.markups))
 }
 
 /** Geometria da tabela da legenda em unidades da folha (pt). */

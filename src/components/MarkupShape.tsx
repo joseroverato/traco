@@ -1,14 +1,15 @@
 import type { Markup, PageScale, Preset, Pt } from '../types'
-import { DEFAULT_SOLID_HEIGHT, arrowHead, bbox, centroid, cloudPath, fmt, measureOf, ringsPath, stampText } from '../geometry'
+import { DEFAULT_SOLID_HEIGHT, arrowHead, bbox, centroid, cloudPath, measureOf, ringsPath, stampText } from '../geometry'
 import type { Qty } from '../geometry'
 import { t } from '../i18n'
+import { fmtQty } from '../units'
 
 const derived = (p?: Preset) => !!p && (!!p.formula?.trim() || (p.factor !== 1 && !!p.factor))
 function qtyText(q: Qty | null, p: Preset | undefined, baseUnit: string, deduct: boolean) {
   if (!q) return t('markupshape.sem_escala')
   if (q.error) return t('markupshape.erro_na_formula')
   const sign = deduct ? '− ' : ''
-  return `${sign}${fmt(q.raw)} ${baseUnit}${derived(p) ? ` → ${fmt(Math.abs(q.value))} ${q.unit}` : ''}`
+  return `${sign}${fmtQty(q.raw, baseUnit)}${derived(p) ? ` → ${fmtQty(Math.abs(q.value), q.unit)}` : ''}`
 }
 
 interface Props {
@@ -274,7 +275,7 @@ export function MarkupShape({ m, preset, scale, zoom, selected, draft, stampCtx 
         label = (
           <g style={{ pointerEvents: 'none' }}>
             <Label at={{ x: c.x, y: c.y - 7 / zoom }} color={color} zoom={zoom} text={m.text || t('markupshape.ambiente')} />
-            {q && <Label at={{ x: c.x, y: c.y + 7 / zoom }} color={color} zoom={zoom} text={`${fmt(q.vars.A)} m²`} />}
+            {q && <Label at={{ x: c.x, y: c.y + 7 / zoom }} color={color} zoom={zoom} text={fmtQty(q.vars.A, 'm²')} />}
           </g>
         )
       }
@@ -288,7 +289,7 @@ export function MarkupShape({ m, preset, scale, zoom, selected, draft, stampCtx 
         label = (
           <g style={{ pointerEvents: 'none' }}>
             <Label at={{ x: c.x, y: c.y - 7 / zoom }} color={color} zoom={zoom} text={m.text || t('markupshape.solido')} />
-            <Label at={{ x: c.x, y: c.y + 7 / zoom }} color={color} zoom={zoom} text={q ? `h = ${fmt(m.height ?? DEFAULT_SOLID_HEIGHT)} m · ${fmt(q.vars.VOL)} m³` : `h = ${fmt(m.height ?? DEFAULT_SOLID_HEIGHT)} m`} />
+            <Label at={{ x: c.x, y: c.y + 7 / zoom }} color={color} zoom={zoom} text={q ? `h = ${fmtQty(m.height ?? DEFAULT_SOLID_HEIGHT, 'm')} · ${fmtQty(q.vars.VOL, 'm³')}` : `h = ${fmtQty(m.height ?? DEFAULT_SOLID_HEIGHT, 'm')}`} />
           </g>
         )
       }

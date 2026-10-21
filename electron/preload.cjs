@@ -35,6 +35,7 @@ contextBridge.exposeInMainWorld('traco', {
   },
   engine: {
     redact: (pdf, items) => ipcRenderer.invoke('engine:redact', pdf, items),
-    ocr: (png) => ipcRenderer.invoke('engine:ocr', png),
+    ocr: (png, lang) => ipcRenderer.invoke('engine:ocr', png, lang),
+    ocrStatus: (lang) => ipcRenderer.invoke('engine:ocrStatus', lang),
   },
 })

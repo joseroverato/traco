@@ -220,7 +220,12 @@ ipcMain.handle('update:install', () => {
 let engineP = null
 const engine = () => (engineP ??= import(pathToFileURL(path.join(__dirname, 'engine.mjs')).href))
 ipcMain.handle('engine:redact', async (_e, pdf, items) => (await engine()).redact(pdf, items))
-ipcMain.handle('engine:ocr', async (_e, png) => (await engine()).ocr(png, path.join(USER, 'ocr-cache')))
+const OCR_CACHE = path.join(USER, 'ocr-cache')
+ipcMain.handle('engine:ocr', async (_e, png, lang) => {
+  fs.mkdirSync(OCR_CACHE, { recursive: true })
+  return (await engine()).ocr(png, OCR_CACHE, lang)
+})
+ipcMain.handle('engine:ocrStatus', async (_e, lang) => (await engine()).ocrStatus(lang, OCR_CACHE))
 
 // ---------------- ponte local para o servidor MCP ----------------
 const pending = new Map()

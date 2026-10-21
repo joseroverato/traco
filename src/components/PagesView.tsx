@@ -6,10 +6,12 @@ import { insertPdf, download } from '../project'
 import { PAPER, blankSource, buildPdf, splitToZip } from '../pdfexport'
 import { pageText, renderSheet } from '../pdf'
 import { desktop } from '../platform'
+import { useDialogA11y } from '../dialogA11y'
 import type { Markup, Sheet } from '../types'
 import { parseRanges } from '../ranges'
 import { rotateSheets } from '../sheetOps'
-import { localeOf, t } from '../i18n'
+import { LANGS, localeOf, t, useLang } from '../i18n'
+import type { Lang } from '../i18n'
 
 const uid = () => Math.random().toString(36).slice(2, 10)
 
@@ -22,6 +24,15 @@ export function PagesView() {
   const [editing, setEditing] = useState<string | null>(null)
   const [dlg, setDlg] = useState<null | 'rename' | 'split' | 'blank'>(null)
   const [busy, setBusy] = useState<string | null>(null)
+  const appLang = useLang()
+  const [ocrPick, setOcrPick] = useState<Lang | null>(() => {
+    try { const v = localStorage.getItem('traco.ocrLang'); return LANGS.some((l) => l.id === v) ? (v as Lang) : null } catch { return null }
+  })
+  const ocrLang = ocrPick ?? appLang // sem escolha própria, o OCR lê no idioma do app
+  const pickOcrLang = (l: Lang) => {
+    setOcrPick(l)
+    try { localStorage.setItem('traco.ocrLang', l) } catch { /* sem armazenamento: vale só nesta sessão */ }
+  }
   const pdfInput = useRef<HTMLInputElement>(null)
   const sheets = s.sheets
   const selected = sel.filter((id) => sheets.some((x) => x.id === id))
@@ -94,19 +105,27 @@ export function PagesView() {
 
   const runOcr = async () => {
     if (!desktop) return
+    const st = await desktop.engine.ocrStatus(ocrLang)
+    if (!st.ready && !window.confirm(t('pagesview.ocr_baixar_idioma', { idioma: LANGS.find((l) => l.id === ocrLang)!.name, mb: st.size }))) return
     const list = sheets.filter((x) => (target.length ? target.includes(x.id) : true))
     const ocr = { ...s.ocr }
-    for (const [i, sh] of list.entries()) {
-      setBusy(t('pagesview.ocr_progresso', { i: i + 1, total: list.length, label: sh.label }))
-      const k = 220 / 72 // ~220 dpi
-      const c = await renderSheet(s.sources[sh.src], sh, k)
-      const png = new Uint8Array(await (await new Promise<Blob>((r) => c.toBlob((b) => r(b!), 'image/png'))).arrayBuffer())
-      const res = await desktop.engine.ocr(png)
-      ocr[sh.id] = { text: res.text, words: res.words.map((w) => ({ ...w, x: w.x / k, y: w.y / k, w: w.w / k, h: w.h / k })) }
+    try {
+      for (const [i, sh] of list.entries()) {
+        setBusy(t('pagesview.ocr_progresso', { i: i + 1, total: list.length, label: sh.label }))
+        const k = 220 / 72 // ~220 dpi
+        const c = await renderSheet(s.sources[sh.src], sh, k)
+        const png = new Uint8Array(await (await new Promise<Blob>((r) => c.toBlob((b) => r(b!), 'image/png'))).arrayBuffer())
+        const res = await desktop.engine.ocr(png, ocrLang)
+        ocr[sh.id] = { text: res.text, words: res.words.map((w) => ({ ...w, x: w.x / k, y: w.y / k, w: w.w / k, h: w.h / k })) }
+      }
+      useStore.setState({ ocr })
+      s.notify(t('pagesview.ocr_concluido_em_folha_s', { length: list.length }))
+    } catch {
+      useStore.setState({ ocr }) // o que já foi lido fica
+      s.notify(t('pagesview.ocr_sem_internet'))
+    } finally {
+      setBusy(null)
     }
-    useStore.setState({ ocr })
-    setBusy(null)
-    s.notify(t('pagesview.ocr_concluido_em_folha_s', { length: list.length }))
   }
 
   const onPdf = async (f: File) => {
@@ -144,6 +163,7 @@ export function PagesView() {
         </div>
         <div className="tb-cluster">
           <button className="btn sm" onClick={() => setDlg('rename')}><Tags size={14} /> {t('pagesview.renomear')}</button>
+          {desktop && <select className="btn sm" value={ocrLang} onChange={(e) => pickOcrLang(e.target.value as Lang)} title={t('pagesview.ocr_idioma')} aria-label={t('pagesview.ocr_idioma')}>{LANGS.map((l) => <option key={l.id} value={l.id}>{l.name}</option>)}</select>}
           {desktop && <button className="btn sm" onClick={runOcr} title={t('pagesview.reconhecer_texto_de_pranchas_escaneadas')}><ScanText size={14} /> OCR</button>}
           <button className="btn sm" onClick={sortByName} title={t('pagesview.ordenar_pelo_nome_da_folha')}><ArrowDownAZ size={14} /></button>
           <button className="btn sm" onClick={reverse} title={t('pagesview.inverter_ordem')}><Undo size={14} /></button>
@@ -226,9 +246,10 @@ export function PagesView() {
 }
 
 function Modal({ title, children, onClose, actions }: { title: string; children: React.ReactNode; onClose: () => void; actions: React.ReactNode }) {
+  const a11y = useDialogA11y(onClose)
   return (
     <div className="modal-back" onMouseDown={onClose}>
-      <div className="modal" onMouseDown={(e) => e.stopPropagation()}>
+      <div className="modal" onMouseDown={(e) => e.stopPropagation()} {...a11y}>
         <h3>{title}</h3>
         {children}
         <div className="modal-actions">{actions}</div>

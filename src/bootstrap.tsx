@@ -3,9 +3,14 @@ import { createRoot } from 'react-dom/client'
 import App from './App.tsx'
 import { desktop } from './platform'
 import { TOOLS, runCommand } from './commands'
+import { ErrorBoundary } from './components/ErrorBoundary'
+import { installErrorCapture } from './diagnostics'
+import { installAutoLabels } from './autoLabels'
 
 /** Liga o app. Fica separado de main.tsx para só ser carregado depois do idioma estar definido (o store já nasce com textos no idioma certo). */
 export function start() {
+  installErrorCapture()
+  installAutoLabels()
   // App de PC: comandos vindos do servidor MCP (Claude Desktop) chegam pela ponte local.
   if (desktop) {
     desktop.onCommand(async (req) => {
@@ -18,7 +23,9 @@ export function start() {
 
   createRoot(document.getElementById('root')!).render(
     <StrictMode>
-      <App />
+      <ErrorBoundary>
+        <App />
+      </ErrorBoundary>
     </StrictMode>,
   )
 }

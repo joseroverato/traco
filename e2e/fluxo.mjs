@@ -195,6 +195,23 @@ await fileInput.setInputFiles(pdf)
 await page.waitForTimeout(2500)
 ok((await contarMarcacoes()) === 0, 'ao confirmar, o novo arquivo abre limpo')
 
+// ---------- OCR por idioma ----------
+console.log('OCR: idioma embutido, idioma que precisa baixar e leitura de uma imagem')
+const ocrInfo = await page.evaluate(async () => {
+  const eng = await window.traco.engine.ocrStatus('en'), por = await window.traco.engine.ocrStatus('pt'), es = await window.traco.engine.ocrStatus('es')
+  const c = document.createElement('canvas')
+  c.width = 900; c.height = 140
+  const g = c.getContext('2d')
+  g.fillStyle = '#fff'; g.fillRect(0, 0, c.width, c.height)
+  g.fillStyle = '#000'; g.font = '56px Arial'; g.fillText('Floor plan level 1', 20, 90)
+  const png = new Uint8Array(await (await new Promise((r) => c.toBlob(r, 'image/png'))).arrayBuffer())
+  const lido = await window.traco.engine.ocr(png, 'en')
+  return { eng, por, es, texto: lido.text.trim(), palavras: lido.words.length }
+})
+ok(ocrInfo.eng.ready && ocrInfo.por.ready, 'inglês e português já vêm no instalador (OCR sem internet)', JSON.stringify(ocrInfo))
+ok(!ocrInfo.es.ready, 'espanhol ainda não foi baixado (pede confirmação antes)', JSON.stringify(ocrInfo.es))
+ok(/floor plan level 1/i.test(ocrInfo.texto) && ocrInfo.palavras >= 4, `OCR em inglês leu a imagem ("${ocrInfo.texto}")`, ocrInfo.texto)
+
 ok(errors.length === 0, 'sem erros de JavaScript na sessão 2', errors.join(' | '))
 await app.close()
 

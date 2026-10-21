@@ -7,6 +7,7 @@ import { isIssue, issueList } from '../issues'
 import { spaceOf } from '../columns'
 import { KIND_LABEL } from '../kinds'
 import { localeOf, t } from '../i18n'
+import { display, fmtQty, lenIn, lenOut, lenUnit, unitName } from '../units'
 import { Rich } from './Rich'
 
 const MEASURE_LABEL = { get length() { return t('rightpanel.comprimento') }, get area() { return t('rightpanel.area') }, get count() { return t('rightpanel.contagem') } }
@@ -70,11 +71,11 @@ function Props() {
         <div className="measure-box">
           {q ? (
             <>
-              <div className="big">{q.error ? '—' : fmt(q.value)} <small>{q.unit}</small></div>
+              <div className="big">{q.error ? '—' : fmt(display(q.value, q.unit).value)} <small>{display(q.value, q.unit).unit}</small></div>
               {q.error && <div className="warn">{t('rightpanel.formula', { error: q.error })}</div>}
               <div className="vars muted small">
-                {m.kind === 'length' && <span>L {fmt(q.vars.L)} m</span>}
-                {m.kind === 'area' && <><span>A {fmt(q.vars.A)} m²</span><span>P {fmt(q.vars.P)} m</span>{q.vars.V > 0 && <span>V {fmt(q.vars.V)} m²</span>}</>}
+                {m.kind === 'length' && <span>L {fmtQty(q.vars.L, 'm')}</span>}
+                {m.kind === 'area' && <><span>A {fmtQty(q.vars.A, 'm²')}</span><span>P {fmtQty(q.vars.P, 'm')}</span>{q.vars.V > 0 && <span>V {fmtQty(q.vars.V, 'm²')}</span>}</>}
                 {m.kind === 'count' && <span>N {q.vars.N}</span>}
                 {preset && preset.factor !== 1 && <span>H {fmt(preset.factor)}</span>}
                 {preset?.formula && <span className="mono">= {preset.formula}</span>}
@@ -165,7 +166,7 @@ function Props() {
             return (
               <div key={i} className="hole-row">
                 <SquareDashed size={13} /> <span className="grow">{t('rightpanel.vazio', { v: i + 1 })}</span>
-                <span className="muted small">{a != null ? `${fmt(a)} m²` : ''}</span>
+                <span className="muted small">{a != null ? fmtQty(a, 'm²') : ''}</span>
                 <button className="icon-btn xs" data-tip={t('rightpanel.remover_vazio')} onClick={() => up({ holes: m.holes!.filter((_, j) => j !== i) })}><X size={12} /></button>
               </div>
             )
@@ -180,17 +181,17 @@ function Props() {
         <>
           <Field label={t('rightpanel.nome_do_solido')}><input value={m.text} onChange={(e) => s.updateMarkup(m.id, { text: e.target.value }, false)} /></Field>
           <div className="row">
-            <Field label={t('rightpanel.base_m')}><input type="number" step={0.05} value={m.base ?? 0} onChange={(e) => up({ base: Number(e.target.value) })} /></Field>
-            <Field label={t('rightpanel.altura_m')}><input type="number" min={0.05} step={0.05} value={m.height ?? DEFAULT_SOLID_HEIGHT} onChange={(e) => { const h = Math.max(0.05, Number(e.target.value)); up({ height: h }); s.rememberSolid({ height: h }) }} /></Field>
+            <Field label={t('rightpanel.base_m', { u: lenUnit() })}><input type="number" step={0.05} value={r3(lenIn(m.base ?? 0))} onChange={(e) => up({ base: lenOut(Number(e.target.value)) })} /></Field>
+            <Field label={t('rightpanel.altura_m', { u: lenUnit() })}><input type="number" min={r3(lenIn(0.05))} step={r3(lenIn(0.05))} value={r3(lenIn(m.height ?? DEFAULT_SOLID_HEIGHT))} onChange={(e) => { const h = Math.max(0.05, lenOut(Number(e.target.value))); up({ height: h }); s.rememberSolid({ height: h }) }} /></Field>
             <Field label={t('rightpanel.cor')}><input type="color" value={m.color} onChange={(e) => { up({ color: e.target.value, fill: e.target.value }); s.rememberSolid({ color: e.target.value }) }} /></Field>
           </div>
           <div className="card">
             {q ? (
               <>
-                <div className="kv"><span>{t('rightpanel.volume')}</span><b>{fmt(q.vars.VOL)} m³</b></div>
-                <div className="kv"><span>{t('rightpanel.area_da_base')}</span><b>{fmt(q.vars.A)} m²</b></div>
-                <div className="kv"><span>{t('rightpanel.area_lateral')}</span><b>{fmt(q.vars.AL)} m²</b></div>
-                <div className="kv"><span>{t('rightpanel.topo_na_cota')}</span><b>{fmt((m.base ?? 0) + (m.height ?? DEFAULT_SOLID_HEIGHT))} m</b></div>
+                <div className="kv"><span>{t('rightpanel.volume')}</span><b>{fmtQty(q.vars.VOL, 'm³')}</b></div>
+                <div className="kv"><span>{t('rightpanel.area_da_base')}</span><b>{fmtQty(q.vars.A, 'm²')}</b></div>
+                <div className="kv"><span>{t('rightpanel.area_lateral')}</span><b>{fmtQty(q.vars.AL, 'm²')}</b></div>
+                <div className="kv"><span>{t('rightpanel.topo_na_cota')}</span><b>{fmtQty((m.base ?? 0) + (m.height ?? DEFAULT_SOLID_HEIGHT), 'm')}</b></div>
               </>
             ) : <span className="muted small">{t('rightpanel.defina_a_escala_da_folha')}</span>}
           </div>
@@ -202,7 +203,7 @@ function Props() {
           <Field label={t('rightpanel.nome_do_ambiente')}><input value={m.text} onChange={(e) => s.updateMarkup(m.id, { text: e.target.value }, false)} /></Field>
           <div className="row">
             <Field label={t('rightpanel.cor')}><input type="color" value={m.color} onChange={(e) => up({ color: e.target.value, fill: e.target.value })} /></Field>
-            <span className="muted small">{q ? t('rightpanel.m_m_de_perimetro', { v: fmt(q.vars.A), v2: fmt(q.vars.P) }) : t('rightpanel.defina_a_escala_para_medir')}</span>
+            <span className="muted small">{q ? t('rightpanel.m_m_de_perimetro', { v: fmtQty(q.vars.A, 'm²'), v2: fmtQty(q.vars.P, 'm') }) : t('rightpanel.defina_a_escala_para_medir')}</span>
           </div>
           <span className="muted small">{t('rightpanel.medicoes_cujo_centro_cai_dentro')}</span>
         </>
@@ -331,7 +332,7 @@ function Presets() {
                   <PresetSwatch p={p} />
                   <div className="preset-txt">
                     <span className="preset-name">{p.name}</span>
-                    <span className="muted small">{MEASURE_LABEL[p.measure]}{p.formula ? ` = ${p.formula}` : p.factor !== 1 ? ` × ${fmt(p.factor)}` : ''} · {p.resultUnit}{p.code ? ` · ${p.code}` : ''}</span>
+                    <span className="muted small">{MEASURE_LABEL[p.measure]}{p.formula ? ` = ${p.formula}` : p.factor !== 1 ? ` × ${fmt(p.factor)}` : ''} · {unitName(p.resultUnit)}{p.code ? ` · ${p.code}` : ''}</span>
                   </div>
                   <div className="preset-actions" onClick={(e) => e.stopPropagation()}>
                     <button className="icon-btn xs" data-tip={t('rightpanel.editar')} onClick={() => s.set({ presetDialog: { id: p.id } })}><Pencil size={13} /></button>
@@ -352,6 +353,9 @@ function Presets() {
     </div>
   )
 }
+
+/** arredonda para não aparecer 9,180000000001 num campo depois da conversão de unidade */
+const r3 = (x: number) => Math.round(x * 1000) / 1000
 
 export function PresetSwatch({ p }: { p: Preset }) {
   return (

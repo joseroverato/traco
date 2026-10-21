@@ -34,6 +34,12 @@ Coisas que valem em todas as línguas:
 - **Dados da pessoa não são traduzidos**: nomes de marcadores que ela criou ou editou, nomes de status, textos de marcações. Os marcadores e o autor **padrão** acompanham o idioma enquanto ela não os tiver alterado.
 - **Texto desenhado dentro de PDFs** (legenda de quantitativo, relatório de compatibilização, rótulos de medida) usa a fonte padrão do PDF, que cobre as línguas latinas mas não ideogramas: em **chinês esse texto sai em inglês**. Os outros textos do app são todos em chinês.
 
+## OCR, unidades e atalhos
+
+- **OCR:** lê no idioma do app (ou no que a pessoa escolher ao lado do botão OCR). Português e inglês vêm no instalador; espanhol, francês, alemão, italiano e chinês baixam de 1 a 4 MB uma única vez, depois de a pessoa confirmar. Os códigos de idioma do Tesseract estão em `CODES`, em `electron/engine.mjs`.
+- **Unidades:** Configurações › Sobre › Unidades. O projeto guarda tudo em metros; o modo imperial só converte o que aparece e o que se digita (m → ft, m² → ft², m³ → yd³; escalas como 1/4" = 1'-0"). Textos traduzidos que citam medidas recebem o número já com a unidade (`fmtQty` em `src/units.ts`): não escreva "m²" dentro de uma tradução.
+- **Atalhos:** cada ferramenta tem uma letra de fábrica (`DEFAULT_KEYS` em `src/hotkeys.ts`) e a pessoa troca em Configurações › Atalhos. Textos que citam a tecla recebem `{key}` (ex.: `view3d.nada_para_mostrar`).
+
 ## Como corrigir ou melhorar uma tradução
 
 1. Abra `src/i18n/<idioma>.ts` (`en`, `es`, `fr`, `de`, `it` ou `zh`).

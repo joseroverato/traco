@@ -8,6 +8,7 @@ import type { Source } from './pdf'
 import { DEFAULT_SOLID_HEIGHT, arrowHead, bbox, centroid, cloudPoints, fmt, measureOf, scaleFor, signedArea, stampText } from './geometry'
 import type { Markup, Preset, Pt, Sheet } from './types'
 import { fmtMoney, t, tPdf } from './i18n'
+import { fmtQty } from './units'
 
 export interface ExportOptions {
   sheetIds?: string[] // padrão: todas, na ordem atual
@@ -115,7 +116,7 @@ async function paintMarkup(P: Painter, m: Markup, preset: Preset | undefined, ct
   const dash = preset?.dash === 'dash' ? [m.width * 4, m.width * 2.5] : preset?.dash === 'dot' ? [m.width, m.width * 2] : undefined
   const q = measureOf(m, scaleFor(m, ctx.all, ctx.sheetScale), preset)
   const derived = !!preset && (!!preset.formula?.trim() || (preset.factor !== 1 && !!preset.factor))
-  const label = (base: string) => (!q ? tPdf('markupshape.sem_escala') : `${m.deduct ? '-' : ''}${fmt(q.raw)} ${base}${derived ? ` -> ${fmt(Math.abs(q.value))} ${q.unit}` : ''}`)
+  const label = (base: string) => (!q ? tPdf('markupshape.sem_escala') : `${m.deduct ? '-' : ''}${fmtQty(q.raw, base)}${derived ? ` -> ${fmtQty(Math.abs(q.value), q.unit)}` : ''}`)
   switch (m.kind) {
     case 'rect':
     case 'ellipse':
@@ -184,7 +185,7 @@ async function paintMarkup(P: Painter, m: Markup, preset: Preset | undefined, ct
       if (m.points.length > 2) {
         const c = centroid(m.points)
         P.text({ x: c.x, y: c.y - 2 }, m.text || tPdf('markupshape.ambiente'), 8, m.color, { bold: true, align: 'center', halo: true })
-        if (q) P.text({ x: c.x, y: c.y + 8 }, `${fmt(q.vars.A)} m²`, 7, m.color, { align: 'center', halo: true })
+        if (q) P.text({ x: c.x, y: c.y + 8 }, fmtQty(q.vars.A, 'm²'), 7, m.color, { align: 'center', halo: true })
       }
       break
     }
@@ -193,7 +194,7 @@ async function paintMarkup(P: Painter, m: Markup, preset: Preset | undefined, ct
       if (m.points.length > 2) {
         const c = centroid(m.points)
         P.text({ x: c.x, y: c.y - 2 }, m.text || tPdf('markupshape.solido'), 8, m.color, { bold: true, align: 'center', halo: true })
-        P.text({ x: c.x, y: c.y + 8 }, q ? `h = ${fmt(m.height ?? DEFAULT_SOLID_HEIGHT)} m · ${fmt(q.vars.VOL)} m³` : `h = ${fmt(m.height ?? DEFAULT_SOLID_HEIGHT)} m`, 7, m.color, { align: 'center', halo: true })
+        P.text({ x: c.x, y: c.y + 8 }, q ? `h = ${fmtQty(m.height ?? DEFAULT_SOLID_HEIGHT, 'm')} · ${fmtQty(q.vars.VOL, 'm³')}` : `h = ${fmtQty(m.height ?? DEFAULT_SOLID_HEIGHT, 'm')}`, 7, m.color, { align: 'center', halo: true })
       }
       break
     }

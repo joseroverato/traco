@@ -1,10 +1,12 @@
 import { useStore } from '../store'
 import { TOOLS } from '../railTools'
 import { RichTip } from './RichTip'
+import { useKeymap } from '../hotkeys'
 
 export function ToolRail() {
   const { tool, setTool, sheets } = useStore()
   const doc = sheets.length > 0
+  useKeymap() // redesenha quando a pessoa troca uma letra
   let last = -1
   return (
     <nav className="rail">

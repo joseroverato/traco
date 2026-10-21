@@ -1,6 +1,6 @@
 import * as XLSX from 'xlsx'
 import { measureOf, scaleFor } from './geometry'
-import { summarize } from './summary'
+import { displayRows, summarize } from './summary'
 import { download } from './project'
 import { useStore } from './store'
 import { spaceOf } from './columns'
@@ -12,7 +12,7 @@ export function exportXlsx(fileName: string, markups: Markup[], presets: Preset[
   const st = useStore.getState()
   const by = st.groupBy
   const cols = st.columns
-  const sum = summarize(markups, presets, scales, pages, st.markups, by, cols)
+  const sum = displayRows(summarize(markups, presets, scales, pages, st.markups, by, cols))
   const r2 = (n: number) => Math.round(n * 100) / 100
   const byLabel = { preset: '', space: t('xlsx.ambiente'), level: t('xlsx.pavimento'), sheet: t('xlsx.folha'), status: t('xlsx.status') }[by]
   const service = t('xlsx.servico')

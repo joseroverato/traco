@@ -1009,5 +1009,8 @@ const catalog: Catalog = {
   "dialogs.unidades_metrico": "Metrico (m, m², m³)",
   "dialogs.unidades_imperial": "Imperiale (ft, ft², yd³)",
   "dialogs.unidades_ajuda": "Cambia solo come le misure vengono mostrate e digitate. Il progetto salva tutto in metri; formule e fattori delle voci restano in metri e i totali in denaro non cambiano.",
+  "mobile.mais": "Altro",
+  "mobile.voltar_a_folha": "Torna al foglio",
+  "mobile.ferramentas": "Strumenti",
 }
 export default catalog

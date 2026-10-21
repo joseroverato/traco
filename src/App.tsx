@@ -26,6 +26,8 @@ const Loading = () => <div className="loading-mod">{t('app.carregando')}</div>
 import { loadFile, saveProject } from './project'
 import { desktop } from './platform'
 import { SearchBar } from './components/SearchBar'
+import { MobileShell } from './components/MobileShell'
+import { useIsMobile } from './mobile'
 import { Resizer } from './components/Resizer'
 import { togglePanel } from './panels'
 import { ChevronLeft, ChevronUp } from 'lucide-react'
@@ -37,6 +39,7 @@ export default function App() {
   const s = useStore()
   const units = useUnits() // idem para as unidades (m ↔ ft)
   const lang = useLang() // trocar o idioma refaz a tela inteira (textos que ficaram em cache dentro de componentes)
+  const mobile = useIsMobile()
   const input = useRef<HTMLInputElement>(null)
   const imgInput = useRef<HTMLInputElement>(null)
   const open = useCallback(async () => {
@@ -135,7 +138,8 @@ export default function App() {
   const rightW = s.rightTab === 'claude' ? Math.max(390, s.rightW) : s.rightW
   const cols = `${showLeft ? '240px' : '0px'} 48px 1fr ${showRight ? `${rightW}px` : '0px'}`
   return (
-    <div className="app" key={`${lang}-${units}`}>
+    <div className={`app ${mobile ? 'mobile' : ''}`} key={`${lang}-${units}`}>
+      {mobile ? <MobileShell onOpen={open} /> : <>
       <TopBar onOpen={open} />
       <div className="shell">
         <NavBar />
@@ -173,6 +177,7 @@ export default function App() {
         <div key="compare" className="workspace single mode-in"><Suspense fallback={<Loading />}><CompareView /></Suspense></div>
       )}
       </div>
+      </>}
       <ScaleDialog key={s.calibrating ? `${s.calibrating.page}-${s.calibrating.length}-${s.calibrating.viewport}` : 'none'} />
       <Suspense fallback={null}>
         {s.dialog === 'export' && <ExportDialog />}
@@ -184,7 +189,7 @@ export default function App() {
         {s.dialog === 'recover' && <RecoverDialog />}
         {s.presetDialog && <PresetDialog />}
       </Suspense>
-      <Tour />
+      {!mobile && <Tour />}
       {s.toast && <div className="toast">{s.toast}</div>}
       <input
         ref={input}

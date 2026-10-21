@@ -18,6 +18,13 @@ export function start() {
       desktop!.replyCommand(req.id, await runCommand(req.name, req.args))
     })
   }
+  // versão web instalável (PWA): service worker para abrir sem rede; fora do app de PC e da prévia em arquivo único
+  if (!desktop && import.meta.env.PROD && import.meta.env.VITE_SINGLE !== '1' && 'serviceWorker' in navigator) {
+    const register = () => navigator.serviceWorker.register('./sw.js').catch((e) => console.warn('sw', e))
+    // o app só inicia depois do idioma carregar, então o evento load pode já ter passado
+    if (document.readyState === 'complete') register()
+    else window.addEventListener('load', register)
+  }
   // acesso para automação/testes
   ;(window as unknown as { __traco: unknown }).__traco = { runCommand }
 

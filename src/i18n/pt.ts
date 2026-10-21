@@ -1007,4 +1007,7 @@ export const pt = {
   "dialogs.unidades_metrico": "Métrico (m, m², m³)",
   "dialogs.unidades_imperial": "Imperial (ft, ft², yd³)",
   "dialogs.unidades_ajuda": "Muda só como as medidas aparecem e o que você digita. O projeto guarda tudo em metros; fórmulas e fatores dos marcadores continuam em metros, e o valor total em dinheiro não muda.",
+  "mobile.mais": "Mais",
+  "mobile.voltar_a_folha": "Voltar à folha",
+  "mobile.ferramentas": "Ferramentas",
 } as const satisfies Record<string, string>

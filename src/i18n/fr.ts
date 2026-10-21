@@ -1012,5 +1012,9 @@ const catalog: Catalog = {
   "mobile.mais": "Plus",
   "mobile.voltar_a_folha": "Retour à la feuille",
   "mobile.ferramentas": "Outils",
+  "mobile.adicionar_ponto": "Ajouter un point",
+  "mobile.desfazer_ponto": "Annuler le point",
+  "mobile.dica_mira": "Déplacez la feuille sous le réticule et touchez Ajouter un point",
+  "mobile.sair_da_medicao": "Quitter la mesure",
 }
 export default catalog

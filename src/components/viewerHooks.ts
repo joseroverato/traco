@@ -130,6 +130,37 @@ export function useZoomControls({ box, hasDoc, info, doc, page, size, zoom, layo
     return () => window.removeEventListener('traco:zoom', h)
   }, [smoothZoom, size])
 
+  /** Zoom imediato (pinça): o ponto (px, py) da folha fica sob (cx, cy) da área visível; dá também o arrastar com dois dedos. */
+  const zoomAt = useCallback((z: number, px: number, py: number, cx: number, cy: number) => {
+    const el = box.current
+    if (!el) return
+    if (zoomAnim.current) {
+      cancelAnimationFrame(zoomAnim.current.raf)
+      zoomAnim.current = null
+    }
+    const nz = clampZoom(z)
+    const place = () => {
+      const l = layoutRef.current(useStore.getState().zoom)
+      const z2 = useStore.getState().zoom
+      el.scrollLeft = px * z2 + l.left - cx
+      el.scrollTop = py * z2 + l.top - cy
+    }
+    if (nz === useStore.getState().zoom) {
+      // se um zoom anterior ainda espera o React reposicionar a rolagem, ele passa a usar este centro
+      if (anchor.current) anchor.current = { px, py, cx, cy }
+      place()
+    } else {
+      anchor.current = { px, py, cx, cy }
+      useStore.setState({ zoom: nz })
+    }
+    // vários toques no mesmo quadro podem devolver o zoom ao valor já desenhado: o React não reposiciona e a âncora ficaria sem uso
+    requestAnimationFrame(() => {
+      if (!anchor.current) return
+      anchor.current = null
+      place()
+    })
+  }, [box])
+
   // centraliza um ponto da folha (busca, lista de itens)
   useEffect(() => {
     const h = (e: Event) => {
@@ -142,6 +173,8 @@ export function useZoomControls({ box, hasDoc, info, doc, page, size, zoom, layo
     window.addEventListener('traco:center', h)
     return () => window.removeEventListener('traco:center', h)
   }, [zoom, layoutFor, box])
+
+  return { zoomAt }
 }
 
 interface RenderArgs {

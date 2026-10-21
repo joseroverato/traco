@@ -1012,5 +1012,9 @@ const catalog: Catalog = {
   "mobile.mais": "Mehr",
   "mobile.voltar_a_folha": "Zurück zum Blatt",
   "mobile.ferramentas": "Werkzeuge",
+  "mobile.adicionar_ponto": "Punkt setzen",
+  "mobile.desfazer_ponto": "Punkt zurück",
+  "mobile.dica_mira": "Blatt unter das Fadenkreuz schieben und Punkt setzen tippen",
+  "mobile.sair_da_medicao": "Messen beenden",
 }
 export default catalog

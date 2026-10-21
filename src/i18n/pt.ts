@@ -1010,4 +1010,8 @@ export const pt = {
   "mobile.mais": "Mais",
   "mobile.voltar_a_folha": "Voltar à folha",
   "mobile.ferramentas": "Ferramentas",
+  "mobile.adicionar_ponto": "Adicionar ponto",
+  "mobile.desfazer_ponto": "Desfazer ponto",
+  "mobile.dica_mira": "Mova a folha até a mira e toque em Adicionar ponto",
+  "mobile.sair_da_medicao": "Sair da medição",
 } as const satisfies Record<string, string>

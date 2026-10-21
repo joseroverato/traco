@@ -1,6 +1,6 @@
 import { Suspense, lazy, useEffect, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
-import { ArrowLeft, Box, ClipboardList, Columns2, Ellipsis, FileDown, FilePenLine, FolderOpen, Files, Layers3, LayoutGrid, Maximize, Minus, Moon, Plus, Redo2, Ruler, Save, Search, Settings, SquareStack, Stamp, Sun, Sparkles, Table2, Tags, Undo2, X } from 'lucide-react'
+import { ArrowLeft, Box, Check, ClipboardList, Columns2, Ellipsis, FileDown, FilePenLine, FolderOpen, Files, Layers3, LayoutGrid, Maximize, Minus, Moon, Plus, Redo2, Ruler, Save, Search, Settings, SlidersHorizontal, SquareStack, Stamp, Sun, Sparkles, Table2, Tags, Trash2, Undo2, X } from 'lucide-react'
 import { curSheet, useStore } from '../store'
 import type { State } from '../store'
 import { saveProject } from '../project'
@@ -10,6 +10,7 @@ import { LeftPanel } from './LeftPanel'
 import { RightPanel } from './RightPanel'
 import { BottomPanel } from './BottomPanel'
 import { SearchBar } from './SearchBar'
+import { isMiraTool, miraCmd, useMira } from '../mira'
 import { t, useLang } from '../i18n'
 
 const PagesView = lazy(() => import('./PagesView').then((m) => ({ default: m.PagesView })))
@@ -34,6 +35,23 @@ export function MobileShell({ onOpen }: { onOpen: () => void }) {
   const sh = curSheet(s)
   const sc = sh ? s.scales[sh.id] : undefined
   const review = s.mode === 'review' || !has
+  const mira = review && has && isMiraTool(s.tool)
+  const miraN = useMira((m) => m.n)
+  const miraMin = useMira((m) => m.min)
+
+  // ao abrir um documento a mão já vem selecionada: arrastar move a folha
+  useEffect(() => {
+    if (has) useStore.getState().setTool('pan')
+  }, [has])
+
+  // o Safari do iPhone dá zoom na página com a pinça; aqui a pinça é do visor
+  useEffect(() => {
+    const stop = (e: Event) => e.preventDefault()
+    for (const ev of ['gesturestart', 'gesturechange', 'gestureend']) document.addEventListener(ev, stop, { passive: false })
+    return () => {
+      for (const ev of ['gesturestart', 'gesturechange', 'gestureend']) document.removeEventListener(ev, stop)
+    }
+  }, [])
 
   // escolheu um marcador ou uma folha: a gaveta fecha para a pessoa trabalhar na planta
   useEffect(() => {
@@ -138,7 +156,28 @@ export function MobileShell({ onOpen }: { onOpen: () => void }) {
         )}
       </main>
 
-      {has && review && (
+      {mira && (
+        <div className="m-mira">
+          <p>{t('mobile.dica_mira')}</p>
+          <div className="m-mira-row">
+            <button className="m-mira-btn" disabled={miraN === 0} onClick={() => miraCmd('undo')}><Undo2 size={20} /><span>{t('mobile.desfazer_ponto')}</span></button>
+            <button className="m-mira-btn primary" onClick={() => miraCmd('add')}><Plus size={22} /><span>{t('mobile.adicionar_ponto')}</span></button>
+            <button className="m-mira-btn ok" disabled={miraN < miraMin} onClick={() => miraCmd('done')}><Check size={20} /><span>{t('dialogs.concluir')}</span></button>
+            <button className="m-mira-btn" aria-label={miraN ? t('dialogs.cancelar') : t('mobile.sair_da_medicao')} onClick={() => (miraN ? miraCmd('cancel') : s.setTool('pan'))}><X size={20} /></button>
+          </div>
+        </div>
+      )}
+
+      {has && review && !mira && s.selected.length > 0 && (
+        <div className="m-sel">
+          <b>{s.selected.length}</b>
+          <button aria-label={t('rightpanel.propriedades')} onClick={() => openRight('props')}><SlidersHorizontal size={20} /></button>
+          <button className="danger" aria-label={t('rightpanel.excluir')} onClick={() => s.removeMarkups(s.selected)}><Trash2 size={20} /></button>
+          <button aria-label={t('dialogs.fechar')} onClick={() => s.set({ selected: [] })}><X size={20} /></button>
+        </div>
+      )}
+
+      {has && review && !mira && (
         <nav className="m-tools" ref={strip} aria-label={t('mobile.ferramentas')}>
           {TOOLS.map((tl) => {
             const sep = last !== -1 && tl.group !== last

@@ -1012,5 +1012,9 @@ const catalog: Catalog = {
   "mobile.mais": "更多",
   "mobile.voltar_a_folha": "返回图纸",
   "mobile.ferramentas": "工具",
+  "mobile.adicionar_ponto": "添加点",
+  "mobile.desfazer_ponto": "撤销上一点",
+  "mobile.dica_mira": "把图纸移到十字准线下，再点“添加点”",
+  "mobile.sair_da_medicao": "退出测量",
 }
 export default catalog

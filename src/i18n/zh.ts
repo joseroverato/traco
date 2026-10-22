@@ -1016,5 +1016,16 @@ const catalog: Catalog = {
   "mobile.desfazer_ponto": "撤销上一点",
   "mobile.dica_mira": "把图纸移到十字准线下，再点“添加点”",
   "mobile.sair_da_medicao": "退出测量",
+  "dialogs.aparencia": "外观",
+  "dialogs.tema": "主题",
+  "dialogs.cor_principal": "主色",
+  "dialogs.cor_principal_ajuda": "决定背景和面板的色调。保持低调，以确保文字清晰可读。",
+  "dialogs.cor_de_acento": "强调色",
+  "dialogs.cor_de_acento_ajuda": "用于按钮、选中项和高亮。其上的文字会自动调整，保持清晰可读。",
+  "dialogs.cor_padrao": "默认",
+  "dialogs.cor_personalizada": "自定义",
+  "dialogs.restaurar_cores": "恢复颜色",
+  "dialogs.legibilidade": "可读性：按钮对比度 {a}:1，彩色文字对比度 {b}:1（建议不低于 4.5:1）",
+  "dialogs.previa": "预览",
 }
 export default catalog

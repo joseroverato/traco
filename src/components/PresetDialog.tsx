@@ -10,6 +10,7 @@ import { fmt } from '../geometry'
 import { PresetSwatch } from './RightPanel'
 import { localeOf, t } from '../i18n'
 import { Rich } from './Rich'
+import { TickSlider } from './TickSlider'
 
 const BLANK: Omit<Preset, 'id'> = {
   name: '', group: 'Geral', code: '', measure: 'area', color: '#0090ff', opacity: 0.25, width: 1.5, dash: 'solid', pattern: 'solid',
@@ -137,7 +138,7 @@ export function PresetDialog() {
                   <option value="solid">{t('presetdialog.solida')}</option><option value="hatch">{t('presetdialog.diagonal')}</option><option value="cross">{t('presetdialog.xadrez')}</option><option value="dots">{t('presetdialog.pontos')}</option><option value="none">{t('presetdialog.sem_preenchimento')}</option>
                 </select>
               </F>
-              <F label={t('presetdialog.opacidade', { round: Math.round(p.opacity * 100) })}><input type="range" min={0} max={0.9} step={0.05} value={p.opacity} onChange={(e) => up({ opacity: Number(e.target.value) })} /></F>
+              <F label={t('presetdialog.opacidade', { round: Math.round(p.opacity * 100) })}><TickSlider min={0} max={0.9} step={0.05} value={p.opacity} onChange={(v) => up({ opacity: v })} /></F>
             </>
           )}
           <F label={t('presetdialog.fator_h')}><input type="number" step={0.01} value={p.factor} onChange={(e) => up({ factor: Number(e.target.value) })} /></F>

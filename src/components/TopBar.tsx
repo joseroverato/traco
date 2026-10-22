@@ -1,6 +1,10 @@
 import { Columns2, Settings, Search, FileDown, FolderOpen, Maximize, MoveHorizontal, Moon, PanelBottom, PanelLeft, PanelRight, Redo2, Save, Stamp, Sun, Undo2, ZoomIn, ZoomOut } from 'lucide-react'
+import { useLayoutEffect, useRef, useState } from 'react'
 import { curSheet, useStore } from '../store'
 import type { Mode } from '../store'
+import { setModeAnimated, withTransition } from '../motion'
+import { applyPalette } from '../theme'
+import { Logo } from './Logo'
 import { saveProject } from '../project'
 import { IS_DESKTOP } from '../platform'
 import { t } from '../i18n'
@@ -11,6 +15,34 @@ const MODES: { id: Mode; label: string }[] = [
   { id: 'compare', get label() { return t('topbar.comparar') } },
   { id: '3d', label: '3D' },
 ]
+
+/** Botões de modo com um indicador que desliza até o escolhido. */
+function ModeSwitch({ has, mode }: { has: boolean; mode: Mode }) {
+  const box = useRef<HTMLDivElement>(null)
+  const [pill, setPill] = useState<{ x: number; w: number } | null>(null)
+  useLayoutEffect(() => {
+    const el = box.current
+    if (!el) return
+    const place = () => {
+      const b = el.querySelector<HTMLElement>('button.active')
+      setPill(b ? { x: b.offsetLeft, w: b.offsetWidth } : null)
+    }
+    place()
+    const ro = new ResizeObserver(place)
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [mode, has])
+  return (
+    <div className="modes" ref={box}>
+      {pill && <i className="modes-pill" style={{ transform: `translateX(${pill.x}px)`, width: pill.w }} />}
+      {MODES.map((m) => (
+        <button key={m.id} className={mode === m.id ? 'active' : ''} disabled={!has} onClick={() => setModeAnimated(m.id, { selected: [], tool: 'select' })}>
+          {m.label}
+        </button>
+      ))}
+    </div>
+  )
+}
 
 export function TopBar({ onOpen }: { onOpen: () => void }) {
   const s = useStore()
@@ -26,15 +58,16 @@ export function TopBar({ onOpen }: { onOpen: () => void }) {
     } catch {
       /* sem storage */
     }
-    s.set({ theme: t })
+    withTransition(() => {
+      applyPalette(t)
+      document.documentElement.dataset.theme = t // já dentro da transição, para o navegador guardar o "depois" com o tema novo
+      s.set({ theme: t })
+    }, 'theme')
   }
   return (
     <header className="topbar">
       <div className="brand">
-        <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden>
-          <rect x="2" y="2" width="20" height="20" rx="6" fill="var(--accent)" />
-          <path d="M7 16.5 L17 7.5 M7 7.5 h5" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" />
-        </svg>
+        <Logo size={24} />
         <span>Traço</span>
         {IS_DESKTOP && <span className="edition" title={t('topbar.app_de_pc_com_motor')}>PC</span>}
       </div>
@@ -46,13 +79,8 @@ export function TopBar({ onOpen }: { onOpen: () => void }) {
         <button className="icon-btn" data-tip={t('topbar.desfazer_ctrl_z')} disabled={!s.past.length} onClick={s.undo}><Undo2 size={17} /></button>
         <button className="icon-btn" data-tip={t('topbar.refazer_ctrl_y')} disabled={!s.future.length} onClick={s.redo}><Redo2 size={17} /></button>
       </div>
-      <div className="modes">
-        {MODES.map((m) => (
-          <button key={m.id} className={s.mode === m.id ? 'active' : ''} disabled={!has} onClick={() => s.set({ mode: m.id, selected: [], tool: 'select' })}>
-            {m.label}
-          </button>
-        ))}
-      </div>
+      <ModeSwitch has={has} mode={s.mode} />
+
       <div className="doc-title" title={s.fileName}>
         {s.fileName ? (
           <>

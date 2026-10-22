@@ -24,6 +24,8 @@ import { copyDiagnostic } from '../diagnostics'
 import { setUnits, useUnits } from '../units'
 import type { UnitSystem } from '../units'
 import { useDialogA11y } from '../dialogA11y'
+import { TickSlider } from './TickSlider'
+import { AppearancePanel } from './AppearancePanel'
 
 function Modal({ title, children, onClose, actions, wide }: { title: string; children: React.ReactNode; onClose: () => void; actions: React.ReactNode; wide?: boolean }) {
   const a11y = useDialogA11y(onClose)
@@ -233,8 +235,8 @@ export function StampDialog() {
                 <label className="field"><span>{t('dialogs.borda')}</span><input type="number" min={0} step={0.5} value={border} onChange={(e) => setBorder(Number(e.target.value))} /></label>
               </div>
               <div className="row">
-                <label className="field"><span>{t('dialogs.rotacao', { angle })}</span><input type="range" min={-90} max={90} step={5} value={angle} onChange={(e) => setAngle(Number(e.target.value))} /></label>
-                <label className="field"><span>{t('dialogs.opacidade', { round: Math.round(opacity * 100) })}</span><input type="range" min={0.05} max={1} step={0.05} value={opacity} onChange={(e) => setOpacity(Number(e.target.value))} /></label>
+                <label className="field"><span>{t('dialogs.rotacao', { angle })}</span><TickSlider min={-90} max={90} step={5} value={angle} unit="°" onChange={(v) => setAngle(v)} /></label>
+                <label className="field"><span>{t('dialogs.opacidade', { round: Math.round(opacity * 100) })}</span><TickSlider min={0.05} max={1} step={0.05} value={opacity} onChange={(v) => setOpacity(v)} /></label>
               </div>
             </>
           )}
@@ -542,7 +544,7 @@ function AboutPanel({ st, goUpdates }: { st: UpdateState; goUpdates: () => void 
 
 /** Configurações: aba Sobre (versão e atualização) e aba Atualizações (token do GitHub). */
 export function SettingsDialog() {
-  const [tab, setTab] = useState<'about' | 'keys' | 'updates'>('about')
+  const [tab, setTab] = useState<'about' | 'look' | 'keys' | 'updates'>('about')
   const [st, setSt] = useState<UpdateState>({ status: 'idle', current: APP_VERSION })
   const up = desktop?.update
   useEffect(() => {
@@ -558,10 +560,11 @@ export function SettingsDialog() {
     <Modal wide={tab === 'keys'} title={t('dialogs.configuracoes')} onClose={close} actions={<><div className="spacer" /><button className="btn ghost" onClick={close}>{t('dialogs.fechar')}</button></>}>
       <div className="tabs">
         <button className={tab === 'about' ? 'active' : ''} onClick={() => setTab('about')}>{t('dialogs.sobre')}</button>
+        <button className={tab === 'look' ? 'active' : ''} onClick={() => setTab('look')}>{t('dialogs.aparencia')}</button>
         <button className={tab === 'keys' ? 'active' : ''} onClick={() => setTab('keys')}>{t('dialogs.atalhos')}</button>
         <button className={tab === 'updates' ? 'active' : ''} onClick={() => setTab('updates')}>{t('dialogs.atualizacoes')}</button>
       </div>
-      {tab === 'about' ? <AboutPanel st={st} goUpdates={() => setTab('updates')} /> : tab === 'keys' ? <KeysPanel /> : <UpdatesPanel st={st} setSt={setSt} />}
+      {tab === 'about' ? <AboutPanel st={st} goUpdates={() => setTab('updates')} /> : tab === 'look' ? <AppearancePanel /> : tab === 'keys' ? <KeysPanel /> : <UpdatesPanel st={st} setSt={setSt} />}
     </Modal>
   )
 }

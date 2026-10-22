@@ -1016,5 +1016,16 @@ const catalog: Catalog = {
   "mobile.desfazer_ponto": "Punkt zurück",
   "mobile.dica_mira": "Blatt unter das Fadenkreuz schieben und Punkt setzen tippen",
   "mobile.sair_da_medicao": "Messen beenden",
+  "dialogs.aparencia": "Darstellung",
+  "dialogs.tema": "Design",
+  "dialogs.cor_principal": "Hauptfarbe",
+  "dialogs.cor_principal_ajuda": "Gibt Hintergrund und Bedienfeldern den Ton. Sie bleibt dezent, damit der Text lesbar bleibt.",
+  "dialogs.cor_de_acento": "Akzentfarbe",
+  "dialogs.cor_de_acento_ajuda": "Schaltflächen, Auswahl und Hervorhebungen. Der Text darauf passt sich selbst an, damit er lesbar bleibt.",
+  "dialogs.cor_padrao": "Standard",
+  "dialogs.cor_personalizada": "Benutzerdefiniert",
+  "dialogs.restaurar_cores": "Farben zurücksetzen",
+  "dialogs.legibilidade": "Lesbarkeit: Kontrast {a}:1 auf der Schaltfläche und {b}:1 bei farbigem Text (empfohlenes Minimum: 4,5:1)",
+  "dialogs.previa": "Vorschau",
 }
 export default catalog

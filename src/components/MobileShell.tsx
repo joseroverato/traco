@@ -12,6 +12,9 @@ import { BottomPanel } from './BottomPanel'
 import { SearchBar } from './SearchBar'
 import { isMiraTool, miraCmd, useMira } from '../mira'
 import { t, useLang } from '../i18n'
+import { setModeAnimated, withTransition } from '../motion'
+import { applyPalette } from '../theme'
+import { Logo } from './Logo'
 
 const PagesView = lazy(() => import('./PagesView').then((m) => ({ default: m.PagesView })))
 const View3D = lazy(() => import('./View3D').then((m) => ({ default: m.View3D })))
@@ -30,6 +33,7 @@ export function MobileShell({ onOpen }: { onOpen: () => void }) {
   useLang()
   const s = useStore()
   const [sheet, setSheet] = useState<Sheet>(null)
+  const [closing, setClosing] = useState(false)
   const strip = useRef<HTMLElement>(null)
   const has = s.sheets.length > 0
   const sh = curSheet(s)
@@ -73,7 +77,11 @@ export function MobileShell({ onOpen }: { onOpen: () => void }) {
     } catch {
       /* sem storage */
     }
-    s.set({ theme: next })
+    withTransition(() => {
+      document.documentElement.dataset.theme = next
+      applyPalette(next)
+      s.set({ theme: next })
+    }, 'theme')
   }
   const openLeft = (nav: Nav) => {
     s.set({ nav, mode: 'review', focus: false })
@@ -84,11 +92,20 @@ export function MobileShell({ onOpen }: { onOpen: () => void }) {
     setSheet('right')
   }
   const goMode = (mode: State['mode']) => {
-    s.set({ mode, selected: [], tool: 'select' })
     setSheet(null)
+    setModeAnimated(mode, { selected: [], tool: 'select' })
+  }
+  /** Fecha a gaveta com a animação de descida (a troca de gaveta pelas abas continua direta). */
+  const closeSheet = () => {
+    if (!sheet || closing) return
+    setClosing(true)
+    setTimeout(() => {
+      setSheet(null)
+      setClosing(false)
+    }, 200)
   }
   const act = (fn: () => void) => () => {
-    setSheet(null)
+    closeSheet()
     fn()
   }
 
@@ -110,10 +127,7 @@ export function MobileShell({ onOpen }: { onOpen: () => void }) {
   return (
     <div className="m-app">
       <header className="m-top">
-        <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden className="m-logo">
-          <rect x="2" y="2" width="20" height="20" rx="6" fill="var(--accent)" />
-          <path d="M7 16.5 L17 7.5 M7 7.5 h5" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" />
-        </svg>
+        <Logo size={28} className="m-logo" />
         <div className="m-title">
           {s.fileName ? (
             <>
@@ -148,7 +162,7 @@ export function MobileShell({ onOpen }: { onOpen: () => void }) {
           </>
         ) : (
           <>
-            <button className="m-back" onClick={() => s.set({ mode: 'review' })}><ArrowLeft size={18} /> {t('mobile.voltar_a_folha')}</button>
+            <button className="m-back" onClick={() => setModeAnimated('review')}><ArrowLeft size={18} /> {t('mobile.voltar_a_folha')}</button>
             <Suspense fallback={<div className="loading-mod">{t('app.carregando')}</div>}>
               {s.mode === 'pages' ? <PagesView /> : s.mode === '3d' ? <View3D /> : <CompareView />}
             </Suspense>
@@ -199,7 +213,7 @@ export function MobileShell({ onOpen }: { onOpen: () => void }) {
         {tabs.map((tb) => {
           const I = tb.icon
           return (
-            <button key={tb.id} className={sheet === tb.id ? 'active' : ''} disabled={!has && tb.id !== 'more' && tb.id !== 'left'} onClick={() => (sheet === tb.id ? setSheet(null) : tb.run())}>
+            <button key={tb.id} className={sheet === tb.id ? 'active' : ''} disabled={!has && tb.id !== 'more' && tb.id !== 'left'} onClick={() => (sheet === tb.id ? closeSheet() : tb.run())}>
               <I size={22} strokeWidth={1.7} />
               <span>{tb.label}</span>
             </button>
@@ -208,9 +222,9 @@ export function MobileShell({ onOpen }: { onOpen: () => void }) {
       </nav>
 
       {sheet && (
-        <div className="m-sheet-back" onClick={() => setSheet(null)}>
+        <div className={`m-sheet-back ${closing ? "closing" : ""}`} onClick={closeSheet}>
           <section className={`m-sheet ${sheet}`} role="dialog" onClick={(e) => e.stopPropagation()}>
-            <button className="m-sheet-close" aria-label={t('dialogs.fechar')} onClick={() => setSheet(null)}><X size={20} /></button>
+            <button className="m-sheet-close" aria-label={t('dialogs.fechar')} onClick={closeSheet}><X size={20} /></button>
             <div className="m-sheet-body">
               {sheet === 'left' && <LeftPanel />}
               {sheet === 'right' && <RightPanel />}

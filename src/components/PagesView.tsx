@@ -12,6 +12,7 @@ import { parseRanges } from '../ranges'
 import { rotateSheets } from '../sheetOps'
 import { LANGS, localeOf, t, useLang } from '../i18n'
 import type { Lang } from '../i18n'
+import { setModeAnimated } from '../motion'
 
 const uid = () => Math.random().toString(36).slice(2, 10)
 
@@ -202,7 +203,7 @@ export function PagesView() {
                 setDropAt(null)
               }}
               onClick={(e) => click(e, sh.id)}
-              onDoubleClick={() => s.set({ mode: 'review', page: i })}
+              onDoubleClick={() => setModeAnimated('review', { page: i })}
             >
               <div className="page-thumb">
                 <Thumb sheet={sh} width={200} />

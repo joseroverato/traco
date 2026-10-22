@@ -5,6 +5,7 @@ import { addSourceOnly } from '../project'
 import type { Overlay } from '../types'
 import { t } from '../i18n'
 import { Rich } from './Rich'
+import { TickSlider } from './TickSlider'
 
 const COLORS = ['#e5484d', '#0090ff', '#30a46c', '#f76b15', '#8e4ec6', '#d6409f']
 
@@ -61,7 +62,7 @@ export function OverlayPanel() {
             <button className="icon-btn xs" onClick={() => upd(o.id, { visible: !o.visible })}>{o.visible ? <Eye size={14} /> : <EyeOff size={14} />}</button>
             <button className="icon-btn xs" onClick={() => save(list.filter((x) => x.id !== o.id))}><Trash2 size={14} /></button>
           </div>
-          <label className="field"><span>{t('overlaypanel.intensidade', { round: Math.round(o.opacity * 100) })}</span><input type="range" min={0.1} max={1} step={0.05} value={o.opacity} onChange={(e) => upd(o.id, { opacity: Number(e.target.value) })} /></label>
+          <label className="field"><span>{t('overlaypanel.intensidade', { round: Math.round(o.opacity * 100) })}</span><TickSlider min={0.1} max={1} step={0.05} value={o.opacity} onChange={(v) => upd(o.id, { opacity: v })} /></label>
           <div className="row">
             <button className={`btn sm ${s.aligning?.overlay === o.id ? 'primary' : ''}`} onClick={() => s.set({ aligning: { overlay: o.id, step: 0, pts: [] }, tool: 'select', mode: 'review' })}><Crosshair size={13} /> {t('overlaypanel.alinhar_por_2_pontos')}</button>
             <button className="btn sm ghost" onClick={() => upd(o.id, { matrix: [1, 0, 0, 1, 0, 0] })}>{t('overlaypanel.zerar')}</button>

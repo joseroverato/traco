@@ -1016,5 +1016,16 @@ const catalog: Catalog = {
   "mobile.desfazer_ponto": "Deshacer punto",
   "mobile.dica_mira": "Mueve la hoja bajo la mira y toca Añadir punto",
   "mobile.sair_da_medicao": "Salir de la medición",
+  "dialogs.aparencia": "Apariencia",
+  "dialogs.tema": "Tema",
+  "dialogs.cor_principal": "Color principal",
+  "dialogs.cor_principal_ajuda": "Da el tono del fondo y de los paneles. Se mantiene discreto para que el texto siga siendo legible.",
+  "dialogs.cor_de_acento": "Color de acento",
+  "dialogs.cor_de_acento_ajuda": "Botones, selecciones y resaltados. El texto encima se ajusta solo para seguir siendo legible.",
+  "dialogs.cor_padrao": "Predeterminado",
+  "dialogs.cor_personalizada": "Personalizado",
+  "dialogs.restaurar_cores": "Restablecer colores",
+  "dialogs.legibilidade": "Legibilidad: contraste {a}:1 en el botón y {b}:1 en el texto de color (mínimo recomendado: 4,5:1)",
+  "dialogs.previa": "Vista previa",
 }
 export default catalog

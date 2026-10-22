@@ -26,6 +26,7 @@ import type { UnitSystem } from '../units'
 import { useDialogA11y } from '../dialogA11y'
 import { TickSlider } from './TickSlider'
 import { AppearancePanel } from './AppearancePanel'
+import { ReleaseNotes } from './ReleaseNotes'
 
 function Modal({ title, children, onClose, actions, wide }: { title: string; children: React.ReactNode; onClose: () => void; actions: React.ReactNode; wide?: boolean }) {
   const a11y = useDialogA11y(onClose)
@@ -527,7 +528,7 @@ function AboutPanel({ st, goUpdates }: { st: UpdateState; goUpdates: () => void 
         ) : (
           <p className="muted small">{t('dialogs.a_versao_web_e_atualizada_2')}</p>
         )}
-        {st.notes && newer && <pre className="notes">{st.notes}</pre>}
+        {st.notes && newer && <ReleaseNotes source={st.notes} />}
       </div>
       <div className="row">
         <a className="btn sm" href={REPO_URL} target="_blank" rel="noreferrer">{t('dialogs.repositorio_no_github')}</a>

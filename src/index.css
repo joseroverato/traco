@@ -803,3 +803,14 @@ body { overscroll-behavior: none; touch-action: manipulation; }
 .swatch.pick input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
 .appearance-preview { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; padding: 12px; border-radius: 12px; background: var(--panel-2); border: 1px solid var(--line-soft); }
 .legibility { margin-top: 8px; font-size: 11.5px; }
+
+/* notas da versão (texto da release já formatado) */
+.notes { white-space: normal; line-height: 1.5; max-height: 220px; }
+.notes > :first-child { margin-top: 0; }
+.notes h5.notes-h { margin: 10px 0 4px; font-size: 12.5px; font-weight: 650; color: var(--text); }
+.notes p { margin: 4px 0; }
+.notes ul, .notes ol { margin: 4px 0; padding-left: 18px; }
+.notes li { margin: 3px 0; }
+.notes strong { color: var(--text); font-weight: 620; }
+.notes code { font-family: var(--mono); font-size: 11.5px; background: var(--panel-2); padding: 1px 5px; border-radius: 4px; }
+.notes a { color: var(--accent-text); }

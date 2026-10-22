@@ -746,7 +746,7 @@ body { overscroll-behavior: none; touch-action: manipulation; }
 .modes button.active { background: transparent; color: var(--on-accent); box-shadow: none; }
 
 /* troca de modo e de folha: só a área central se move (View Transitions); a barra e o menu lateral ficam parados */
-.workspace, .m-stage { view-transition-name: stage; }
+.stagewrap, .m-stage { view-transition-name: stage; }
 :root[data-vt] .mode-in { animation: none; }
 :root[data-vt]:not([data-vt='theme'])::view-transition-group(root) { animation-duration: 0s; }
 :root[data-vt]:not([data-vt='theme'])::view-transition-old(root) { display: none; }
@@ -840,3 +840,25 @@ body { overscroll-behavior: none; touch-action: manipulation; }
 .ctx-item kbd { font-size: 10.5px; color: var(--text-3); font-family: var(--font); }
 .ctx-sep { height: 1px; margin: 5px 6px; background: var(--line-soft); }
 @media (prefers-reduced-motion: reduce) { .ctxmenu { animation: none; } }
+
+/* ---------- troca de modo sem piscar: Revisar fica montada, os outros entram por cima ---------- */
+.stagewrap { position: relative; display: grid; min-width: 0; min-height: 0; }
+.stagewrap > .workspace { min-width: 0; min-height: 0; padding-left: 0; }
+.workspace.is-hidden { visibility: hidden; pointer-events: none; }
+.workspace.layer { position: absolute; inset: 0; z-index: 2; background: var(--bg); }
+.m-layer { position: relative; flex: 1; min-height: 0; min-width: 0; display: flex; flex-direction: column; }
+.m-layer.over { position: absolute; inset: 0; z-index: 3; background: var(--bg); }
+.m-layer.is-hidden { visibility: hidden; }
+.m-layer > .viewer-wrap, .m-layer > .viewer, .m-layer > .workspace { flex: 1; min-height: 0; min-width: 0; }
+/* sem View Transitions (navegador antigo), uma entrada simples */
+:root:not(.vt-ok) .workspace.layer, :root:not(.vt-ok) .m-layer.over { animation: modein 0.3s var(--ease-out); }
+
+/* a tela que sai some rápido e a que entra desliza com curva de desaceleração: sem "dois quadros" sobrepostos */
+:root[data-vt='fwd']::view-transition-old(stage) { animation: vt-out-l 150ms cubic-bezier(0.4, 0, 1, 1) both; }
+:root[data-vt='fwd']::view-transition-new(stage) { animation: vt-in-r 320ms cubic-bezier(0.16, 1, 0.3, 1) 40ms both; }
+:root[data-vt='back']::view-transition-old(stage) { animation: vt-out-r 150ms cubic-bezier(0.4, 0, 1, 1) both; }
+:root[data-vt='back']::view-transition-new(stage) { animation: vt-in-l 320ms cubic-bezier(0.16, 1, 0.3, 1) 40ms both; }
+@keyframes vt-out-l { to { opacity: 0; transform: translateX(-16px); } }
+@keyframes vt-in-r { from { opacity: 0; transform: translateX(22px); } }
+@keyframes vt-out-r { to { opacity: 0; transform: translateX(16px); } }
+@keyframes vt-in-l { from { opacity: 0; transform: translateX(-22px); } }

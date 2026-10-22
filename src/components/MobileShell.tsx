@@ -149,25 +149,25 @@ export function MobileShell({ onOpen }: { onOpen: () => void }) {
       </header>
 
       <main className="m-stage">
-        {review ? (
-          <>
-            <Viewer onOpen={onOpen} />
-            {s.search.open && has && <SearchBar />}
-            {has && (
-              <div className="m-zoom">
-                <button aria-label={t('topbar.ampliar')} onClick={() => zoomBy(1.25)}><Plus size={20} /></button>
-                <button aria-label={t('topbar.reduzir')} onClick={() => zoomBy(1 / 1.25)}><Minus size={20} /></button>
-                <button aria-label={t('topbar.folha_inteira_0')} onClick={() => s.set({ fitReq: { mode: 'page', n: Date.now() } })}><Maximize size={18} /></button>
-              </div>
-            )}
-          </>
-        ) : (
-          <>
+        {/* a folha fica montada por baixo dos outros modos: voltar não redesenha o PDF */}
+        <div className={`m-layer ${review ? '' : 'is-hidden'}`} aria-hidden={!review} inert={!review}>
+          <Viewer onOpen={onOpen} />
+          {s.search.open && has && <SearchBar />}
+          {has && (
+            <div className="m-zoom">
+              <button aria-label={t('topbar.ampliar')} onClick={() => zoomBy(1.25)}><Plus size={20} /></button>
+              <button aria-label={t('topbar.reduzir')} onClick={() => zoomBy(1 / 1.25)}><Minus size={20} /></button>
+              <button aria-label={t('topbar.folha_inteira_0')} onClick={() => s.set({ fitReq: { mode: 'page', n: Date.now() } })}><Maximize size={18} /></button>
+            </div>
+          )}
+        </div>
+        {!review && (
+          <div key={s.mode} className="m-layer over">
             <button className="m-back" onClick={() => setModeAnimated('review')}><ArrowLeft size={18} /> {t('mobile.voltar_a_folha')}</button>
             <Suspense fallback={<div className="loading-mod">{t('app.carregando')}</div>}>
               {s.mode === 'pages' ? <PagesView /> : s.mode === '3d' ? <View3D /> : <CompareView />}
             </Suspense>
-          </>
+          </div>
         )}
       </main>
 

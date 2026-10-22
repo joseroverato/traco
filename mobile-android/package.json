@@ -1,0 +1,19 @@
+{
+  "name": "traco-android",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Empacotamento do Traço para Android (Capacitor). Gera o APK a partir da versão web.",
+  "scripts": {
+    "sync": "cap sync android",
+    "apk": "node scripts/build-apk.mjs"
+  },
+  "dependencies": {
+    "@capacitor/android": "^6.2.0",
+    "@capacitor/core": "^6.2.0",
+    "@capacitor/filesystem": "^6.0.2",
+    "@capacitor/share": "^6.0.3"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^6.2.0"
+  }
+}

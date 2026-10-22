@@ -1,0 +1,8 @@
+{
+  "appId": "br.com.lottos.traco",
+  "appName": "Traço",
+  "webDir": "www",
+  "backgroundColor": "#161618",
+  "server": { "androidScheme": "https" },
+  "android": { "allowMixedContent": false }
+}

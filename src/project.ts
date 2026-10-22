@@ -2,6 +2,7 @@ import { openSource, sheetsOf } from './pdf'
 import type { Source } from './pdf'
 import { useStore } from './store'
 import { desktop } from './platform'
+import { IS_NATIVE, saveNative } from './native'
 import { decodeProject, encodeProject } from './projectFormat'
 import type { ProjectData } from './projectFormat'
 import type { Sheet } from './types'
@@ -24,6 +25,7 @@ export async function download(data: Uint8Array | ArrayBuffer | string, name: st
     const bytes = typeof data === 'string' ? data : data instanceof Uint8Array ? data : new Uint8Array(data)
     return desktop.saveFile({ defaultName: name, data: bytes, filters: FILTERS[ext] ? [FILTERS[ext]] : undefined, path })
   }
+  if (IS_NATIVE && (await saveNative(data, name))) return null // app Android: Compartilhar do sistema
   const a = document.createElement('a')
   a.href = URL.createObjectURL(new Blob([data as BlobPart], { type }))
   a.download = name

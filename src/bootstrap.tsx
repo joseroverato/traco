@@ -2,6 +2,7 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import App from './App.tsx'
 import { desktop } from './platform'
+import { IS_NATIVE } from './native'
 import { TOOLS, runCommand } from './commands'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { installErrorCapture } from './diagnostics'
@@ -19,7 +20,7 @@ export function start() {
     })
   }
   // versão web instalável (PWA): service worker para abrir sem rede; fora do app de PC e da prévia em arquivo único
-  if (!desktop && import.meta.env.PROD && import.meta.env.VITE_SINGLE !== '1' && 'serviceWorker' in navigator) {
+  if (!desktop && !IS_NATIVE && import.meta.env.PROD && import.meta.env.VITE_SINGLE !== '1' && 'serviceWorker' in navigator) {
     const register = () => navigator.serviceWorker.register('./sw.js').catch((e) => console.warn('sw', e))
     // o app só inicia depois do idioma carregar, então o evento load pode já ter passado
     if (document.readyState === 'complete') register()

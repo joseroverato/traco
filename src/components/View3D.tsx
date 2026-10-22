@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Maximize, Trash2, ArrowUpToLine } from 'lucide-react'
+import { Maximize, Trash2, ArrowUpToLine, ChevronDown, ChevronUp } from 'lucide-react'
+import { useIsMobile } from '../mobile'
 import { useStore } from '../store'
 import { DEFAULT_SOLID_HEIGHT } from '../geometry'
 import { LAYER_LABEL, areaOf, buildSolids3D, layerTotals, volumeOf } from '../solids'
@@ -28,6 +29,9 @@ export function View3D({ compact = false }: { compact?: boolean }) {
   const scene = useRef<Scene3D | null>(null)
   const [visible, setVisible] = useState<Record<LayerKind, boolean>>({ solid: true, space: true, area: true, length: true, count: true })
   const [hover, setHover] = useState<HoverInfo | null>(null)
+  const mobile = useIsMobile()
+  const [sheetOpen, setSheetOpen] = useState(false)
+  const [ready, setReady] = useState(false)
 
   const solids = useMemo(
     () => (sheet ? buildSolids3D({ page: sheet.id, markups: s.markups, presets: s.presets, scales: s.scales }) : []),
@@ -40,7 +44,11 @@ export function View3D({ compact = false }: { compact?: boolean }) {
   useEffect(() => {
     const el = host.current
     if (!el) return
-    const sc = new Scene3D(
+    let sc: Scene3D | null = null
+    // criar o WebGL no meio da animação de entrada trava a transição: espera ela terminar (a tela já mostra o fundo)
+    const wait = document.documentElement.classList.contains('vt-ok') ? 380 : 0
+    const timer = window.setTimeout(() => {
+    sc = new Scene3D(
       el,
       {
         onPick: (id, additive) => {
@@ -61,15 +69,20 @@ export function View3D({ compact = false }: { compact?: boolean }) {
       },
       useStore.getState().theme === 'dark',
     )
-    scene.current = sc
-    ;(window as unknown as { __traco?: Record<string, unknown> }).__traco = { ...((window as unknown as { __traco?: Record<string, unknown> }).__traco ?? {}), view3d: () => sc.state() }
+    const made = sc
+    scene.current = made
+    ;(window as unknown as { __traco?: Record<string, unknown> }).__traco = { ...((window as unknown as { __traco?: Record<string, unknown> }).__traco ?? {}), view3d: () => made.state() }
+    setReady(true)
+    }, wait)
     return () => {
-      sc.dispose()
+      window.clearTimeout(timer)
+      sc?.dispose()
       scene.current = null
+      setReady(false)
     }
   }, [])
 
-  useEffect(() => scene.current?.setDark(s.theme === 'dark'), [s.theme])
+  useEffect(() => scene.current?.setDark(s.theme === 'dark'), [s.theme, ready])
 
   useEffect(() => {
     const sc = scene.current
@@ -77,7 +90,7 @@ export function View3D({ compact = false }: { compact?: boolean }) {
     sc.setSolids(solids, s.selected, visible)
     // acompanha a montagem: enquadra quando a planta dos volumes muda, enquanto a câmera não foi mexida
     if (sheet && solids.length) sc.autoFrame(`${sheet.id}|${ringKey}`)
-  }, [solids, s.selected, visible, sheet, ringKey])
+  }, [solids, s.selected, visible, sheet, ringKey, ready])
 
   const goPlan = (id?: string) => {
     const m = id ? s.markups.find((x) => x.id === id) : undefined
@@ -87,7 +100,7 @@ export function View3D({ compact = false }: { compact?: boolean }) {
   const listed = solids.filter((x) => x.kind === 'solid')
 
   return (
-    <div className={`view3d ${compact ? 'compact' : ''}`}>
+    <div className={`view3d ${compact ? 'compact' : ''} ${mobile ? 'mob' : ''} ${mobile && sheetOpen ? 'sheet-open' : ''}`}>
       <div className="v3-host" ref={host} />
       <div className="v3-bar">
         {!compact && s.sheets.length > 1 && (
@@ -108,6 +121,11 @@ export function View3D({ compact = false }: { compact?: boolean }) {
         ))}
       </div>
 
+      {mobile && (
+        <button className="v3-sheet-toggle" aria-expanded={sheetOpen} onClick={() => setSheetOpen(!sheetOpen)}>
+          {sheetOpen ? <ChevronDown size={18} /> : <ChevronUp size={18} />} {t('view3d.resumo_da_folha')}
+        </button>
+      )}
       {!compact && (
       <aside className="v3-panel">
         <h4>{t('view3d.resumo_da_folha')}</h4>
@@ -160,7 +178,7 @@ export function View3D({ compact = false }: { compact?: boolean }) {
       {scale && !solids.length && (
         <div className="v3-empty"><Rich k="view3d.nada_para_mostrar" vars={{ key: keyOf('solid') }} />{!compact && <button className="btn sm primary" onClick={() => goPlan()}>{t('view3d.ir_para_a_planta')}</button>}</div>
       )}
-      {!compact && <div className="hud v3-hint">{t('view3d.roda_zoom_botao_do_meio')}</div>}
+      {!compact && !mobile && <div className="hud v3-hint">{t('view3d.roda_zoom_botao_do_meio')}</div>}
     </div>
   )
 }

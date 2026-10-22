@@ -9,11 +9,15 @@ let lib: Promise<typeof import('pdfjs-dist')> | null = null
 function pdfjsLib() {
   if (!lib)
     lib = (async () => {
-      const pdfjs = await import('pdfjs-dist')
+      // WebViews antigas (Android) não têm Promise.withResolvers: usam a versão "legacy" do pdf.js, que traz os remendos
+      const old = !('withResolvers' in Promise)
+      const pdfjs = (old ? await import('pdfjs-dist/legacy/build/pdf.mjs') : await import('pdfjs-dist')) as typeof import('pdfjs-dist')
       if (import.meta.env.VITE_SINGLE === '1') {
         // prévia em arquivo único: worker embutido via Blob
         const code = (await import('pdfjs-dist/build/pdf.worker.min.mjs?raw')).default
         pdfjs.GlobalWorkerOptions.workerSrc = URL.createObjectURL(new Blob([code], { type: 'text/javascript' }))
+      } else if (old) {
+        pdfjs.GlobalWorkerOptions.workerSrc = (await import('pdfjs-dist/legacy/build/pdf.worker.min.mjs?url')).default
       } else {
         pdfjs.GlobalWorkerOptions.workerSrc = (await import('pdfjs-dist/build/pdf.worker.min.mjs?url')).default
       }

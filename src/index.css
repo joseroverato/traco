@@ -862,3 +862,14 @@ body { overscroll-behavior: none; touch-action: manipulation; }
 @keyframes vt-in-r { from { opacity: 0; transform: translateX(22px); } }
 @keyframes vt-out-r { to { opacity: 0; transform: translateX(16px); } }
 @keyframes vt-in-l { from { opacity: 0; transform: translateX(-22px); } }
+
+/* 3D no celular: faixa de camadas rolável embaixo do "Voltar", resumo numa gaveta recolhida */
+.v3-sheet-toggle { display: none; }
+.view3d.mob .v3-bar { top: 56px; left: 8px; right: 8px; max-width: none; flex-wrap: nowrap; overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: none; padding: 6px; }
+.view3d.mob .v3-bar::-webkit-scrollbar { display: none; }
+.view3d.mob .v3-bar > * { flex: none; white-space: nowrap; }
+.view3d.mob .v3-bar .chip, .view3d.mob .v3-bar .btn { min-height: 36px; }
+.view3d.mob .v3-sheet-toggle { display: inline-flex; align-items: center; gap: 6px; position: absolute; left: 8px; bottom: 8px; z-index: 4; min-height: 44px; padding: 0 16px; border-radius: 99px; border: 1px solid var(--line); background: var(--panel); color: var(--text); font-weight: 560; box-shadow: 0 6px 18px rgba(0, 0, 0, 0.3); }
+.view3d.mob .v3-panel { left: 8px; right: 8px; top: auto; bottom: 62px; width: auto; max-height: 55%; z-index: 3; opacity: 0; transform: translateY(16px); pointer-events: none; visibility: hidden; transition: opacity .2s ease, transform .2s ease, visibility 0s .2s; }
+.view3d.mob.sheet-open .v3-panel { opacity: 1; transform: none; pointer-events: auto; visibility: visible; transition: opacity .2s ease, transform .2s ease; }
+.view3d.mob .v3-empty { top: 40%; max-width: calc(100% - 32px); }

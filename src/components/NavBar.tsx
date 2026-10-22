@@ -2,6 +2,7 @@ import { ClipboardList, Columns2, FileDown, FilePenLine, Files, Layers3, LayoutG
 import { useStore } from '../store'
 import type { State } from '../store'
 import { t } from '../i18n'
+import { setModeAnimated } from '../motion'
 
 type Nav = NonNullable<State['nav']>
 
@@ -20,7 +21,7 @@ export function NavBar() {
   const s = useStore()
   const has = s.sheets.length > 0
   const openPanel = (id: Nav) => {
-    if (s.mode !== 'review') return s.set({ mode: 'review', nav: id, focus: false })
+    if (s.mode !== 'review') return setModeAnimated('review', { nav: id, focus: false })
     s.set({ nav: s.nav === id && !s.focus ? null : id, focus: false })
   }
   return (
@@ -36,15 +37,15 @@ export function NavBar() {
         )
       })}
       <div className="nav-sep" />
-      <button className={`nav-btn ${s.mode === 'pages' ? 'active' : ''}`} disabled={!has} onClick={() => s.set({ mode: s.mode === 'pages' ? 'review' : 'pages', selected: [], tool: 'select' })}>
+      <button className={`nav-btn ${s.mode === 'pages' ? 'active' : ''}`} disabled={!has} onClick={() => setModeAnimated(s.mode === 'pages' ? 'review' : 'pages', { selected: [], tool: 'select' })}>
         <LayoutGrid size={19} strokeWidth={1.7} />
         <span>{t('navbar.organizar')}</span>
       </button>
-      <button className={`nav-btn ${s.mode === 'compare' ? 'active' : ''}`} disabled={!has} onClick={() => s.set({ mode: s.mode === 'compare' ? 'review' : 'compare', selected: [], tool: 'select' })}>
+      <button className={`nav-btn ${s.mode === 'compare' ? 'active' : ''}`} disabled={!has} onClick={() => setModeAnimated(s.mode === 'compare' ? 'review' : 'compare', { selected: [], tool: 'select' })}>
         <Columns2 size={19} strokeWidth={1.7} />
         <span>{t('navbar.comparar')}</span>
       </button>
-      <button className={`nav-btn ${s.mode === 'review' && s.panels.right && s.rightTab === 'claude' && !s.focus ? 'active claude-nav' : 'claude-nav'}`} onClick={() => s.set({ mode: 'review', rightTab: 'claude', panels: { ...s.panels, right: true }, focus: false })}>
+      <button className={`nav-btn ${s.mode === 'review' && s.panels.right && s.rightTab === 'claude' && !s.focus ? 'active claude-nav' : 'claude-nav'}`} onClick={() => setModeAnimated('review', { rightTab: 'claude', panels: { ...s.panels, right: true }, focus: false })}>
         <Sparkles size={19} strokeWidth={1.7} />
         <span>{t('navbar.claude')}</span>
       </button>

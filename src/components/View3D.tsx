@@ -10,6 +10,7 @@ import { t } from '../i18n'
 import { Rich } from './Rich'
 import { keyOf } from '../hotkeys'
 import { fmtQty, lenIn, lenOut, lenUnit } from '../units'
+import { setModeAnimated } from '../motion'
 
 const LAYERS = Object.keys(LAYER_LABEL) as LayerKind[]
 const VIEW_NAME = { get top() { return t('view3d.topo') }, get front() { return t('view3d.frente') }, get right() { return t('view3d.direita') } } as const
@@ -80,7 +81,7 @@ export function View3D({ compact = false }: { compact?: boolean }) {
 
   const goPlan = (id?: string) => {
     const m = id ? s.markups.find((x) => x.id === id) : undefined
-    s.set({ mode: 'review', tool: 'select', selected: id ? [id] : [], ...(m ? { page: Math.max(0, s.sheets.findIndex((x) => x.id === m.page)) } : {}) })
+    setModeAnimated('review', { tool: 'select', selected: id ? [id] : [], ...(m ? { page: Math.max(0, s.sheets.findIndex((x) => x.id === m.page)) } : {}) })
   }
   const up = (patch: Partial<NonNullable<typeof sel>>) => sel && s.updateMarkup(sel.id, patch)
   const listed = solids.filter((x) => x.kind === 'solid')

@@ -9,6 +9,8 @@ import { OverlayPanel } from './OverlayPanel'
 import { IssuesPanel } from './IssuesPanel'
 import { t } from '../i18n'
 import { Rich } from './Rich'
+import { setModeAnimated, withTransition } from '../motion'
+import { TickSlider } from './TickSlider'
 
 function Thumbs() {
   const { sheets, page, markups, scales, set } = useStore()
@@ -19,7 +21,7 @@ function Thumbs() {
         const n = markups.filter((m) => m.page === sh.id && m.kind !== 'viewport').length
         const vps = markups.filter((m) => m.page === sh.id && m.kind === 'viewport').length
         return (
-          <button key={sh.id} className={`thumb ${i === page ? 'active' : ''}`} onClick={() => set({ page: i, selected: [] })}>
+          <button key={sh.id} className={`thumb ${i === page ? 'active' : ''}`} onClick={() => withTransition(() => set({ page: i, selected: [] }), 'fade')}>
             <Thumb sheet={sh} width={200} />
             <div className="thumb-meta">
               <span className="thumb-label">{sh.label}</span>
@@ -69,9 +71,9 @@ function EditPanel() {
       }} />
       <div className="dock-group">{t('leftpanel.documento')}</div>
       <Action icon={Layers} label={t('leftpanel.numeracao_carimbos_e_marca_d')} onClick={() => s.set({ dialog: 'stamp' })} />
-      <Action icon={FilePlus2} label={t('leftpanel.inserir_paginas_folha_em_branco')} onClick={() => s.set({ mode: 'pages' })} />
-      <Action icon={Tags} label={t('leftpanel.renomear_folhas')} onClick={() => s.set({ mode: 'pages' })} />
-      <Action icon={LayoutGrid} label={t('leftpanel.organizar_paginas')} onClick={() => s.set({ mode: 'pages' })} />
+      <Action icon={FilePlus2} label={t('leftpanel.inserir_paginas_folha_em_branco')} onClick={() => setModeAnimated('pages')} />
+      <Action icon={Tags} label={t('leftpanel.renomear_folhas')} onClick={() => setModeAnimated('pages')} />
+      <Action icon={LayoutGrid} label={t('leftpanel.organizar_paginas')} onClick={() => setModeAnimated('pages')} />
     </div>
   )
 }
@@ -117,7 +119,7 @@ function MeasurePanel() {
       <div className="dock-group">{t('leftpanel.precisao')}</div>
       <Action icon={Magnet} label={t('leftpanel.snap_na_geometria')} hint="F3" active={s.snap} onClick={() => s.set({ snap: !s.snap })} />
       <Action icon={Move} label={t('leftpanel.ortogonal_0_90')} hint="F8" active={s.ortho} onClick={() => s.set({ ortho: !s.ortho })} />
-      <label className="field dock-field"><span>{t('leftpanel.area_por_clique_fechar_aberturas', { fillGap: s.fillGap })}</span><input type="range" min={1} max={30} step={1} value={s.fillGap} onChange={(e) => s.set({ fillGap: Number(e.target.value) })} /></label>
+      <label className="field dock-field"><span>{t('leftpanel.area_por_clique_fechar_aberturas', { fillGap: s.fillGap })}</span><TickSlider min={1} max={30} step={1} value={s.fillGap} unit=" pt" onChange={(v) => s.set({ fillGap: v })} /></label>
       <p className="muted small dock-note"><Rich k="leftpanel.nota_precisao" /></p>
       <div className="dock-group">{t('leftpanel.quantitativo_e_orcamento')}</div>
       <Action icon={FileSpreadsheet} label={s.panels.bottom ? t('leftpanel.ocultar_tabela') : t('leftpanel.mostrar_tabela')} onClick={() => s.set({ panels: { ...s.panels, bottom: !s.panels.bottom } })} />
@@ -139,8 +141,8 @@ function ExportPanel() {
       <Action icon={Save} label={t('leftpanel.salvar_projeto')} hint={t('leftpanel.ctrl_s')} onClick={() => saveProject()} />
       <Action icon={SaveAll} label={t('leftpanel.salvar_projeto_como')} hint={t('leftpanel.ctrl_s_2')} onClick={() => saveProject(true)} />
       <div className="dock-group">{t('leftpanel.dividir_e_extrair')}</div>
-      <Action icon={Scissors} label={t('leftpanel.dividir_em_varios_pdfs')} onClick={() => s.set({ mode: 'pages' })} />
-      <Action icon={LayoutGrid} label={t('leftpanel.extrair_folhas_selecionadas')} onClick={() => s.set({ mode: 'pages' })} />
+      <Action icon={Scissors} label={t('leftpanel.dividir_em_varios_pdfs')} onClick={() => setModeAnimated('pages')} />
+      <Action icon={LayoutGrid} label={t('leftpanel.extrair_folhas_selecionadas')} onClick={() => setModeAnimated('pages')} />
     </div>
   )
 }

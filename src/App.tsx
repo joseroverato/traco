@@ -28,6 +28,8 @@ import { desktop } from './platform'
 import { SearchBar } from './components/SearchBar'
 import { MobileShell } from './components/MobileShell'
 import { useIsMobile } from './mobile'
+import { preloadViews } from './motion'
+import { applyPalette, usePalette } from './theme'
 import { Resizer } from './components/Resizer'
 import { togglePanel } from './panels'
 import { ChevronLeft, ChevronUp } from 'lucide-react'
@@ -59,13 +61,16 @@ export default function App() {
   }, [])
 
   handleFileRef.current = handleFile
+  const palette = usePalette()
   useEffect(() => {
     document.documentElement.dataset.theme = s.theme
-  }, [s.theme])
+    applyPalette(s.theme, palette)
+  }, [s.theme, palette.primary, palette.accent]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // salvamento automático + oferta de recuperação ao abrir
   useEffect(() => {
     startAutosave()
+    preloadViews()
     readRecoveryInfo().then((info) => {
       if (info && !useStore.getState().sheets.length) useStore.setState({ dialog: 'recover' })
     })

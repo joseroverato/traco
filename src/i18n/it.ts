@@ -1016,5 +1016,16 @@ const catalog: Catalog = {
   "mobile.desfazer_ponto": "Annulla punto",
   "mobile.dica_mira": "Sposta il foglio sotto il mirino e tocca Aggiungi punto",
   "mobile.sair_da_medicao": "Esci dalla misura",
+  "dialogs.aparencia": "Aspetto",
+  "dialogs.tema": "Tema",
+  "dialogs.cor_principal": "Colore principale",
+  "dialogs.cor_principal_ajuda": "Dà il tono allo sfondo e ai pannelli. Resta discreto perché il testo rimanga leggibile.",
+  "dialogs.cor_de_acento": "Colore di accento",
+  "dialogs.cor_de_acento_ajuda": "Pulsanti, selezioni ed evidenziazioni. Il testo sopra si adatta da solo per restare leggibile.",
+  "dialogs.cor_padrao": "Predefinito",
+  "dialogs.cor_personalizada": "Personalizzato",
+  "dialogs.restaurar_cores": "Ripristina i colori",
+  "dialogs.legibilidade": "Leggibilità: contrasto {a}:1 sul pulsante e {b}:1 sul testo colorato (minimo consigliato: 4,5:1)",
+  "dialogs.previa": "Anteprima",
 }
 export default catalog

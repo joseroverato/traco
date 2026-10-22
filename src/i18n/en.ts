@@ -1016,5 +1016,16 @@ const catalog: Catalog = {
   "mobile.desfazer_ponto": "Undo point",
   "mobile.dica_mira": "Move the sheet under the crosshair and tap Add point",
   "mobile.sair_da_medicao": "Leave measuring",
+  "dialogs.aparencia": "Appearance",
+  "dialogs.tema": "Theme",
+  "dialogs.cor_principal": "Main color",
+  "dialogs.cor_principal_ajuda": "Sets the tone of the background and panels. It stays subtle so text always remains readable.",
+  "dialogs.cor_de_acento": "Accent color",
+  "dialogs.cor_de_acento_ajuda": "Buttons, selections and highlights. The text on top of it adjusts itself to stay readable.",
+  "dialogs.cor_padrao": "Default",
+  "dialogs.cor_personalizada": "Custom",
+  "dialogs.restaurar_cores": "Reset colors",
+  "dialogs.legibilidade": "Legibility: {a}:1 contrast on the button and {b}:1 on colored text (recommended minimum: 4.5:1)",
+  "dialogs.previa": "Preview",
 }
 export default catalog

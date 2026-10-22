@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Traço — conceitos de logo</title>
+<style>
+  :root { --bg: #0f1013; --card: #17181c; --line: #26272d; --text: #ececef; --mut: #9a9aa6; --a1: #6aa2ff; --a2: #2f6fed; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.5 Inter, 'Segoe UI', system-ui, sans-serif; padding: 32px 20px 64px; }
+  main { max-width: 1040px; margin: 0 auto; }
+  h1 { font-size: 26px; margin: 0 0 6px; letter-spacing: -0.3px; }
+  .sub { color: var(--mut); margin: 0 0 28px; max-width: 70ch; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 18px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 18px; display: flex; flex-direction: column; gap: 14px; }
+  .card h2 { margin: 0; font-size: 15px; display: flex; gap: 8px; align-items: baseline; }
+  .card h2 b { color: var(--a1); font-size: 13px; letter-spacing: 1px; }
+  .card p { margin: 0; color: var(--mut); font-size: 13.5px; }
+  .stage { display: grid; place-items: center; border-radius: 14px; padding: 22px; background: #0b0c0f; }
+  .stage.light { background: #f1f2f5; }
+  .row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .lockup { display: flex; align-items: center; gap: 14px; }
+  .word { font-size: 34px; font-weight: 700; letter-spacing: -0.8px; }
+  .light .word { color: #15161a; }
+  .sizes { display: flex; align-items: flex-end; gap: 14px; justify-content: center; }
+  .mono { color: #fff; }
+  svg { display: block; }
+  .tag { font-size: 11.5px; color: var(--mut); text-align: center; margin-top: 6px; }
+  .pick { margin-top: 28px; color: var(--mut); font-size: 13.5px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Traço — conceitos de logo</h1>
+  <p class="sub">Quatro direções para o ícone, todas desenhadas em vetor, com o mesmo raio de canto e a mesma paleta, para você comparar de igual para igual. Cada uma aparece grande, no tamanho de ícone de celular e favicon, em fundo escuro e claro, e em versão de uma cor só.</p>
+
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <defs>
+      <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stop-color="#6aa2ff" />
+        <stop offset="1" stop-color="#2f6fed" />
+      </linearGradient>
+      <linearGradient id="shine" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#fff" stop-opacity=".22" />
+        <stop offset=".5" stop-color="#fff" stop-opacity="0" />
+      </linearGradient>
+    </defs>
+  </svg>
+
+  <div class="grid" id="grid"></div>
+  <p class="pick">Me diga qual direção você prefere (ou misture: “o traço do A com o nó do D”). Eu refino a escolhida, gero todos os tamanhos (celular, PC, favicon, instalador) e troco no app.</p>
+</main>
+
+<script>
+  // glifos desenhados em um quadrado de 64 x 64
+  const concepts = [
+    { id: 'A', name: 'Cota', desc: 'Uma linha de cota: o traço diagonal com as duas marcas nas pontas, como nas plantas. Diz “medir” logo de cara.',
+      glyph: `<g fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round"><path d="M18 46 L46 18"/><path d="M13.5 41.5 L22.5 50.5"/><path d="M41.5 13.5 L50.5 22.5"/></g>` },
+    { id: 'B', name: 'T-ponto', desc: 'A inicial T feita de um traço só, com o ponto marcado embaixo, como um pino no desenho.',
+      glyph: `<g fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round"><path d="M17 20 H47"/><path d="M32 20 V38"/></g><circle cx="32" cy="48.5" r="4.2" fill="#fff"/>` },
+    { id: 'C', name: 'Planta', desc: 'O canto de uma parede em planta, com a diagonal da medição saindo dele e terminando num ponto.',
+      glyph: `<path d="M17 47 V19 H47" fill="none" stroke="#fff" stroke-width="6" stroke-linejoin="round" stroke-linecap="round"/><path d="M27 47 L45 29" fill="none" stroke="#fff" stroke-opacity=".6" stroke-width="4.5" stroke-linecap="round"/><circle cx="46" cy="28" r="4" fill="#fff"/>` },
+    { id: 'D', name: 'Evolução', desc: 'Mantém o desenho atual (o pequeno traço e a diagonal), mais limpo e com um nó na ponta. Não assusta quem já usa.',
+      glyph: `<g fill="none" stroke="#fff" stroke-width="5.5" stroke-linecap="round"><path d="M20 21 H32"/><path d="M45 20 L19 46"/></g><circle cx="45.5" cy="19.5" r="4.6" fill="#fff"/>` },
+  ]
+  const icon = (c, size, { mono = false, plate = true } = {}) => {
+    const body = mono
+      ? c.glyph.replaceAll('#fff', 'currentColor')
+      : c.glyph
+    return `<svg width="${size}" height="${size}" viewBox="0 0 64 64" role="img" aria-label="Traço ${c.name}">
+      ${plate ? `<rect width="64" height="64" rx="15" fill="url(#g)"/><rect width="64" height="64" rx="15" fill="url(#shine)"/>` : ''}
+      ${body}
+    </svg>`
+  }
+  document.getElementById('grid').innerHTML = concepts.map((c) => `
+    <section class="card">
+      <h2><b>${c.id}</b> ${c.name}</h2>
+      <p>${c.desc}</p>
+      <div class="stage"><div class="lockup">${icon(c, 96)}<span class="word">Traço</span></div></div>
+      <div class="stage light"><div class="lockup">${icon(c, 64)}<span class="word">Traço</span></div></div>
+      <div class="stage"><div class="sizes">
+        <div>${icon(c, 60)}<div class="tag">celular</div></div>
+        <div>${icon(c, 40)}<div class="tag">PC</div></div>
+        <div>${icon(c, 24)}<div class="tag">aba</div></div>
+        <div>${icon(c, 16)}<div class="tag">16 px</div></div>
+      </div></div>
+      <div class="stage"><div class="row">
+        <span class="mono">${icon(c, 52, { mono: true, plate: false })}</span>
+        <span style="color:#f1f2f5;background:#f1f2f5;border-radius:12px;padding:6px;display:inline-flex"><span style="color:#15161a">${icon(c, 40, { mono: true, plate: false })}</span></span>
+        <div class="tag" style="text-align:left">uma cor só<br>(carimbo, PDF, impressão)</div>
+      </div></div>
+    </section>`).join('')
+</script>
+</body>
+</html>

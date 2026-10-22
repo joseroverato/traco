@@ -1016,5 +1016,16 @@ const catalog: Catalog = {
   "mobile.desfazer_ponto": "Annuler le point",
   "mobile.dica_mira": "Déplacez la feuille sous le réticule et touchez Ajouter un point",
   "mobile.sair_da_medicao": "Quitter la mesure",
+  "dialogs.aparencia": "Apparence",
+  "dialogs.tema": "Thème",
+  "dialogs.cor_principal": "Couleur principale",
+  "dialogs.cor_principal_ajuda": "Donne la teinte du fond et des panneaux. Elle reste discrète pour que le texte reste lisible.",
+  "dialogs.cor_de_acento": "Couleur d’accent",
+  "dialogs.cor_de_acento_ajuda": "Boutons, sélections et surbrillances. Le texte dessus s’ajuste tout seul pour rester lisible.",
+  "dialogs.cor_padrao": "Par défaut",
+  "dialogs.cor_personalizada": "Personnalisée",
+  "dialogs.restaurar_cores": "Réinitialiser les couleurs",
+  "dialogs.legibilidade": "Lisibilité : contraste {a}:1 sur le bouton et {b}:1 sur le texte coloré (minimum recommandé : 4,5:1)",
+  "dialogs.previa": "Aperçu",
 }
 export default catalog

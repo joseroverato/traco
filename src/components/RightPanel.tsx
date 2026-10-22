@@ -9,6 +9,7 @@ import { KIND_LABEL } from '../kinds'
 import { localeOf, t } from '../i18n'
 import { display, fmtQty, lenIn, lenOut, lenUnit, unitName } from '../units'
 import { Rich } from './Rich'
+import { TickSlider } from './TickSlider'
 
 const MEASURE_LABEL = { get length() { return t('rightpanel.comprimento') }, get area() { return t('rightpanel.area') }, get count() { return t('rightpanel.contagem') } }
 
@@ -109,7 +110,7 @@ function Props() {
           <Field label={t('rightpanel.cor')}><input type="color" value={m.color} onChange={(e) => up({ color: e.target.value, fill: e.target.value })} /></Field>
           <Field label={t('rightpanel.espessura')}><input type="number" min={0.25} step={0.25} value={m.width} onChange={(e) => up({ width: Number(e.target.value) })} /></Field>
           {m.kind !== 'text' && m.kind !== 'count' && m.kind !== 'line' && m.kind !== 'arrow' && m.kind !== 'length' && (
-            <Field label={t('rightpanel.preench')}><input type="range" min={0} max={0.8} step={0.05} value={m.fillOpacity} onChange={(e) => up({ fillOpacity: Number(e.target.value) })} /></Field>
+            <Field label={t('rightpanel.preench')}><TickSlider min={0} max={0.8} step={0.05} value={m.fillOpacity} onChange={(v) => up({ fillOpacity: v })} /></Field>
           )}
         </div>
       )}
@@ -132,8 +133,8 @@ function Props() {
             <Field label={t('rightpanel.borda')}><input type="number" min={0} step={0.5} value={m.width} onChange={(e) => up({ width: Number(e.target.value) })} /></Field>
           </div>
           <div className="row">
-            <Field label={t('rightpanel.rotacao', { v: m.angle ?? 0 })}><input type="range" min={-90} max={90} step={5} value={m.angle ?? 0} onChange={(e) => up({ angle: Number(e.target.value) })} /></Field>
-            <Field label={t('rightpanel.opacidade', { round: Math.round((m.opacity ?? 1) * 100) })}><input type="range" min={0.05} max={1} step={0.05} value={m.opacity ?? 1} onChange={(e) => up({ opacity: Number(e.target.value) })} /></Field>
+            <Field label={t('rightpanel.rotacao', { v: m.angle ?? 0 })}><TickSlider min={-90} max={90} step={5} value={m.angle ?? 0} unit="°" onChange={(v) => up({ angle: v })} /></Field>
+            <Field label={t('rightpanel.opacidade', { round: Math.round((m.opacity ?? 1) * 100) })}><TickSlider min={0.05} max={1} step={0.05} value={m.opacity ?? 1} onChange={(v) => up({ opacity: v })} /></Field>
           </div>
         </>
       )}
@@ -149,7 +150,7 @@ function Props() {
         </>
       )}
       {m.kind === 'image' && (
-        <Field label={t('rightpanel.opacidade', { round: Math.round((m.opacity ?? 1) * 100) })}><input type="range" min={0.05} max={1} step={0.05} value={m.opacity ?? 1} onChange={(e) => up({ opacity: Number(e.target.value) })} /></Field>
+        <Field label={t('rightpanel.opacidade', { round: Math.round((m.opacity ?? 1) * 100) })}><TickSlider min={0.05} max={1} step={0.05} value={m.opacity ?? 1} onChange={(v) => up({ opacity: v })} /></Field>
       )}
       {m.kind === 'text' && (
         <>

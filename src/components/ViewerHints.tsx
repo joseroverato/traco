@@ -2,6 +2,20 @@ import type { State } from '../store'
 import type { Pt, Tool } from '../types'
 import { t } from '../i18n'
 import { Rich } from './Rich'
+import { useStore } from '../store'
+
+/** Tipo de ponto que o snap aceita durante o alinhamento de sobreposição. */
+export function AlignSnapChips({ aligning }: { aligning: NonNullable<State['aligning']> }) {
+  const opts = [['all', t('snap.tudo')], ['intersection', t('snap.somente_intersecoes')], ['endpoint', t('snap.somente_extremidades')]] as const
+  const cur = aligning.snap ?? 'all'
+  return (
+    <span className="snap-chips" role="radiogroup">
+      {opts.map(([id, label]) => (
+        <button key={id} role="radio" aria-checked={cur === id} className={cur === id ? 'on' : ''} onPointerDown={(e) => e.stopPropagation()} onClick={() => useStore.setState({ aligning: { ...aligning, snap: id } })}>{label}</button>
+      ))}
+    </span>
+  )
+}
 
 export interface ViewerHintsProps {
   tool: Tool
@@ -22,6 +36,7 @@ export function ViewerHints({ tool, busy, poly, symFound, aligning, fillGap }: V
       {aligning && (
         <div className="hud">
           <Rich k="viewerhints.alinhar" vars={{ n: Math.floor(aligning.step / 2) + 1, alvo: aligning.step % 2 === 0 ? t('viewerhints.desenho_colorido_sobreposto') : t('viewerhints.desenho_base') }} />
+          <AlignSnapChips aligning={aligning} />
         </div>
       )}
       {tool === 'fill' && !busy && <div className="hud"><Rich k="viewerhints.area_por_clique" vars={{ gap: fillGap }} /></div>}

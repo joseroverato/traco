@@ -27,12 +27,17 @@ import type { SnapHit, SnapIndex } from '../snap'
 import { t } from '../i18n'
 import { useIsMobile } from '../mobile'
 import { isMiraTool, useMira } from '../mira'
+import { ContextMenu } from './ContextMenu'
+import type { MenuItem } from './ContextMenu'
+import { viewerMenu } from '../contextMenu'
+import { textInRect } from '../search'
 
 
 type Drag =
   | { type: 'draw'; kind: MarkupKind | 'calibrate'; start: Pt }
   | { type: 'move'; ids: string[]; start: Pt; orig: Record<string, Pt[]>; holes: Record<string, Pt[][] | undefined>; moved: boolean }
   | { type: 'symbol'; start: Pt }
+  | { type: 'copy'; start: Pt }
   | { type: 'handle'; id: string; idx: number; moved: boolean }
   | { type: 'pan'; sx: number; sy: number; sl: number; st: number }
   | { type: 'marquee'; start: Pt }
@@ -71,9 +76,12 @@ export function Viewer({ onOpen }: { onOpen: () => void }) {
   const prompted = useRef(new Set<string>())
   const mobile = useIsMobile()
   // celular: ferramentas de medição usam a mira fixa no centro (ver mira.ts)
-  const mira = mobile && isMiraTool(tool)
+  const mira = mobile && (isMiraTool(tool) || !!s.aligning)
   const [calStart, setCalStart] = useState<Pt | null>(null)
   const miraPt = useRef<Pt | null>(null)
+  const [menu, setMenu] = useState<{ x: number; y: number; items: MenuItem[] } | null>(null)
+  // modo "selecionar e copiar texto": o próximo retângulo traçado copia o texto da folha que está dentro dele
+  const [copyMode, setCopyMode] = useState(false)
 
   // ---------- layout ----------
   const hasDoc = !!doc
@@ -219,6 +227,8 @@ export function Viewer({ onOpen }: { onOpen: () => void }) {
       }
       if (e.key === 'Enter') finishPoly()
       if (e.key === 'Escape') {
+        setCopyMode(false)
+        setSymRect(null)
         if (useStore.getState().aligning) useStore.setState({ aligning: null })
         setSymFound(null)
         if (poly) setPoly(null)
@@ -249,12 +259,13 @@ export function Viewer({ onOpen }: { onOpen: () => void }) {
     setPoly(null)
     setDraft(null)
     setCalStart(null)
+    setCopyMode(false)
     countId.current = null
   }, [tool, s.activePreset])
 
   // ---------- pan (botão do meio, Espaço ou ferramenta Mão) ----------
   const onPanDown = (e: React.PointerEvent) => {
-    if (!(e.button === 1 || (e.button === 0 && (space.current || tool === 'pan' || mira)))) return
+    if (!(e.button === 1 || (e.button === 0 && !copyMode && (space.current || tool === 'pan' || mira)))) return
     e.preventDefault()
     e.stopPropagation()
     const el = box.current!
@@ -333,34 +344,56 @@ export function Viewer({ onOpen }: { onOpen: () => void }) {
 
   const mkDraft = (kind: MarkupKind | 'calibrate', pts: Pt[]): Markup => buildDraft(kind, pts, page, zoom)
 
+  /**
+   * Ponto de snap do alinhamento. Passos pares marcam um ponto do desenho sobreposto (snap na geometria dele, em coordenadas próprias);
+   * passos ímpares marcam o ponto correspondente na base. `show` é onde desenhar o marcador, sempre em coordenadas da base.
+   */
+  const alignHit = (raw: Pt, altKey: boolean): { pt: Pt; show: SnapHit | null } | null => {
+    const st = useStore.getState()
+    const a = st.aligning
+    const ov = a && (st.overlays[page] ?? []).find((o) => o.id === a.overlay)
+    if (!a || !ov) return null
+    const only = a.snap === 'intersection' ? (['intersection'] as const) : a.snap === 'endpoint' ? (['endpoint', 'markup'] as const) : undefined
+    const useSnap = st.snap && !altKey
+    if (a.step % 2 === 0) {
+      const local = applyM(invertM(ov.matrix), raw)
+      const sc = Math.hypot(ov.matrix[0], ov.matrix[1]) || 1
+      const hit = useSnap && ovIdx.current[ov.id] ? findSnap(ovIdx.current[ov.id], local, 10 / zoom / sc, [], only) : null
+      const good = hit && (only || hit.kind !== 'nearest') ? hit : null
+      return { pt: good ? good.pt : local, show: good ? { ...good, pt: applyM(ov.matrix, good.pt) } : null }
+    }
+    const hit = useSnap ? findSnap(snapIdx.current, raw, 10 / zoom, [], only) : null
+    const good = hit && (only || hit.kind !== 'nearest') ? hit : null
+    return { pt: good ? good.pt : raw, show: good }
+  }
+
   /** Alinhar disciplina: ponto no desenho sobreposto → mesmo ponto na base (2 pares). */
-  const alignClick = (raw: Pt, e: React.PointerEvent) => {
+  const alignAt = (raw: Pt, altKey: boolean) => {
     const st = useStore.getState()
     const a = st.aligning!
     const ov = (st.overlays[page] ?? []).find((o) => o.id === a.overlay)
     if (!ov) return st.set({ aligning: null })
-    let q: Pt
-    if (a.step % 2 === 0) {
-      // ponto do desenho sobreposto: snap na geometria dele (em coordenadas próprias)
-      const inv = invertM(ov.matrix)
-      const local = applyM(inv, raw)
-      const sc = Math.hypot(ov.matrix[0], ov.matrix[1]) || 1
-      const hit = !e.altKey && ovIdx.current[ov.id] ? findSnap(ovIdx.current[ov.id], local, 10 / zoom / sc, []) : null
-      q = hit && hit.kind !== 'nearest' ? hit.pt : local
-    } else q = resolve(raw, e)
+    const q = alignHit(raw, altKey)!.pt
     const pts = [...a.pts, q]
+    setSnapHit(null)
     if (pts.length < 4) return st.set({ aligning: { ...a, step: a.step + 1, pts } })
     const m = similarity(pts[0], pts[2], pts[1], pts[3])
     st.set({ aligning: null, overlays: { ...st.overlays, [page]: (st.overlays[page] ?? []).map((o) => (o.id === ov.id ? { ...o, matrix: m } : o)) } })
     st.notify(t('viewer.alinhada_escala', { label: ov.label, toFixed: (Math.hypot(m[0], m[1]) * 100).toFixed(1) }))
   }
+  const alignClick = (raw: Pt, e: React.PointerEvent) => alignAt(raw, e.altKey)
 
   const onPointerDown = (e: React.PointerEvent) => {
     if (!info) return
     const st = useStore.getState()
-    if (e.button !== 0 || space.current || tool === 'pan') return // pan é tratado pela área toda
+    if (e.button !== 0 || (!copyMode && (space.current || tool === 'pan'))) return // pan é tratado pela área toda
     ;(e.currentTarget as Element).setPointerCapture?.(e.pointerId)
     const raw = toPage(e)
+    if (copyMode) {
+      drag.current = { type: 'copy', start: raw }
+      setSymRect({ a: raw, b: raw })
+      return
+    }
     const lastPt = poly?.points[poly.points.length - 1]
     const p = DRAWING.includes(tool) ? resolve(raw, e, lastPt) : raw
     if (st.aligning) return alignClick(raw, e)
@@ -452,12 +485,13 @@ export function Viewer({ onOpen }: { onOpen: () => void }) {
     const d = drag.current
     const p = toPage(e)
     const st = useStore.getState()
+    if (!d && st.aligning) return setSnapHit(alignHit(p, e.altKey)?.show ?? null)
     if (!d && DRAWING.includes(tool)) {
       const q = resolve(p, e, poly?.points[poly.points.length - 1])
       if (poly) setPoly({ ...poly, hover: q })
     } else if (!d && snapHit) setSnapHit(null)
     if (!d || d.type === 'pan') return
-    if (d.type === 'symbol') return setSymRect({ a: d.start, b: p })
+    if (d.type === 'symbol' || d.type === 'copy') return setSymRect({ a: d.start, b: p })
     if (d.type === 'draw') {
       const q = resolve(p, e, ['arrow', 'line', 'calibrate'].includes(d.kind) ? d.start : undefined)
       setDraft(mkDraft(d.kind, [d.start, q]))
@@ -495,6 +529,27 @@ export function Viewer({ onOpen }: { onOpen: () => void }) {
     if (d?.type === 'handle') setSnapHit(null)
     const st = useStore.getState()
     if (!d) return
+    if (d.type === 'copy' && symRect) {
+      const r = bbox([symRect.a, symRect.b])
+      setSymRect(null)
+      setCopyMode(false)
+      if (r.w * zoom < 4 || r.h * zoom < 4 || !sheet) return
+      void textInRect(sheet, r).then(async (txt) => {
+        if (!txt) return st.notify(t('menu.sem_texto'))
+        try {
+          await navigator.clipboard.writeText(txt)
+        } catch {
+          const ta = document.createElement('textarea')
+          ta.value = txt
+          document.body.appendChild(ta)
+          ta.select()
+          document.execCommand('copy')
+          ta.remove()
+        }
+        st.notify(t('menu.texto_copiado', { n: txt.length }))
+      })
+      return
+    }
     if (d.type === 'symbol' && symRect) {
       const r = bbox([symRect.a, symRect.b])
       setSymRect(null)
@@ -536,6 +591,33 @@ export function Viewer({ onOpen }: { onOpen: () => void }) {
     if (m && (m.kind === 'text' || m.kind === 'stamp')) s.set({ editingText: m.id })
   }
 
+  // ---------- botão direito ----------
+  const onContext = (e: React.MouseEvent) => {
+    e.preventDefault()
+    if (poly) return finishPoly() // com uma medição em andamento, o botão direito conclui (como no AutoCAD)
+    if (mobile) return
+    const hit = (e.target as Element).closest?.('[data-id]') as SVGElement | null
+    const hitId = hit && hit.dataset.id !== '__draft' ? hit.dataset.id! : null
+    const st = useStore.getState()
+    if (hitId && !st.selected.includes(hitId)) st.set({ selected: [hitId] })
+    setMenu({ x: e.clientX, y: e.clientY, items: viewerMenu(hitId) })
+  }
+  useEffect(() => {
+    const h = (e: Event) => {
+      const cmd = (e as CustomEvent<string>).detail
+      if (cmd === 'copytext') {
+        setPoly(null)
+        setDraft(null)
+        setCopyMode(true)
+      } else if (cmd === 'count-new') {
+        countId.current = null
+        useStore.getState().notify(t('menu.nova_contagem'))
+      }
+    }
+    window.addEventListener('traco:viewer', h)
+    return () => window.removeEventListener('traco:viewer', h)
+  }, [])
+
   // ---------- arrastar arquivo ----------
   const onDrop = async (e: React.DragEvent) => {
     e.preventDefault()
@@ -556,6 +638,7 @@ export function Viewer({ onOpen }: { onOpen: () => void }) {
     if (!mira) return
     const raw = miraPoint()
     if (!raw) return
+    if (useStore.getState().aligning) return setSnapHit(alignHit(raw, false)?.show ?? null)
     const last = tool === 'calibrate' ? calStart ?? undefined : poly?.points[poly.points.length - 1]
     const q = resolve(raw, { shiftKey: false, altKey: false }, last)
     miraPt.current = q
@@ -578,6 +661,14 @@ export function Viewer({ onOpen }: { onOpen: () => void }) {
     const h = (e: Event) => {
       const cmd = (e as CustomEvent<string>).detail
       const q = miraPt.current ?? miraPoint()
+      const al = useStore.getState().aligning
+      if (al) {
+        const raw = miraPoint()
+        if (cmd === 'add' && raw) alignAt(raw, false)
+        else if (cmd === 'undo' && al.pts.length) useStore.setState({ aligning: { ...al, step: al.step - 1, pts: al.pts.slice(0, -1) } })
+        else if (cmd === 'cancel') useStore.setState({ aligning: null })
+        return
+      }
       if (cmd === 'add' && q) {
         if (tool === 'calibrate') {
           if (!calStart) return setCalStart(q)
@@ -603,12 +694,13 @@ export function Viewer({ onOpen }: { onOpen: () => void }) {
     }
     window.addEventListener('traco:mira', h)
     return () => window.removeEventListener('traco:mira', h)
-  }, [mira, tool, poly, calStart, zoom, page, finishPoly]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [mira, tool, poly, calStart, zoom, page, finishPoly, s.aligning]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (!mira) return useMira.setState({ n: 0, min: 2 })
+    if (s.aligning) return useMira.setState({ n: s.aligning.pts.length, min: 99 })
     useMira.setState(tool === 'calibrate' ? { n: calStart ? 1 : 0, min: 99 } : { n: poly?.points.length ?? 0, min: minVertices(tool as 'length' | 'area' | 'hole' | 'space' | 'solid') })
-  }, [mira, tool, poly?.points.length, calStart])
+  }, [mira, tool, poly?.points.length, calStart, s.aligning?.pts.length]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // celular: pinça (zoom na folha, não na página) e arrastar com dois dedos.
   // O ouvinte fica no document (captura) para agir antes dos tratadores do React e cancelar o gesto de um dedo que já tinha começado.
@@ -678,7 +770,7 @@ export function Viewer({ onOpen }: { onOpen: () => void }) {
   const sel = s.selected.length === 1 ? pageMarkups.find((m) => m.id === s.selected[0]) : undefined
   const polyDraft = poly ? { ...mkDraft(poly.kind === 'hole' ? 'area' : poly.kind, poly.hover ? [...poly.points, poly.hover] : poly.points), ...(poly.kind === 'hole' ? { color: '#ff6369', fill: '#ff6369', fillOpacity: 0.15, presetId: null } : {}) } : null
   const editing = s.editingText ? s.markups.find((m) => m.id === s.editingText) : undefined
-  const cursor = space.current || tool === 'pan' ? (drag.current?.type === 'pan' ? 'grabbing' : 'grab') : tool === 'select' ? 'default' : tool === 'fill' ? 'cell' : 'crosshair'
+  const cursor = copyMode ? 'text' : space.current || tool === 'pan' ? (drag.current?.type === 'pan' ? 'grabbing' : 'grab') : tool === 'select' ? 'default' : tool === 'fill' ? 'cell' : 'crosshair'
 
   return (
     <div className="viewer-wrap">
@@ -697,6 +789,7 @@ export function Viewer({ onOpen }: { onOpen: () => void }) {
         }}
         onDragLeave={() => setDragOver(false)}
         onDrop={onDrop}
+        onContextMenu={onContext}
       >
         <div className="stage" style={{ width: L.sw, height: L.sh }}>
           <div className="sheet" style={{ left: L.left, top: L.top, width: L.pw, height: L.ph }}>
@@ -713,10 +806,6 @@ export function Viewer({ onOpen }: { onOpen: () => void }) {
             onPointerMove={onPointerMove}
             onPointerUp={onPointerUp}
             onDoubleClick={onDoubleClick}
-            onContextMenu={(e) => {
-              e.preventDefault()
-              if (poly) finishPoly()
-            }}
           >
             <PatternDefs presets={s.presets} />
             <rect width={info.width} height={info.height} fill="transparent" />
@@ -737,7 +826,7 @@ export function Viewer({ onOpen }: { onOpen: () => void }) {
               <circle cx={poly.points[0].x} cy={poly.points[0].y} r={6 / zoom} fill="none" stroke="var(--accent)" strokeWidth={1.5 / zoom} />
             )}
             {sel && tool === 'select' && sel.kind !== 'legend' && <SelectionHandles sel={sel} zoom={zoom} />}
-            {snapHit && DRAWING.includes(tool) && <SnapMarker hit={snapHit} zoom={zoom} />}
+            {snapHit && (DRAWING.includes(tool) || s.aligning) && <SnapMarker hit={snapHit} zoom={zoom} />}
             {marquee && <DashedRect a={marquee.a} b={marquee.b} zoom={zoom} color="var(--accent)" fillOpacity={0.08} />}
           </svg>
           {editing && editing.page === page && <TextEditor m={editing} zoom={zoom} left={L.left} top={L.top} />}
@@ -753,6 +842,8 @@ export function Viewer({ onOpen }: { onOpen: () => void }) {
         </div>
         {symFound && <SymbolResult found={symFound} sheetId={page} onClose={() => setSymFound(null)} />}
         {mira && <div className="mira" aria-hidden />}
+        {copyMode && <div className="hud">{t('viewerhints.copiar_texto')}</div>}
+        {menu && <ContextMenu x={menu.x} y={menu.y} items={menu.items} onClose={() => setMenu(null)} />}
         {!mira && <ViewerHints tool={tool} busy={busy} poly={poly} symFound={!!symFound} aligning={s.aligning} fillGap={s.fillGap} />}
     </div>
   )

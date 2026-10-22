@@ -142,3 +142,24 @@ export async function saveProject(saveAs = false) {
   ;(await import('./autosave')).clearRecovery()
   return true
 }
+
+/** Deixa o app como recém-aberto, sem projeto. Descarta também a cópia do salvamento automático (fechar é uma escolha, não um acidente). */
+export async function discardProject() {
+  const { clearRecovery } = await import('./autosave')
+  destroyAll()
+  useStore.setState({
+    sources: {}, sheets: [], page: 0, fileName: '', markups: [], scales: {}, selected: [], past: [], future: [], mode: 'review', projectPath: null, ocr: {},
+    overlays: {}, hiddenLayers: {}, dirty: false, search: { open: false, query: '', hits: [], index: 0 }, tool: 'select', activePreset: null,
+    calibrating: null, resumeTool: null, editingText: null, aligning: null, pendingImage: null, split3d: false, dialog: null,
+    meta: { title: '', author: '', subject: '', keywords: '' },
+  })
+  await clearRecovery()
+}
+
+/** Pedido de fechar o projeto: sem alterações pendentes fecha direto; com elas, pergunta (salvar, fechar sem salvar ou voltar). */
+export function requestCloseProject() {
+  const st = useStore.getState()
+  if (!st.sheets.length) return
+  if (st.dirty) st.set({ dialog: 'close' })
+  else void discardProject()
+}

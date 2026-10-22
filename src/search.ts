@@ -85,3 +85,38 @@ export function goTo(index: number) {
   useStore.setState({ search: { ...st.search, index: i }, ...(switching ? { page, selected: [] } : {}) })
   setTimeout(() => window.dispatchEvent(new CustomEvent('traco:center', { detail: { x: h.x + h.w / 2, y: h.y + h.h / 2 } })), switching ? 180 : 0)
 }
+
+/**
+ * Texto da folha dentro de um retângulo (em pt da folha): vem do texto do PDF e das palavras do OCR.
+ * Entra o trecho que está pelo menos 40% dentro da área; as linhas saem na ordem de leitura.
+ */
+export async function textInRect(sh: Sheet, r: { x: number; y: number; w: number; h: number }): Promise<string> {
+  const inside = (b: { x: number; y: number; w: number; h: number }) => {
+    const ix = Math.max(0, Math.min(b.x + b.w, r.x + r.w) - Math.max(b.x, r.x))
+    const iy = Math.max(0, Math.min(b.y + b.h, r.y + r.h) - Math.max(b.y, r.y))
+    const area = Math.max(b.w * b.h, 1e-6)
+    return (ix * iy) / area >= 0.4
+  }
+  const picked: { text: string; cx: number; cy: number; h: number }[] = []
+  let items: Item[] = []
+  try {
+    items = await itemsOf(sh)
+  } catch {
+    /* página sem texto */
+  }
+  for (const it of items) {
+    const b = rectOf(it, 0, 1)
+    if (inside(b)) picked.push({ text: it.text, cx: b.x, cy: b.y + b.h / 2, h: b.h })
+  }
+  for (const w of useStore.getState().ocr[sh.id]?.words ?? []) if (inside(w)) picked.push({ text: w.text, cx: w.x, cy: w.y + w.h / 2, h: w.h })
+  if (!picked.length) return ''
+  picked.sort((a, b) => a.cy - b.cy)
+  const tol = Math.max(2, picked.map((p) => p.h).sort((a, b) => a - b)[Math.floor(picked.length / 2)] * 0.6)
+  const lines: (typeof picked)[] = []
+  for (const p of picked) {
+    const last = lines[lines.length - 1]
+    if (last && Math.abs(last[0].cy - p.cy) <= tol) last.push(p)
+    else lines.push([p])
+  }
+  return lines.map((l) => l.sort((a, b) => a.cx - b.cx).map((p) => p.text.trim()).join(' ')).join('\n')
+}

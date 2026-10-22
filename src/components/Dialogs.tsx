@@ -6,7 +6,7 @@ import { IS_DESKTOP, desktop } from '../platform'
 import type { UpdateState } from '../platform'
 import { clearRecovery, readRecoveryInfo, restoreRecovery } from '../autosave'
 import type { RecoveryInfo } from '../autosave'
-import { download } from '../project'
+import { discardProject, download, saveProject } from '../project'
 import { parseRanges } from '../ranges'
 import type { CustomColumn, Markup, StatusDef } from '../types'
 import { clearBase, importPriceFile, loadBase } from '../sinapi'
@@ -26,6 +26,7 @@ import type { UnitSystem } from '../units'
 import { useDialogA11y } from '../dialogA11y'
 import { TickSlider } from './TickSlider'
 import { AppearancePanel } from './AppearancePanel'
+import { ReleaseNotes } from './ReleaseNotes'
 
 function Modal({ title, children, onClose, actions, wide }: { title: string; children: React.ReactNode; onClose: () => void; actions: React.ReactNode; wide?: boolean }) {
   const a11y = useDialogA11y(onClose)
@@ -527,7 +528,7 @@ function AboutPanel({ st, goUpdates }: { st: UpdateState; goUpdates: () => void 
         ) : (
           <p className="muted small">{t('dialogs.a_versao_web_e_atualizada_2')}</p>
         )}
-        {st.notes && newer && <pre className="notes">{st.notes}</pre>}
+        {st.notes && newer && <ReleaseNotes source={st.notes} />}
       </div>
       <div className="row">
         <a className="btn sm" href={REPO_URL} target="_blank" rel="noreferrer">{t('dialogs.repositorio_no_github')}</a>
@@ -565,6 +566,22 @@ export function SettingsDialog() {
         <button className={tab === 'updates' ? 'active' : ''} onClick={() => setTab('updates')}>{t('dialogs.atualizacoes')}</button>
       </div>
       {tab === 'about' ? <AboutPanel st={st} goUpdates={() => setTab('updates')} /> : tab === 'look' ? <AppearancePanel /> : tab === 'keys' ? <KeysPanel /> : <UpdatesPanel st={st} setSt={setSt} />}
+    </Modal>
+  )
+}
+
+// ---------------------------------------------------------------- Fechar projeto
+export function CloseDialog() {
+  const s = useStore()
+  const [busy, setBusy] = useState(false)
+  const name = s.fileName || t('dialogs.projeto')
+  return (
+    <Modal title={t('project.fechar_projeto_titulo')} onClose={close} actions={<><button className="btn ghost danger" onClick={() => void discardProject()}>{t('project.fechar_sem_salvar')}</button><div className="spacer" /><button className="btn ghost" onClick={close}>{t('dialogs.cancelar')}</button><button className="btn primary" disabled={busy} onClick={async () => {
+      setBusy(true)
+      if (await saveProject()) await discardProject()
+      else setBusy(false)
+    }}>{t('project.salvar_e_fechar')}</button></>}>
+      <p>{t('project.fechar_projeto_texto', { name })}</p>
     </Modal>
   )
 }

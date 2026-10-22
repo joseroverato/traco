@@ -208,11 +208,13 @@ const d = (a: Pt, b: Pt) => Math.hypot(a.x - b.x, a.y - b.y)
 /**
  * Melhor ponto de snap perto de `p`. `tol` em unidades da folha (pt).
  * Prioridade: vértice de marcação > extremidade > interseção > ponto médio > sobre a linha.
+ * `only` restringe aos tipos listados (ex.: só interseções).
  */
-export function findSnap(idx: SnapIndex | null, p: Pt, tol: number, extra: Pt[] = []): SnapHit | null {
+export function findSnap(idx: SnapIndex | null, p: Pt, tol: number, extra: Pt[] = [], only?: readonly SnapKind[]): SnapHit | null {
+  const ok = (k: SnapKind) => !only || only.includes(k)
   let best: SnapHit | null = null
   let bestD = Infinity
-  for (const q of extra) {
+  for (const q of ok('markup') ? extra : []) {
     const dd = d(p, q)
     if (dd < tol && dd < bestD) {
       best = { pt: q, kind: 'markup' }
@@ -224,7 +226,7 @@ export function findSnap(idx: SnapIndex | null, p: Pt, tol: number, extra: Pt[] 
   const ids = idx.near(p, tol)
   if (!ids.length) return null
   // extremidades
-  for (const id of ids) {
+  for (const id of ok('endpoint') ? ids : []) {
     const s = idx.seg(id)
     for (const q of [{ x: s[0], y: s[1] }, { x: s[2], y: s[3] }]) {
       const dd = d(p, q)
@@ -246,7 +248,7 @@ export function findSnap(idx: SnapIndex | null, p: Pt, tol: number, extra: Pt[] 
     .sort((a, b) => a.dd - b.dd)
     .slice(0, 24)
   // interseções
-  for (let i = 0; i < close.length; i++)
+  for (let i = 0; i < close.length && ok('intersection'); i++)
     for (let j = i + 1; j < close.length; j++) {
       const q = intersect(close[i].s, close[j].s)
       if (!q) continue
@@ -258,7 +260,7 @@ export function findSnap(idx: SnapIndex | null, p: Pt, tol: number, extra: Pt[] 
     }
   if (best) return best
   // ponto médio
-  for (const c of close) {
+  for (const c of ok('midpoint') ? close : []) {
     const m = { x: (c.s[0] + c.s[2]) / 2, y: (c.s[1] + c.s[3]) / 2 }
     const dd = d(p, m)
     if (dd < tol * 0.7 && dd < bestD) {
@@ -268,7 +270,7 @@ export function findSnap(idx: SnapIndex | null, p: Pt, tol: number, extra: Pt[] 
   }
   if (best) return best
   // sobre a linha (perpendicular)
-  if (close[0]) return { pt: { x: close[0].pr.x, y: close[0].pr.y }, kind: 'nearest', seg: close[0].s }
+  if (close[0] && ok('nearest')) return { pt: { x: close[0].pr.x, y: close[0].pr.y }, kind: 'nearest', seg: close[0].s }
   return null
 }
 

@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
-import { thumbOf } from '../thumbs'
+import { peekThumb, thumbOf } from '../thumbs'
 import type { Sheet } from '../types'
 
 export function Thumb({ sheet, width = 240 }: { sheet: Sheet; width?: number }) {
-  const [url, setUrl] = useState<string | null>(null)
+  const [url, setUrl] = useState<string | null>(() => peekThumb(sheet, width))
   const ref = useRef<HTMLDivElement>(null)
   useEffect(() => {
     let alive = true
@@ -22,7 +22,7 @@ export function Thumb({ sheet, width = 240 }: { sheet: Sheet; width?: number }) 
   }, [sheet.src, sheet.srcIndex, sheet.rot, width]) // eslint-disable-line react-hooks/exhaustive-deps
   return (
     <div ref={ref} className="thumb-img" style={{ aspectRatio: `${sheet.width} / ${sheet.height}` }}>
-      {url && <img src={url} alt="" draggable={false} />}
+      {url && <img src={url} alt="" draggable={false} decoding="sync" />}
     </div>
   )
 }

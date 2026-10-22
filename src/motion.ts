@@ -12,6 +12,10 @@ export type Dir = 'fwd' | 'back' | 'up' | 'down' | 'fade' | 'theme'
 
 const reduced = () => typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches
 
+// com View Transitions a entrada dos modos é feita por ela; sem, o CSS usa uma animação simples. A marca é fixa (nunca sai do <html>):
+// tirar a marca no fim da transição fazia a animação de entrada recomeçar, e a tela piscava.
+if (typeof document !== 'undefined' && (document as VTDoc).startViewTransition && !reduced()) document.documentElement.classList.add('vt-ok')
+
 export function withTransition(update: () => void, dir: Dir = 'fade') {
   const d = document as VTDoc
   if (!d.startViewTransition || reduced()) return update()

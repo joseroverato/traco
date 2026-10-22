@@ -139,6 +139,7 @@ export default function App() {
     return () => window.removeEventListener('keydown', onKey)
   }, [open])
 
+  const other = s.mode !== 'review' && s.sheets.length > 0 // Pranchas, Comparar ou 3D
   const showLeft = !!s.nav && !s.focus
   const showRight = s.panels.right && !s.focus
   const showBottom = s.panels.bottom && !s.focus
@@ -150,14 +151,15 @@ export default function App() {
       <TopBar onOpen={open} />
       <div className="shell">
         <NavBar />
-        {s.mode === 'review' || !s.sheets.length ? (
-        <div key="review" className="workspace mode-in" style={{ gridTemplateColumns: cols }}>
+        <div className="stagewrap">
+        {/* Revisar nunca é desmontada: voltar dos outros modos não redesenha o PDF (era a "piscada") e mantém zoom e posição */}
+        <div className={`workspace ${other ? 'is-hidden' : ''}`} aria-hidden={other} inert={other} style={{ gridTemplateColumns: cols }}>
           <div className={`slot ${showLeft ? '' : 'collapsed'}`}><LeftPanel /></div>
           <ToolRail />
           <main className="center" style={{ gridTemplateRows: showBottom ? `1fr ${s.bottomH}px` : '1fr 0px' }}>
             <div className={`split ${s.split3d && s.sheets.length ? 'on' : ''}`}>
               <Viewer onOpen={open} />
-              {s.split3d && s.sheets.length > 0 && <Suspense fallback={<Loading />}><View3D compact /></Suspense>}
+              {s.split3d && s.sheets.length > 0 && !other && <Suspense fallback={<Loading />}><View3D compact /></Suspense>}
             </div>
             {s.search.open && s.sheets.length > 0 && <SearchBar />}
             {!showBottom && !s.focus && s.sheets.length > 0 && (
@@ -176,13 +178,12 @@ export default function App() {
             <RightPanel />
           </div>
         </div>
-      ) : s.mode === 'pages' ? (
-        <div key="pages" className="workspace single mode-in"><Suspense fallback={<Loading />}><PagesView /></Suspense></div>
-      ) : s.mode === '3d' ? (
-        <div key="3d" className="workspace single mode-in"><Suspense fallback={<Loading />}><View3D /></Suspense></div>
-      ) : (
-        <div key="compare" className="workspace single mode-in"><Suspense fallback={<Loading />}><CompareView /></Suspense></div>
-      )}
+        {other && (
+          <div key={s.mode} className="workspace single layer">
+            <Suspense fallback={<Loading />}>{s.mode === 'pages' ? <PagesView /> : s.mode === '3d' ? <View3D /> : <CompareView />}</Suspense>
+          </div>
+        )}
+        </div>
       </div>
       </>}
       <ScaleDialog key={s.calibrating ? `${s.calibrating.page}-${s.calibrating.length}-${s.calibrating.viewport}` : 'none'} />

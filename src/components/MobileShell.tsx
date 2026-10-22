@@ -3,7 +3,7 @@ import type { ReactNode } from 'react'
 import { ArrowLeft, Box, Check, ClipboardList, Columns2, Ellipsis, FileDown, FilePenLine, FolderOpen, Files, Layers3, LayoutGrid, Maximize, Minus, Moon, Plus, Redo2, Ruler, Save, Search, Settings, SlidersHorizontal, SquareStack, Stamp, Sun, Sparkles, Table2, Tags, Trash2, Undo2, X } from 'lucide-react'
 import { curSheet, useStore } from '../store'
 import type { State } from '../store'
-import { saveProject } from '../project'
+import { requestCloseProject, saveProject } from '../project'
 import { TOOLS } from '../railTools'
 import { Viewer } from './Viewer'
 import { LeftPanel } from './LeftPanel'
@@ -11,6 +11,7 @@ import { RightPanel } from './RightPanel'
 import { BottomPanel } from './BottomPanel'
 import { SearchBar } from './SearchBar'
 import { isMiraTool, miraCmd, useMira } from '../mira'
+import { AlignSnapChips } from './ViewerHints'
 import { t, useLang } from '../i18n'
 import { setModeAnimated, withTransition } from '../motion'
 import { applyPalette } from '../theme'
@@ -39,7 +40,7 @@ export function MobileShell({ onOpen }: { onOpen: () => void }) {
   const sh = curSheet(s)
   const sc = sh ? s.scales[sh.id] : undefined
   const review = s.mode === 'review' || !has
-  const mira = review && has && isMiraTool(s.tool)
+  const mira = review && has && (isMiraTool(s.tool) || !!s.aligning)
   const miraN = useMira((m) => m.n)
   const miraMin = useMira((m) => m.min)
 
@@ -172,12 +173,12 @@ export function MobileShell({ onOpen }: { onOpen: () => void }) {
 
       {mira && (
         <div className="m-mira">
-          <p>{t('mobile.dica_mira')}</p>
+          {s.aligning ? <AlignSnapChips aligning={s.aligning} /> : <p>{t('mobile.dica_mira')}</p>}
           <div className="m-mira-row">
             <button className="m-mira-btn" disabled={miraN === 0} onClick={() => miraCmd('undo')}><Undo2 size={20} /><span>{t('mobile.desfazer_ponto')}</span></button>
             <button className="m-mira-btn primary" onClick={() => miraCmd('add')}><Plus size={22} /><span>{t('mobile.adicionar_ponto')}</span></button>
             <button className="m-mira-btn ok" disabled={miraN < miraMin} onClick={() => miraCmd('done')}><Check size={20} /><span>{t('dialogs.concluir')}</span></button>
-            <button className="m-mira-btn" aria-label={miraN ? t('dialogs.cancelar') : t('mobile.sair_da_medicao')} onClick={() => (miraN ? miraCmd('cancel') : s.setTool('pan'))}><X size={20} /></button>
+            <button className="m-mira-btn" aria-label={miraN ? t('dialogs.cancelar') : t('mobile.sair_da_medicao')} onClick={() => (miraN || s.aligning ? miraCmd('cancel') : s.setTool('pan'))}><X size={20} /></button>
           </div>
         </div>
       )}
@@ -248,6 +249,7 @@ export function MobileShell({ onOpen }: { onOpen: () => void }) {
                   {row(<Box size={20} />, '3D', () => goMode('3d'), !has)}
                   {row(<Sparkles size={20} />, t('navbar.claude'), () => openRight('claude'))}
                   <div className="m-more-sep" />
+                  {row(<X size={20} />, t('project.fechar_projeto'), act(requestCloseProject), !has)}
                   {row(<Settings size={20} />, t('topbar.configuracoes_e_atualizacoes'), act(() => s.set({ dialog: 'updates' })))}
                   {row(s.theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />, s.theme === 'dark' ? t('topbar.tema_claro') : t('topbar.tema_escuro'), toggleTheme)}
                 </div>

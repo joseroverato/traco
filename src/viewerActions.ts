@@ -111,3 +111,18 @@ export function buildDraft(kind: MarkupKind | 'calibrate', pts: Pt[], page: stri
     fill: color, fillOpacity: pr?.opacity ?? (kind === 'area' ? 0.2 : 0), fontSize: 12,
   }
 }
+
+/** Duplica marcações (deslocadas um pouco, para a cópia não ficar escondida) e seleciona as cópias. */
+export function duplicateMarkups(ids: string[]) {
+  const st = useStore.getState()
+  const off = 14
+  const made: string[] = []
+  st.checkpoint()
+  for (const m of st.markups.filter((x) => ids.includes(x.id))) {
+    const { id: _id, points, holes, ...rest } = m
+    void _id
+    const c = st.addMarkup(m.kind, m.page, points.map((p) => ({ x: p.x + off, y: p.y + off })), { ...rest, ...(holes ? { holes: holes.map((h) => h.map((p) => ({ x: p.x + off, y: p.y + off }))) } : {}) })
+    made.push(c.id)
+  }
+  st.set({ selected: made })
+}

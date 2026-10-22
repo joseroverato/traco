@@ -96,7 +96,7 @@ export interface State {
   resumeTool: Tool | null
   editingText: string | null
   panels: { left: boolean; right: boolean; bottom: boolean }
-  dialog: null | 'export' | 'stamp' | 'statuses' | 'meta' | 'claude-settings' | 'prices' | 'columns' | 'updates' | 'recover' | 'claude-desktop'
+  dialog: null | 'export' | 'stamp' | 'statuses' | 'meta' | 'claude-settings' | 'prices' | 'columns' | 'updates' | 'recover' | 'claude-desktop' | 'close'
   bottomH: number
   rightW: number
   toast: string | null
@@ -123,7 +123,7 @@ export interface State {
   dirty: boolean
   fillGap: number // preenchimento: fecha aberturas até N pt
   minHole: number // vazios menores (m²) são ignorados na área por clique
-  aligning: { overlay: string; step: number; pts: { x: number; y: number }[] } | null
+  aligning: { overlay: string; step: number; pts: { x: number; y: number }[]; snap?: 'all' | 'intersection' | 'endpoint' } | null
   fillAs: 'area' | 'space'
   holeTarget: string | null
   /** cor e altura do último sólido criado/ajustado: o próximo já nasce assim */

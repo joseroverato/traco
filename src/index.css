@@ -814,3 +814,29 @@ body { overscroll-behavior: none; touch-action: manipulation; }
 .notes strong { color: var(--text); font-weight: 620; }
 .notes code { font-family: var(--mono); font-size: 11.5px; background: var(--panel-2); padding: 1px 5px; border-radius: 4px; }
 .notes a { color: var(--accent-text); }
+
+/* botão de fechar o projeto ao lado do nome do arquivo */
+.doc-title .doc-close { width: 20px; height: 20px; margin-left: 6px; vertical-align: middle; opacity: 0.55; }
+.doc-title .doc-close:hover { opacity: 1; color: var(--danger); }
+
+/* tipo de ponto do snap no alinhamento */
+.snap-chips { display: inline-flex; gap: 4px; margin-left: 10px; vertical-align: middle; flex-wrap: wrap; justify-content: center; }
+.snap-chips button { border: 1px solid var(--line); background: var(--panel-2); color: var(--text-2); border-radius: 99px; padding: 2px 10px; font-size: 11.5px; font-weight: 560; cursor: pointer; }
+.snap-chips button.on { background: var(--accent); border-color: transparent; color: var(--on-accent); }
+.m-mira .snap-chips { display: flex; margin: 0 0 7px; }
+.m-mira .snap-chips button { min-height: 32px; padding: 0 12px; }
+.hud .snap-chips button { pointer-events: auto; }
+
+/* menu do botão direito */
+.ctxmenu { position: fixed; z-index: 300; min-width: 230px; max-width: 320px; padding: 5px; border-radius: 12px; background: color-mix(in srgb, var(--panel) 96%, transparent); backdrop-filter: blur(14px); border: 1px solid var(--line); box-shadow: 0 18px 50px rgba(0, 0, 0, 0.45), 0 2px 8px rgba(0, 0, 0, 0.25); outline: none; animation: ctxin 0.14s var(--ease-out); transform-origin: top left; }
+@keyframes ctxin { from { opacity: 0; transform: scale(0.96); } }
+.ctx-item { display: flex; align-items: center; gap: 10px; width: 100%; padding: 7px 10px; border: 0; border-radius: 8px; background: transparent; color: var(--text); text-align: left; cursor: pointer; font-size: 12.5px; }
+.ctx-item.cur:not(:disabled), .ctx-item:hover:not(:disabled) { background: var(--accent-soft); }
+.ctx-item:disabled { opacity: 0.4; cursor: default; }
+.ctx-item.danger { color: var(--danger); }
+.ctx-ico { width: 16px; display: grid; place-items: center; color: var(--text-2); flex: none; }
+.ctx-item.cur .ctx-ico { color: var(--accent-text); }
+.ctx-label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ctx-item kbd { font-size: 10.5px; color: var(--text-3); font-family: var(--font); }
+.ctx-sep { height: 1px; margin: 5px 6px; background: var(--line-soft); }
+@media (prefers-reduced-motion: reduce) { .ctxmenu { animation: none; } }

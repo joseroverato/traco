@@ -1,11 +1,11 @@
-import { Columns2, Settings, Search, FileDown, FolderOpen, Maximize, MoveHorizontal, Moon, PanelBottom, PanelLeft, PanelRight, Redo2, Save, Stamp, Sun, Undo2, ZoomIn, ZoomOut } from 'lucide-react'
+import { Columns2, Settings, Search, FileDown, FolderOpen, Maximize, MoveHorizontal, Moon, PanelBottom, PanelLeft, PanelRight, Redo2, Save, Stamp, Sun, Undo2, X, ZoomIn, ZoomOut } from 'lucide-react'
 import { useLayoutEffect, useRef, useState } from 'react'
 import { curSheet, useStore } from '../store'
 import type { Mode } from '../store'
 import { setModeAnimated, withTransition } from '../motion'
 import { applyPalette } from '../theme'
 import { Logo } from './Logo'
-import { saveProject } from '../project'
+import { requestCloseProject, saveProject } from '../project'
 import { IS_DESKTOP } from '../platform'
 import { t } from '../i18n'
 
@@ -86,6 +86,7 @@ export function TopBar({ onOpen }: { onOpen: () => void }) {
           <>
             <span className="name">{s.fileName}</span>
             {sh && review && <span className="muted"> · {sh.label}</span>}
+            <button className="icon-btn xs doc-close" data-tip={t('project.fechar_projeto') + '  Ctrl+W'} aria-label={t('project.fechar_projeto')} onClick={requestCloseProject}><X size={13} /></button>
           </>
         ) : (
           <span className="muted">{t('topbar.nenhum_documento')}</span>

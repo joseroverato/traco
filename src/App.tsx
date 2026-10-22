@@ -21,9 +21,10 @@ const PricesDialog = lazy(() => import('./components/Dialogs').then((m) => ({ de
 const ColumnsDialog = lazy(() => import('./components/Dialogs').then((m) => ({ default: m.ColumnsDialog })))
 const SettingsDialog = lazy(() => import('./components/Dialogs').then((m) => ({ default: m.SettingsDialog })))
 const RecoverDialog = lazy(() => import('./components/Dialogs').then((m) => ({ default: m.RecoverDialog })))
+const CloseDialog = lazy(() => import('./components/Dialogs').then((m) => ({ default: m.CloseDialog })))
 const PresetDialog = lazy(() => import('./components/PresetDialog').then((m) => ({ default: m.PresetDialog })))
 const Loading = () => <div className="loading-mod">{t('app.carregando')}</div>
-import { loadFile, saveProject } from './project'
+import { loadFile, requestCloseProject, saveProject } from './project'
 import { desktop } from './platform'
 import { SearchBar } from './components/SearchBar'
 import { MobileShell } from './components/MobileShell'
@@ -111,6 +112,7 @@ export default function App() {
       if (target.closest('input,textarea,select,[contenteditable]')) return
       if (mod && k === 'o') { e.preventDefault(); open(); return }
       if (mod && k === 's') { e.preventDefault(); saveProject(e.shiftKey); return }
+      if (mod && k === 'w') { e.preventDefault(); requestCloseProject(); return }
       if (mod && k === 'e') { e.preventDefault(); if (st.sheets.length) st.set({ dialog: 'export' }); return }
       if (mod && k === 'z') { e.preventDefault(); if (e.shiftKey) st.redo(); else st.undo(); return }
       if (mod && k === 'y') { e.preventDefault(); st.redo(); return }
@@ -192,6 +194,7 @@ export default function App() {
         {s.dialog === 'columns' && <ColumnsDialog />}
         {s.dialog === 'updates' && <SettingsDialog />}
         {s.dialog === 'recover' && <RecoverDialog />}
+        {s.dialog === 'close' && <CloseDialog />}
         {s.presetDialog && <PresetDialog />}
       </Suspense>
       {!mobile && <Tour />}

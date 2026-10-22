@@ -4,6 +4,7 @@ import { curSheet, useStore } from '../store'
 import type { Mode } from '../store'
 import { setModeAnimated, withTransition } from '../motion'
 import { applyPalette } from '../theme'
+import { Logo } from './Logo'
 import { saveProject } from '../project'
 import { IS_DESKTOP } from '../platform'
 import { t } from '../i18n'
@@ -66,10 +67,7 @@ export function TopBar({ onOpen }: { onOpen: () => void }) {
   return (
     <header className="topbar">
       <div className="brand">
-        <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden>
-          <rect x="2" y="2" width="20" height="20" rx="6" fill="var(--accent)" />
-          <path d="M7 16.5 L17 7.5 M7 7.5 h5" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" />
-        </svg>
+        <Logo size={24} />
         <span>Traço</span>
         {IS_DESKTOP && <span className="edition" title={t('topbar.app_de_pc_com_motor')}>PC</span>}
       </div>

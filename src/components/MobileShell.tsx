@@ -14,6 +14,7 @@ import { isMiraTool, miraCmd, useMira } from '../mira'
 import { t, useLang } from '../i18n'
 import { setModeAnimated, withTransition } from '../motion'
 import { applyPalette } from '../theme'
+import { Logo } from './Logo'
 
 const PagesView = lazy(() => import('./PagesView').then((m) => ({ default: m.PagesView })))
 const View3D = lazy(() => import('./View3D').then((m) => ({ default: m.View3D })))
@@ -126,10 +127,7 @@ export function MobileShell({ onOpen }: { onOpen: () => void }) {
   return (
     <div className="m-app">
       <header className="m-top">
-        <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden className="m-logo">
-          <rect x="2" y="2" width="20" height="20" rx="6" fill="var(--accent)" />
-          <path d="M7 16.5 L17 7.5 M7 7.5 h5" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" />
-        </svg>
+        <Logo size={28} className="m-logo" />
         <div className="m-title">
           {s.fileName ? (
             <>

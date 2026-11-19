@@ -8,7 +8,8 @@ const { pathToFileURL } = require('node:url')
 
 // nome ASCII: evita acentos no user-agent e nas pastas de dados
 app.setName('Traco')
-app.setPath('userData', path.join(app.getPath('appData'), 'Traco'))
+// TRACO_USER_DATA isola o perfil (testes de ponta a ponta e capturas); sem ela, vale a pasta de sempre
+app.setPath('userData', process.env.TRACO_USER_DATA || path.join(app.getPath('appData'), 'Traco'))
 const USER = app.getPath('userData')
 const TITLEBAR_H = 30 // altura da barra de título do app (.tb, primeira linha de .rx-top no r3.css); os botões da janela têm a mesma altura
 const DIST = path.join(__dirname, '..', 'dist-desktop')

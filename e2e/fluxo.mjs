@@ -22,7 +22,7 @@ const ok = (cond, msg, extra = '') => { console.log(`${cond ? '  ok  ' : ' FALHA
 const near = (a, b, tol = 0.02) => Math.abs(a - b) <= tol
 
 async function abrir() {
-  const app = await electron.launch({ executablePath: electronPath, args: [...(exe ? [] : [root]), `--user-data-dir=${userData}`], env: { ...process.env, TRACO_SAVE_DIR: saveDir } })
+  const app = await electron.launch({ executablePath: electronPath, args: [...(exe ? [] : [root]), `--user-data-dir=${userData}`], env: { ...process.env, TRACO_SAVE_DIR: saveDir, TRACO_USER_DATA: userData } })
   const page = await app.firstWindow()
   await page.waitForSelector('input[type=file]', { state: 'attached' })
   // os textos conferidos abaixo estão em português: fixa o idioma (o app abre no idioma do sistema)

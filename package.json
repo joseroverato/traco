@@ -40,7 +40,7 @@
     "@types/react-dom": "^19.1.2",
     "@types/three": "^0.186.0",
     "@vitejs/plugin-react": "^4.4.1",
-    "electron": "^33.4.11",
+    "electron": "^44.9.0",
     "electron-builder": "^26.15.3",
     "esbuild": "^0.25.12",
     "eslint": "^9.25.0",

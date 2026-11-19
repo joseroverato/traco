@@ -113,8 +113,8 @@ const tj = await cmd(page, 'add_markups', { markups: [{ kind: 'redact', points: 
 ok(!tj.error && !JSON.parse(tj.text).errors, 'tarja criada sobre "QUARTO 2"', tj.text)
 
 const antes = new Set(readdirSync(saveDir))
-await page.locator('header.topbar button[data-tip^="Exportar PDF"]').click()
-await page.locator('button.btn.primary', { hasText: /^Exportar$/ }).click()
+await page.locator('.rx .tb button[aria-label^="Exportar PDF"]').click()
+await page.locator('.dlg button.btn.pri', { hasText: /^Exportar$/ }).click()
 const novoArquivo = async (ext) => {
   for (let i = 0; i < 80; i++) {
     const f = readdirSync(saveDir).find((x) => !antes.has(x) && x.endsWith(ext))

@@ -7,6 +7,7 @@ import type { GroupBy } from '../summary'
 import { spaceOf } from '../columns'
 import { KIND_LABEL } from '../kinds'
 import { t } from '../i18n'
+import { TabPill } from './TabPill'
 
 const GROUPS: { id: GroupBy; label: string }[] = [
   { id: 'preset', get label() { return t('bottompanel.servico') } },
@@ -36,6 +37,7 @@ export function BottomPanel() {
   return (
     <section className="panel bottom">
       <header className="tabs">
+        <TabPill />
         <button className={tab === 'qty' ? 'active' : ''} onClick={() => setTab('qty')}>{t('bottompanel.quantitativo')}</button>
         <button className={tab === 'list' ? 'active' : ''} onClick={() => setTab('list')}>{t('bottompanel.marcacoes')} <span className="count">{s.markups.length}</span></button>
         <div className="tabs-tools">
@@ -46,6 +48,7 @@ export function BottomPanel() {
           </label>
         )}
         <div className="seg">
+          <TabPill />
           <button className={scope === 'all' ? 'active' : ''} onClick={() => setScope('all')}>{t('bottompanel.todas')}</button>
           <button className={scope === 'page' ? 'active' : ''} onClick={() => setScope('page')}>{t('bottompanel.esta_folha')}</button>
         </div>

@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { desktop } from './platform'
 
 /**
  * Cores personalizáveis, no espírito do Material You (Android):
@@ -90,7 +91,7 @@ export function derive(theme: ThemeName, p: Palette): Derived {
     for (const [k, l] of Object.entries(SURF[theme])) vars[`--${k}`] = oklchToHex({ l, c, h: base.h })
     panel = vars['--panel']
   }
-  const panelHex = panel || (dark ? '#232326' : '#fbfbfc')
+  const panelHex = panel || (dark ? '#27282b' : '#c4c8cc')
 
   if (p.accent && HEX.test(p.accent)) {
     const a = hexToOklch(p.accent)
@@ -157,8 +158,49 @@ export function applyPalette(theme: ThemeName = currentTheme(), p: Palette = use
     if (vars[k]) st.setProperty(k, vars[k])
     else st.removeProperty(k)
   }
-  document.querySelector('meta[name=theme-color]')?.setAttribute('content', vars['--bg'] ?? (theme === 'dark' ? '#161618' : '#e4e6ea'))
+  const bg = vars['--bg'] ?? (theme === 'dark' ? '#1d1e20' : '#a3a7ad')
+  document.querySelector('meta[name=theme-color]')?.setAttribute('content', bg)
+  // app de PC: os botões da janela ficam sobre a barra do app e acompanham o tema
+  desktop?.setTitleBar?.({ color: bg, symbolColor: theme === 'dark' ? '#e8e9eb' : '#0f1114' })
+}
+
+// ---------- vidro (painéis translúcidos) ----------
+// Pesa na placa de vídeo: pode ser desligado nas configurações ou já no instalador (o app de PC lê essa escolha ao abrir).
+const GLASS_KEY = 'traco.glass'
+
+/** O vidro é opção, não padrão: só liga para quem escolheu em Configurações › Aparência. */
+export function glassEnabled(): boolean {
+  try {
+    return localStorage.getItem(GLASS_KEY) === 'on'
+  } catch {
+    return false
+  }
+}
+
+/** Liga ou desliga o vidro; `persist` grava a escolha (o padrão vindo do instalador não grava, para a pessoa poder mudar depois). */
+export function setGlass(on: boolean, persist = true) {
+  if (typeof document === 'undefined') return
+  if (on) delete document.documentElement.dataset.glass
+  else document.documentElement.dataset.glass = 'off'
+  if (!persist) return
+  try {
+    localStorage.setItem(GLASS_KEY, on ? 'on' : 'off')
+  } catch {
+    /* sem storage */
+  }
+}
+
+/** Já existe uma escolha gravada? Senão, vale o padrão do instalador. */
+export function glassChosen(): boolean {
+  try {
+    return localStorage.getItem(GLASS_KEY) !== null
+  } catch {
+    return false
+  }
 }
 
 // aplica antes da primeira pintura (o módulo é importado no começo do main.tsx)
-if (typeof document !== 'undefined') applyPalette()
+if (typeof document !== 'undefined') {
+  applyPalette()
+  setGlass(glassEnabled(), false)
+}

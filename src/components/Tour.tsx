@@ -39,6 +39,17 @@ export function Tour() {
     setBox(el ? el.getBoundingClientRect() : null)
   }, [step, tick])
 
+  // o passo a passo não pode ficar por cima da folha quando a pessoa já começou a trabalhar: escolher uma ferramenta ou clicar na folha o encerra
+  useEffect(() => {
+    if (step === null) return
+    const un = useStore.subscribe((s, p) => { if (s.tool !== p.tool && s.tool !== 'select') { markTourDone(); set({ tour: null }) } })
+    const down = (e: PointerEvent) => {
+      if ((e.target as Element | null)?.closest?.('.viewer') && useStore.getState().tool !== 'select') { markTourDone(); set({ tour: null }) }
+    }
+    window.addEventListener('pointerdown', down, true)
+    return () => { un(); window.removeEventListener('pointerdown', down, true) }
+  }, [step]) // eslint-disable-line react-hooks/exhaustive-deps
+
   useEffect(() => {
     if (step === null) return
     const re = () => setTick((n) => n + 1)
@@ -62,17 +73,17 @@ export function Tour() {
   const next = nextStep(step + 1, 1)
 
   return (
-    <div className="tour" role="dialog" aria-label={t('tour.passo_a_passo')}>
+    <div className="tour rx" role="dialog" aria-label={t('tour.passo_a_passo')}>
       <div className="tour-spot" style={{ left: box.left - pad, top: box.top - pad, width: box.width + pad * 2, height: box.height + pad * 2 }} />
       <div className="tour-bubble" style={{ left, top, width: W }}>
         <div className="tour-step">{t('tour.passo_a_passo_de', { v: step + 1, total })}</div>
         <h3>{s.title}</h3>
         <p>{s.text}</p>
         <div className="tour-actions">
-          <button className="btn sm ghost" onClick={end}>{t('tour.pular')}</button>
-          <span className="grow" />
+          <button className="btn sm" onClick={end}>{t('tour.pular')}</button>
+          <span className="sp" />
           {prev !== null && <button className="btn sm" onClick={() => go(step - 1, -1)}>{t('tour.voltar')}</button>}
-          <button className="btn sm primary" onClick={() => (next === null ? end() : go(step + 1, 1))}>{next === null ? t('tour.concluir') : t('tour.proximo')}</button>
+          <button className="btn sm pri" onClick={() => (next === null ? end() : go(step + 1, 1))}>{next === null ? t('tour.concluir') : t('tour.proximo')}</button>
         </div>
       </div>
     </div>

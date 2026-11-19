@@ -76,7 +76,7 @@ const A = '#3e63dd' // azul (ação)
 const R = '#e5484d' // vermelho (revisão)
 const G = '#30a46c' // verde (medição)
 const P = '#8e4ec6' // roxo (ambiente)
-const O = '#f76b15' // laranja (contagem)
+const O = 'var(--demo-ac)' // acento sobre o papel branco da demo (antes laranja; o laranja é só do Claude)
 const T = '#2f9e8f' // verde-água (sólido)
 const V = '#0090ff' // azul claro (viewport)
 

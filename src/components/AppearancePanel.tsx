@@ -1,32 +1,32 @@
-import { Moon, Sun } from 'lucide-react'
+import { useState } from 'react'
 import { useStore } from '../store'
-import { applyPalette, derive, usePalette } from '../theme'
+import { applyPalette, derive, glassEnabled, setGlass, usePalette } from '../theme'
 import { withTransition } from '../motion'
 import { t } from '../i18n'
+import { Chk, Rad } from './Dlg'
+import { Icon } from './Icon'
 
-const ACCENTS = [null, '#8b7bff', '#c084fc', '#ff5d9e', '#ff5a5f', '#ff8a3d', '#ffc247', '#3ecf8e', '#2ec5c5', '#38bdf8']
-const PRIMARIES = [null, '#5b6b8c', '#4a6a7a', '#4f7a6a', '#7a4a5a', '#5c4a8a', '#8a6a4a', '#6a6a6a']
-const DEFAULT_ACCENT = '#4d8dff'
+// valores de fábrica por tema: servem de ponto de partida do seletor de cor quando ainda não há cor escolhida
+const BASE_PRIMARY = { dark: '#2d2e31', light: '#cacdd1' }
+const BASE_ACCENT = { dark: '#6cc0dc', light: '#075a73' }
 
-function Swatches({ value, options, onPick, base }: { value: string | null; options: (string | null)[]; onPick: (c: string | null) => void; base: string }) {
-  const custom = value && !options.includes(value)
+/** Linha de uma cor: amostra e nome (Padrão ou o valor) + "Personalizada…" (abre o seletor do sistema) + volta ao padrão. */
+function ColorRow({ value, base, sample, label, onPick }: { value: string | null; base: string; sample: string; label: string; onPick: (c: string | null) => void }) {
   return (
-    <div className="swatches" role="radiogroup">
-      {options.map((c) => (
-        <button key={c ?? 'default'} role="radio" aria-checked={value === c} aria-label={c ?? t('dialogs.cor_padrao')} title={c ?? t('dialogs.cor_padrao')} className={`swatch ${value === c ? 'on' : ''} ${c ? '' : 'default'}`} style={{ background: c ?? base }} onClick={() => onPick(c)} />
-      ))}
-      <label className={`swatch pick ${custom ? 'on' : ''}`} title={t('dialogs.cor_personalizada')} style={custom ? { background: value! } : undefined}>
-        <input type="color" aria-label={t('dialogs.cor_personalizada')} value={value ?? base} onChange={(e) => onPick(e.target.value)} />
-      </label>
+    <div className="vv">
+      <span className="cor fl1"><i className="cz" style={{ background: value ?? sample }} /><span className="n">{value ? value.toUpperCase() : t('dialogs.cor_padrao')}</span></span>
+      <label className="tbn txt pickl">{t('dialogs.cor_personalizada')}…<input type="color" aria-label={`${label}: ${t('dialogs.cor_personalizada')}`} value={value ?? base} onChange={(e) => onPick(e.target.value)} /></label>
+      {value && <button type="button" className="tbn txt" onClick={() => onPick(null)}>{t('dialogs.cor_padrao')}</button>}
     </div>
   )
 }
 
-/** Aba "Aparência" das configurações: tema, cor principal e cor de acento. Tudo vale na hora, para o app inteiro por trás da janela. */
+/** Aba "Aparência" das configurações: tema, vidro, cor principal e cor de acento, com uma prévia da faixa, de uma lista e da barra. Tudo vale na hora, para o app inteiro por trás da janela. */
 export function AppearancePanel() {
   const theme = useStore((s) => s.theme)
   const set = useStore((s) => s.set)
-  const { primary, accent, set: setPalette, reset } = usePalette()
+  const presets = useStore((s) => s.presets)
+  const { primary, accent, set: setPalette } = usePalette()
 
   const pickTheme = (next: 'dark' | 'light') => {
     if (next === theme) return
@@ -41,41 +41,57 @@ export function AppearancePanel() {
       set({ theme: next })
     }, 'theme')
   }
+  const [glass, setGlassOn] = useState(glassEnabled)
+  const toggleGlass = (on: boolean) => {
+    setGlassOn(on)
+    withTransition(() => setGlass(on), 'theme')
+  }
   const d = derive(theme, { primary, accent })
-  const changed = !!(primary || accent)
+  const sample = presets.slice(0, 3)
 
   return (
-    <div className="appearance">
-      <section>
-        <h4>{t('dialogs.tema')}</h4>
-        <div className="seg">
-          <button className={theme === 'dark' ? 'active' : ''} onClick={() => pickTheme('dark')}><Moon size={14} /> {t('topbar.tema_escuro')}</button>
-          <button className={theme === 'light' ? 'active' : ''} onClick={() => pickTheme('light')}><Sun size={14} /> {t('topbar.tema_claro')}</button>
+    <div className="c2c">
+      <div className="col">
+        <div className="gbx"><h3>{t('dialogs.tema')}</h3>
+          <div className="opc h" role="radiogroup" aria-label={t('dialogs.tema')}>
+            <Rad name="tema" checked={theme === 'dark'} onChange={() => pickTheme('dark')}>{t('topbar.tema_escuro')}</Rad>
+            <Rad name="tema" checked={theme === 'light'} onChange={() => pickTheme('light')}>{t('topbar.tema_claro')}</Rad>
+          </div>
         </div>
-      </section>
-      <section>
-        <h4>{t('dialogs.cor_principal')}</h4>
-        <p className="muted">{t('dialogs.cor_principal_ajuda')}</p>
-        <Swatches value={primary} options={PRIMARIES} base={theme === 'dark' ? '#2a2a2e' : '#e4e6ea'} onPick={(c) => setPalette({ primary: c })} />
-      </section>
-      <section>
-        <h4>{t('dialogs.cor_de_acento')}</h4>
-        <p className="muted">{t('dialogs.cor_de_acento_ajuda')}</p>
-        <Swatches value={accent} options={ACCENTS} base={DEFAULT_ACCENT} onPick={(c) => setPalette({ accent: c })} />
-      </section>
-      <section>
-        <h4>{t('dialogs.previa')}</h4>
-        <div className="appearance-preview">
-          <button className="btn primary sm">{t('dialogs.concluir')}</button>
-          <span className="chip accent">12</span>
-          <span className="link">{t('dialogs.cor_de_acento')}</span>
-          <span className="muted">{t('dialogs.cor_principal')}</span>
+        <div className="gbx"><h3>{t('dialogs.efeitos')}</h3>
+          <Chk checked={glass} onChange={toggleGlass}>{t('dialogs.vidro')}</Chk>
+          <p>{t('dialogs.vidro_ajuda')}</p>
         </div>
-        {accent && d.onAccent && d.accentText && (
-          <p className="muted legibility">{t('dialogs.legibilidade', { a: d.onAccent.toFixed(1), b: d.accentText.toFixed(1) })}</p>
-        )}
-      </section>
-      {changed && <button className="btn ghost" onClick={reset}>{t('dialogs.restaurar_cores')}</button>}
+        <div className="gbx"><h3>{t('dialogs.cor_principal')}</h3>
+          <p>{t('dialogs.cor_principal_ajuda')}</p>
+          <ColorRow value={primary} base={BASE_PRIMARY[theme]} sample="var(--pal)" label={t('dialogs.cor_principal')} onPick={(c) => setPalette({ primary: c })} />
+        </div>
+        <div className="gbx"><h3>{t('dialogs.cor_de_acento')}</h3>
+          <p>{t('dialogs.cor_de_acento_ajuda')}</p>
+          <ColorRow value={accent} base={BASE_ACCENT[theme]} sample="var(--ac)" label={t('dialogs.cor_de_acento')} onPick={(c) => setPalette({ accent: c })} />
+        </div>
+      </div>
+      <div className="col">
+        <div className="gbx fl1"><h3>{t('dialogs.previa')}</h3>
+          <div className="pvw" inert aria-hidden="true">
+            <div className="dtabs"><button type="button" className="on" tabIndex={-1}>{t('ribbon.t_inicio')}</button><button type="button" tabIndex={-1}>{t('ribbon.t_anotar')}</button><button type="button" tabIndex={-1}>{t('ribbon.t_exibir')}</button></div>
+            <div className="pv-r">
+              <button className="bb on" type="button" tabIndex={-1}><Icon name="area" size={32} /><span className="bl">{t('railtools.area')}</span></button>
+              <button className="bb" type="button" tabIndex={-1}><Icon name="comprimento" size={32} /><span className="bl">{t('railtools.comprimento')}</span></button>
+            </div>
+            <div className="pv-b">
+              {sample.length > 0 && (
+                <div className="lbx">
+                  {sample.map((p, i) => <div key={p.id} className={`lbi ${i === 0 ? 'on' : ''}`}>{p.name}<span className="lbd">{p.resultUnit}</span></div>)}
+                </div>
+              )}
+              <div className="l1"><span className="btn pri">{t('dialogs.concluir')}</span><span className="chp">12</span><span className="lc">{t('dialogs.cor_de_acento')}</span></div>
+            </div>
+            <div className="pv-s"><span className="mut">{t('dialogs.previa_cor_principal')}</span></div>
+          </div>
+          {accent && d.onAccent && d.accentText && <p>{t('dialogs.legibilidade', { a: d.onAccent.toFixed(1), b: d.accentText.toFixed(1) })}</p>}
+        </div>
+      </div>
     </div>
   )
 }

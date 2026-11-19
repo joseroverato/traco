@@ -12,6 +12,8 @@ import { Rich } from './Rich'
 import { keyOf } from '../hotkeys'
 import { fmtQty, lenIn, lenOut, lenUnit } from '../units'
 import { setModeAnimated } from '../motion'
+import { VIEW3D_EVENT, publishTotals3d, toggleLayer3d, useView3dUi } from '../view3dUi'
+import type { View3DName } from '../view3dUi'
 
 const LAYERS = Object.keys(LAYER_LABEL) as LayerKind[]
 const VIEW_NAME = { get top() { return t('view3d.topo') }, get front() { return t('view3d.frente') }, get right() { return t('view3d.direita') } } as const
@@ -27,7 +29,7 @@ export function View3D({ compact = false }: { compact?: boolean }) {
   const scale = sheet ? s.scales[sheet.id] : undefined
   const host = useRef<HTMLDivElement>(null)
   const scene = useRef<Scene3D | null>(null)
-  const [visible, setVisible] = useState<Record<LayerKind, boolean>>({ solid: true, space: true, area: true, length: true, count: true })
+  const visible = useView3dUi((u) => u.visible)
   const [hover, setHover] = useState<HoverInfo | null>(null)
   const mobile = useIsMobile()
   const [sheetOpen, setSheetOpen] = useState(false)
@@ -38,6 +40,9 @@ export function View3D({ compact = false }: { compact?: boolean }) {
     [sheet, s.markups, s.presets, s.scales],
   )
   const totals = useMemo(() => layerTotals(solids), [solids])
+  // a faixa (Mostrar) e a barra de status leem as contagens e o volume daqui
+  useEffect(() => { if (!compact) publishTotals3d(totals) }, [totals, compact])
+  useEffect(() => () => { if (!compact) publishTotals3d(null) }, [compact])
   const ringKey = useMemo(() => JSON.stringify(solids.map((x) => [x.id, x.ring, x.base])), [solids])
   const sel = s.markups.find((m) => m.id === s.selected[0] && m.kind === 'solid')
 
@@ -84,6 +89,13 @@ export function View3D({ compact = false }: { compact?: boolean }) {
 
   useEffect(() => scene.current?.setDark(s.theme === 'dark'), [s.theme, ready])
 
+  // Vistas da faixa (Enquadrar, Topo, Frente, Direita): o evento chega aqui e a cena enquadra, como o botão da barra interna fazia
+  useEffect(() => {
+    const on = (e: Event) => scene.current?.frame((e as CustomEvent<View3DName>).detail)
+    window.addEventListener(VIEW3D_EVENT, on)
+    return () => window.removeEventListener(VIEW3D_EVENT, on)
+  }, [])
+
   useEffect(() => {
     const sc = scene.current
     if (!sc) return
@@ -102,14 +114,15 @@ export function View3D({ compact = false }: { compact?: boolean }) {
   return (
     <div className={`view3d ${compact ? 'compact' : ''} ${mobile ? 'mob' : ''} ${mobile && sheetOpen ? 'sheet-open' : ''}`}>
       <div className="v3-host" ref={host} />
-      <div className="v3-bar">
+      {/* PC, tela cheia: Vistas e Mostrar estão na faixa (aba 3D). A barra continua no celular (sem faixa) e na tela dividida da planta (aba Início/Exibir). */}
+      {(mobile || compact) && <div className="v3-bar">
         {!compact && s.sheets.length > 1 && (
           <select value={s.page} onChange={(e) => s.set({ page: Number(e.target.value), selected: [] })} aria-label={t('view3d.folha')}>
             {s.sheets.map((x, i) => <option key={x.id} value={i}>{x.label}{x.level ? ` · ${x.level}` : ''}</option>)}
           </select>
         )}
         {LAYERS.map((k) => (
-          <button key={k} className={`chip ${visible[k] ? 'on' : ''}`} onClick={() => setVisible({ ...visible, [k]: !visible[k] })} data-tip={`${visible[k] ? 'Ocultar' : 'Mostrar'} ${LAYER_LABEL[k].toLowerCase()}`}>
+          <button key={k} className={`chip ${visible[k] ? 'on' : ''}`} aria-pressed={visible[k]} onClick={() => toggleLayer3d(k)}>
             {LAYER_LABEL[k]} <span className="count">{totals[k].n}</span>
           </button>
         ))}
@@ -119,14 +132,14 @@ export function View3D({ compact = false }: { compact?: boolean }) {
         {(['top', 'front', 'right'] as const).map((v) => (
           <button key={v} className="btn sm" onClick={() => scene.current?.frame(v)}>{v === 'top' ? <ArrowUpToLine size={13} /> : null}{VIEW_NAME[v]}</button>
         ))}
-      </div>
+      </div>}
 
       {mobile && (
         <button className="v3-sheet-toggle" aria-expanded={sheetOpen} onClick={() => setSheetOpen(!sheetOpen)}>
           {sheetOpen ? <ChevronDown size={18} /> : <ChevronUp size={18} />} {t('view3d.resumo_da_folha')}
         </button>
       )}
-      {!compact && (
+      {!compact && mobile && (
       <aside className="v3-panel">
         <h4>{t('view3d.resumo_da_folha')}</h4>
         <div className="card">
@@ -174,11 +187,10 @@ export function View3D({ compact = false }: { compact?: boolean }) {
         </div>
       )}
 
-      {!scale && <div className="v3-empty">{t('view3d.sem_escala')}{!compact && <button className="btn sm primary" onClick={() => goPlan()}>{t('view3d.ir_para_a_planta')}</button>}</div>}
+      {!scale && <div className="v3-empty rx">{t('view3d.sem_escala')}{!compact && <button className="btn sm pri" onClick={() => goPlan()}>{t('view3d.ir_para_a_planta')}</button>}</div>}
       {scale && !solids.length && (
-        <div className="v3-empty"><Rich k="view3d.nada_para_mostrar" vars={{ key: keyOf('solid') }} />{!compact && <button className="btn sm primary" onClick={() => goPlan()}>{t('view3d.ir_para_a_planta')}</button>}</div>
+        <div className="v3-empty rx"><p><Rich k="view3d.nada_para_mostrar" vars={{ key: keyOf('solid') }} /></p>{!compact && <button className="btn sm pri" onClick={() => goPlan()}>{t('view3d.ir_para_a_planta')}</button>}</div>
       )}
-      {!compact && !mobile && <div className="hud v3-hint">{t('view3d.roda_zoom_botao_do_meio')}</div>}
     </div>
   )
 }

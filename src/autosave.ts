@@ -6,6 +6,7 @@ import { useStore } from './store'
 import { desktop } from './platform'
 import { kvDel, kvGet, kvSet } from './sinapi'
 import { t } from './i18n'
+import { anyDirty, isSwitching, syncDirty } from './tabs'
 
 const KEY = 'recovery'
 const DELAY = 20_000
@@ -72,7 +73,7 @@ export function startAutosave() {
   if (started) return
   started = true
   useStore.subscribe((s, prev) => {
-    if (!s.sheets.length) return
+    if (!s.sheets.length || isSwitching()) return // abrir/trocar de aba não é edição
     const changed = s.markups !== prev.markups || s.sheets !== prev.sheets || s.scales !== prev.scales || s.overlays !== prev.overlays || s.columns !== prev.columns || s.bdi !== prev.bdi || s.hiddenLayers !== prev.hiddenLayers
     // abrir um arquivo novo troca as fontes: não é alteração do usuário
     if (!changed || s.sources !== prev.sources && s.markups.length === 0) return
@@ -81,10 +82,10 @@ export function startAutosave() {
     if (!timer) timer = setTimeout(write, DELAY)
   })
   useStore.subscribe((s, prev) => {
-    if (s.dirty !== prev.dirty) desktop?.setDirty?.(s.dirty)
+    if (s.dirty !== prev.dirty) syncDirty()
   })
   window.addEventListener('beforeunload', (e) => {
-    if (!desktop && useStore.getState().dirty) {
+    if (!desktop && anyDirty()) {
       void write()
       e.preventDefault()
     }

@@ -7,6 +7,7 @@ import { decodeProject, encodeProject } from './projectFormat'
 import type { ProjectData } from './projectFormat'
 import type { Sheet } from './types'
 import { t } from './i18n'
+import { closeActiveTab, dirtyTabIds, openInTab, switchTab, tabForPath } from './tabs'
 
 const toBuffer = (u: Uint8Array) => u.buffer.slice(u.byteOffset, u.byteOffset + u.byteLength) as ArrayBuffer
 
@@ -34,37 +35,25 @@ export async function download(data: Uint8Array | ArrayBuffer | string, name: st
   return null
 }
 
-const destroyAll = () => Object.values(useStore.getState().sources).forEach((s) => s.doc.destroy())
-
-/** Antes de trocar o projeto aberto por outro arquivo: pede confirmação se há alterações não salvas. */
-export function confirmReplace(): boolean {
-  const st = useStore.getState()
-  if (!st.dirty || !st.sheets.length || typeof window === 'undefined') return true
-  return window.confirm(t('project.ha_alteracoes_nao_salvas_neste'))
-}
-
 /**
- * Abre um PDF ou .traco no lugar do que está aberto. O arquivo é lido por inteiro antes de tocar no projeto atual:
- * se estiver corrompido, lança erro e o trabalho aberto continua intacto. Devolve false se o usuário desistiu.
+ * Abre um PDF ou .traco numa aba nova (o que já estava aberto continua na sua aba). O arquivo é lido por inteiro antes de
+ * mexer em qualquer coisa: se estiver corrompido, lança erro e o trabalho aberto continua intacto.
  */
 export async function loadFile(file: File | { name: string; data: ArrayBuffer; path?: string }): Promise<boolean> {
-  const buf = 'data' in file ? file.data : await file.arrayBuffer()
   const path = 'path' in file ? file.path : undefined
-  if (file.name.toLowerCase().endsWith('.traco')) {
-    const opened = await loadProject(buf, true)
-    if (opened) useStore.setState({ projectPath: path ?? null })
-    return opened
+  if (path) {
+    // o mesmo arquivo já está numa aba: só volta para ela
+    const open = tabForPath(path)
+    if (open) {
+      switchTab(open)
+      return true
+    }
   }
+  const buf = 'data' in file ? file.data : await file.arrayBuffer()
+  if (file.name.toLowerCase().endsWith('.traco')) return loadProject(buf, path ?? null)
   const src = await openSource(buf, file.name)
   const sheets = await sheetsOf(src)
-  if (!confirmReplace()) return false
-  destroyAll()
-  useStore.setState({
-    sources: { [src.id]: src }, sheets, page: 0, fileName: file.name, markups: [], scales: {}, selected: [], past: [], future: [], mode: 'review', projectPath: null, ocr: {},
-    overlays: {}, hiddenLayers: {}, dirty: false, search: { open: false, query: '', hits: [], index: 0 },
-    meta: { title: file.name.replace(/\.pdf$/i, ''), author: '', subject: '', keywords: '' },
-  })
-  return true
+  return openInTab({ sources: { [src.id]: src }, sheets, fileName: file.name })
 }
 
 /** Acrescenta as páginas de outro PDF ao conjunto (após a posição indicada). */
@@ -87,23 +76,21 @@ export async function addSourceOnly(file: File): Promise<{ src: Source; sheets: 
   return { src, sheets }
 }
 
-export async function loadProject(buf: ArrayBuffer | Uint8Array, askBeforeReplace = false): Promise<boolean> {
+export async function loadProject(buf: ArrayBuffer | Uint8Array, projectPath: string | null = null): Promise<boolean> {
   const st = useStore.getState()
   const { data: pf, sources: srcs } = decodeProject(buf)
   const sources: Record<string, Source> = {}
   for (const s of srcs) sources[s.id] = await openSource(toBuffer(s.bytes), s.name, s.id)
-  if (askBeforeReplace && !confirmReplace()) return false
   const known = new Set(st.presets.map((p) => p.id))
   st.setPresets([...st.presets, ...pf.presets.filter((p) => !known.has(p.id)).map((p) => ({ ...p, formula: p.formula ?? '' }))])
   if (pf.statuses?.length) st.setStatuses(pf.statuses)
-  destroyAll()
-  useStore.setState({
-    sources, sheets: pf.sheets, page: 0, fileName: pf.fileName, markups: pf.markups, scales: pf.scales, selected: [], past: [], future: [], mode: 'review', ocr: pf.ocr ?? {},
-    columns: pf.columns ?? st.columns, bdi: pf.bdi ?? st.bdi, overlays: pf.overlays ?? {}, hiddenLayers: pf.hiddenLayers ?? {}, dirty: false,
-    search: { open: false, query: '', hits: [], index: 0 },
+  const opened = openInTab({
+    sources, sheets: pf.sheets, fileName: pf.fileName, markups: pf.markups, scales: pf.scales, ocr: pf.ocr ?? {},
+    columns: pf.columns ?? st.columns, bdi: pf.bdi ?? st.bdi, overlays: pf.overlays ?? {}, hiddenLayers: pf.hiddenLayers ?? {}, projectPath,
     meta: pf.meta ?? { title: pf.fileName, author: '', subject: '', keywords: '' },
   })
-  return true
+  if (!opened) Object.values(sources).forEach((x) => x.doc.destroy()) // o projeto já estava aberto em outra aba
+  return opened
 }
 
 /** Projeto completo em bytes (.traco v3: ZIP). Usado ao salvar e no salvamento automático. */
@@ -145,16 +132,10 @@ export async function saveProject(saveAs = false) {
   return true
 }
 
-/** Deixa o app como recém-aberto, sem projeto. Descarta também a cópia do salvamento automático (fechar é uma escolha, não um acidente). */
+/** Fecha o documento da aba ativa (mostra a vizinha; sem nenhuma, o app volta ao estado de recém-aberto). Descarta também a cópia do salvamento automático (fechar é uma escolha, não um acidente). */
 export async function discardProject() {
   const { clearRecovery } = await import('./autosave')
-  destroyAll()
-  useStore.setState({
-    sources: {}, sheets: [], page: 0, fileName: '', markups: [], scales: {}, selected: [], past: [], future: [], mode: 'review', projectPath: null, ocr: {},
-    overlays: {}, hiddenLayers: {}, dirty: false, search: { open: false, query: '', hits: [], index: 0 }, tool: 'select', activePreset: null,
-    calibrating: null, resumeTool: null, editingText: null, aligning: null, pendingImage: null, split3d: false, dialog: null,
-    meta: { title: '', author: '', subject: '', keywords: '' },
-  })
+  closeActiveTab()
   await clearRecovery()
 }
 
@@ -164,4 +145,19 @@ export function requestCloseProject() {
   if (!st.sheets.length) return
   if (st.dirty) st.set({ dialog: 'close' })
   else void discardProject()
+}
+
+/** Fechar uma aba qualquer: se não é a ativa, mostra primeiro (a pergunta de salvar fala do documento que está na tela). */
+export function requestCloseTab(id: string) {
+  if (id !== useStore.getState().activeTab) switchTab(id)
+  requestCloseProject()
+}
+
+/** Salva todas as abas com alterações (o app de PC pede isso ao fechar a janela). Falso se a pessoa cancelou alguma. */
+export async function saveAllDirty(): Promise<boolean> {
+  for (const id of dirtyTabIds()) {
+    switchTab(id)
+    if (!(await saveProject())) return false
+  }
+  return true
 }

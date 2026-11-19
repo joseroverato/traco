@@ -1,7 +1,9 @@
-; Instalador do Traço (NSIS) — instala por usuário, sem pedir administrador
+﻿; Instalador do Traço (NSIS) — instala por usuário, sem pedir administrador
 Unicode true
 !include "MUI2.nsh"
 !include "FileFunc.nsh"
+!include "LogicLib.nsh"
+!include "WinMessages.nsh"
 
 !ifndef VERSION
   !define VERSION "1.0.0"
@@ -15,9 +17,10 @@ OutFile "..\release\Traco-Setup-${VERSION}.exe"
 InstallDir "$LOCALAPPDATA\Programs\Traco"
 InstallDirRegKey HKCU "Software\Traco" "InstallDir"
 RequestExecutionLevel user
+ManifestDPIAware true
 SetCompressor /SOLID lzma
 SetCompressorDictSize 64
-BrandingText "Traço ${VERSION} — Lottos Engenharia"
+BrandingText " "
 VIProductVersion "${VERSION}.0"
 VIAddVersionKey "ProductName" "Traço"
 VIAddVersionKey "CompanyName" "Lottos Engenharia"
@@ -25,21 +28,16 @@ VIAddVersionKey "FileDescription" "Instalador do Traço"
 VIAddVersionKey "FileVersion" "${VERSION}"
 VIAddVersionKey "LegalCopyright" "Lottos Engenharia"
 
-!define MUI_ICON "..\electron\icon.ico"
-!define MUI_UNICON "..\electron\icon.ico"
-!define MUI_ABORTWARNING
-!define MUI_WELCOMEPAGE_TITLE "Instalar o Traço ${VERSION}"
-!define MUI_WELCOMEPAGE_TEXT "Revisão de pranchas, quantitativos e edição de PDF com o motor completo (tarja definitiva, OCR) e integração com o Claude.$\r$\n$\r$\nA instalação é só para o seu usuário e não precisa de administrador."
-!define MUI_FINISHPAGE_RUN "$INSTDIR\${EXE}"
-!define MUI_FINISHPAGE_RUN_TEXT "Abrir o Traço agora"
+!include "ui.nsh"
 
-!insertmacro MUI_PAGE_WELCOME
-!insertmacro MUI_PAGE_DIRECTORY
-!insertmacro MUI_PAGE_INSTFILES
-!insertmacro MUI_PAGE_FINISH
-!insertmacro MUI_UNPAGE_CONFIRM
-!insertmacro MUI_UNPAGE_INSTFILES
-!insertmacro MUI_LANGUAGE "PortugueseBR"
+Function .onInit
+  Call UiInit
+FunctionEnd
+
+; o app de PC lê HKCU\Software\Traco\Glass ao abrir: 0 = painéis opacos (a pessoa ainda pode mudar nas configurações)
+Function GlassOff
+  WriteRegDWORD HKCU "Software\Traco" "Glass" 0
+FunctionEnd
 
 Section "Traço" SecMain
   SectionIn RO
@@ -52,6 +50,7 @@ Section "Traço" SecMain
   File "/oname=traco.ico" "..\electron\icon.ico"
 
   WriteRegStr HKCU "Software\Traco" "InstallDir" "$INSTDIR"
+  DeleteRegValue HKCU "Software\Traco" "Glass" ; a caixa da página final grava de novo se a pessoa marcar
 
   ; atalhos
   CreateShortcut "$SMPROGRAMS\Traço.lnk" "$INSTDIR\${EXE}" "" "$INSTDIR\traco.ico" 0
@@ -66,6 +65,19 @@ Section "Traço" SecMain
   WriteRegStr HKCU "Software\Classes\SystemFileAssociations\.pdf\shell\Traco" "" "Abrir no Traço"
   WriteRegStr HKCU "Software\Classes\SystemFileAssociations\.pdf\shell\Traco" "Icon" '"$INSTDIR\traco.ico"'
   WriteRegStr HKCU "Software\Classes\SystemFileAssociations\.pdf\shell\Traco\command" "" '"$INSTDIR\${EXE}" "%1"'
+
+  ; "Abrir com > Traço" no botão direito de PDFs (aparece na lista de programas sem virar o padrão do PDF)
+  WriteRegStr HKCU "Software\Classes\Traco.PDF" "" "Documento PDF (Traço)"
+  WriteRegStr HKCU "Software\Classes\Traco.PDF\DefaultIcon" "" '"$INSTDIR\traco.ico"'
+  WriteRegStr HKCU "Software\Classes\Traco.PDF\shell\open" "FriendlyAppName" "Traço"
+  WriteRegStr HKCU "Software\Classes\Traco.PDF\shell\open\command" "" '"$INSTDIR\${EXE}" "%1"'
+  WriteRegStr HKCU "Software\Classes\.pdf\OpenWithProgids" "Traco.PDF" ""
+  WriteRegStr HKCU "Software\Classes\Applications\${EXE}" "FriendlyAppName" "Traço"
+  WriteRegStr HKCU "Software\Classes\Applications\${EXE}\SupportedTypes" ".pdf" ""
+  WriteRegStr HKCU "Software\Classes\Applications\${EXE}\SupportedTypes" ".traco" ""
+  WriteRegStr HKCU "Software\Classes\Applications\${EXE}\DefaultIcon" "" '"$INSTDIR\traco.ico"'
+  WriteRegStr HKCU "Software\Classes\Applications\${EXE}\shell\open" "FriendlyAppName" "Traço"
+  WriteRegStr HKCU "Software\Classes\Applications\${EXE}\shell\open\command" "" '"$INSTDIR\${EXE}" "%1"'
 
   ; desinstalador (aparece em Configurações > Aplicativos)
   WriteUninstaller "$INSTDIR\Desinstalar.exe"
@@ -106,6 +118,9 @@ Section "Uninstall"
   DeleteRegKey HKCU "Software\Classes\.traco"
   DeleteRegKey HKCU "Software\Classes\Traco.Projeto"
   DeleteRegKey HKCU "Software\Classes\SystemFileAssociations\.pdf\shell\Traco"
+  DeleteRegKey HKCU "Software\Classes\Traco.PDF"
+  DeleteRegValue HKCU "Software\Classes\.pdf\OpenWithProgids" "Traco.PDF"
+  DeleteRegKey HKCU "Software\Classes\Applications\${EXE}"
   DeleteRegKey HKCU "${UNKEY}"
   DeleteRegKey HKCU "Software\Traco"
   System::Call 'shell32::SHChangeNotify(i 0x08000000, i 0, p 0, p 0)'

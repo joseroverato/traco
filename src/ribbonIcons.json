@@ -1,0 +1,22 @@
+{
+  "select": "selecionar", "pan": "mover", "search": "buscar", "copytext": "copiarTexto",
+  "calibrate": "calibrar", "scale": "escolherEscala", "viewport": "viewport", "level": "pavimento",
+  "length": "comprimento", "area": "area", "fill": "areaClique", "hole": "vazio", "count": "contagem", "symbol": "contagemAuto",
+  "space": "ambiente", "fillSpace": "ambienteClique", "solid": "solido",
+  "sheet": "planilha", "legend": "legenda", "prices": "basePrecos", "columns": "colunas",
+  "cloud": "nuvem", "text": "texto", "rect": "retangulo", "ellipse": "elipse", "arrow": "seta", "line": "linha",
+  "stamp": "carimbo", "image": "imagem", "stampBatch": "carimbosLote", "redact": "tarja", "fixText": "corrigirTexto",
+  "issues": "itens", "report": "relatorioPdf", "issuesSheet": "planilha", "renumber": "renumerar", "statuses": "status",
+  "fitPage": "folhaInteira", "fitWidth": "largura", "zoom100": "zoom100", "zoomIn": "zoomMais", "zoomOut": "zoomMenos",
+  "panelLeft": "painelEsq", "panelBottom": "painelInf", "panelRight": "painelDir", "focus": "ampliar",
+  "layers": "camadas", "overlay": "sobrepor", "showAll": "camadas", "hideAll": "camadas", "addDiscipline": "adicionarDisciplina", "align": "alinhar", "reset": "zerar", "theme": "tema", "settings": "configuracoes", "split3d": "dividir3d",
+  "cancelAlign": "alinhar",
+  "claude": "claude", "newChat": "novaConversa", "claudeConfig": "configClaude", "claudeDesktop": "claudeDesktop",
+  "sugQuant": "tabela", "sugScale": "escolherEscala", "sugOpen": "itens", "sugMarkers": "novoMarcador",
+  "open": "abrir", "save": "salvar", "saveAs": "salvarComo", "exportPdf": "exportarPdf", "recover": "recuperar", "closeProject": "fecharProjeto",
+  "undo": "desfazer", "redo": "refazer", "duplicate": "duplicar", "delete": "excluir",
+  "shapePoly": "formaPoligono", "shapeRect": "formaRetangulo", "shapeCircle": "formaCirculo", "shapeEllipse": "formaElipse",
+  "modeClick": "modoClique", "modeDrag": "modoArrastar",
+  "snap": "snap", "ortho": "orto",
+  "selAll": "selTodas", "rotL": "girarEsq", "rotR": "girarDir", "insertPdf": "inserirPdf", "blank": "folhaBranco", "extract": "extrair", "split": "dividir", "rename": "renomear", "sortName": "ordenar", "reverse": "inverter", "ocr": "ocr", "revA": "revA", "revB": "revB", "otherPdf": "outroPdf", "cmpOverlay": "cmpSobrepor", "cmpDiff": "soDiferencas", "cmpSide": "ladoALado", "cloudsB": "nuvensB", "frame": "enquadrar", "viewTop": "vistaTopo", "viewFront": "vistaFrente", "viewRight": "vistaDireita", "toPlan": "irParaPlanta"
+}

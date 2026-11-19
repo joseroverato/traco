@@ -7,6 +7,8 @@ import { TOOL_LABEL } from '../commands'
 import { desktop } from '../platform'
 import type { ClaudeStatus } from '../platform'
 import { t } from '../i18n'
+import { CLAUDE_EVENT, setClaudeBusy } from '../claudeCmd'
+import type { ClaudeCmd } from '../claudeCmd'
 import { Rich } from './Rich'
 
 interface Item {
@@ -130,6 +132,10 @@ export function ClaudePanel() {
     })
   }, [showSettings])
   useEffect(() => {
+    setClaudeBusy(busy) // a faixa (aba Claude, botão Parar) acompanha
+    return () => setClaudeBusy(false)
+  }, [busy])
+  useEffect(() => {
     session.items = items
     list.current?.scrollTo({ top: list.current.scrollHeight, behavior: 'smooth' })
   }, [items])
@@ -164,6 +170,20 @@ export function ClaudePanel() {
     session.history = []
     setItems([])
   }
+
+  // comandos vindos da faixa de opções (aba Claude): nova conversa, parar, sugestões e configurações
+  const act = useRef<(c: ClaudeCmd) => void>(() => {})
+  act.current = (c) => {
+    if (c === 'new') clear()
+    else if (c === 'stop') abort.current?.abort()
+    else if (c === 'settings') setShowSettings(true)
+    else if (SUGGESTION_KEYS[c.suggest]) void send(t(SUGGESTION_KEYS[c.suggest]))
+  }
+  useEffect(() => {
+    const h = (e: Event) => act.current((e as CustomEvent<ClaudeCmd>).detail)
+    window.addEventListener(CLAUDE_EVENT, h)
+    return () => window.removeEventListener(CLAUDE_EVENT, h)
+  }, [])
 
   return (
     <div className="claude">
@@ -207,7 +227,7 @@ export function ClaudePanel() {
           }}
         />
         {busy ? (
-          <button className="send stop" onClick={() => abort.current?.abort()} aria-label={t('claudepanel.parar')}><Square size={13} /></button>
+          <button className="send stop" onClick={() => abort.current?.abort()} aria-label={t('claudepanel.parar')}><Square size={13} /><span className="send-t">{t('claudepanel.parar')}</span></button>
         ) : (
           <button className="send" disabled={!input.trim()} onClick={() => send(input)} aria-label={t('claudepanel.enviar')}><ArrowUp size={16} /></button>
         )}

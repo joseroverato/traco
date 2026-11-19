@@ -57,3 +57,34 @@ describe('nomes de botões só com ícone', () => {
     expect(at('e')).toBeNull()
   })
 })
+
+function Radios() {
+  const a11y = useDialogA11y(() => {})
+  return (
+    <div {...a11y}>
+      <h3>Opções</h3>
+      <input type="radio" name="g" aria-label="a" />
+      <input type="radio" name="g" aria-label="b" defaultChecked />
+      <input type="radio" name="g" aria-label="c" />
+      <button tabIndex={-1}>fora da ordem</button>
+      <button>ok</button>
+    </div>
+  )
+}
+
+describe('Tab dentro da janela', () => {
+  it('visita só o botão de opção marcado de cada grupo, pula tabindex -1 e dá a volta nos dois sentidos', () => {
+    render(<Radios />)
+    const dlg = screen.getByRole('dialog')
+    const b = screen.getByLabelText('b')
+    const ok = screen.getByText('ok')
+    b.focus()
+    fireEvent.keyDown(b, { key: 'Tab' })
+    expect(document.activeElement).toBe(ok) // a e c não entram na ordem; o botão com tabindex -1 também não
+    fireEvent.keyDown(ok, { key: 'Tab' })
+    expect(document.activeElement).toBe(b) // do último volta ao primeiro
+    fireEvent.keyDown(b, { key: 'Tab', shiftKey: true })
+    expect(document.activeElement).toBe(ok) // e para trás também dá a volta
+    expect(dlg.getAttribute('aria-labelledby')).toBeTruthy()
+  })
+})

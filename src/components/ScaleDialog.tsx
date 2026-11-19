@@ -1,15 +1,20 @@
 import { useEffect, useState } from 'react'
-import { Ruler, ScanSearch } from 'lucide-react'
 import { useStore } from '../store'
-import { useDialogA11y } from '../dialogA11y'
 import { CALIB_UNITS, IMPERIAL_SCALES, getUnits, parseLength } from '../units'
 import { fmt, paperScale } from '../geometry'
 import { detectScales } from '../pdf'
 import type { PageScale } from '../types'
 import { t } from '../i18n'
+import { Chk, Dlg } from './Dlg'
+import { Icon } from './Icon'
+import { SelectCb } from './pal/SelectCb'
 
 const RATIOS = [20, 25, 50, 75, 100, 125, 200, 250, 500, 1000]
 
+/**
+ * Escala da folha (e de um viewport). Variantes: pedido ao abrir folha sem escala, escolha da escala (métrica ou imperial),
+ * viewport (sem "aplicar a todas") e calibrar por uma cota (medida real do trecho traçado).
+ */
 export function ScaleDialog() {
   const s = useStore()
   const c = s.calibrating
@@ -35,7 +40,14 @@ export function ScaleDialog() {
   }, [sheet?.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const close = () => s.set({ calibrating: null, resumeTool: null })
-  const a11y = useDialogA11y(close)
+  // Esc fecha mesmo que o foco tenha saído da janela (clique no fundo, toque, troca de ferramenta pelo teclado)
+  const open = !!c
+  useEffect(() => {
+    if (!open) return
+    const k = (e: KeyboardEvent) => { if (e.key === 'Escape') close() }
+    window.addEventListener('keydown', k)
+    return () => window.removeEventListener('keydown', k)
+  }, [open]) // eslint-disable-line react-hooks/exhaustive-deps
   if (!c) return null
   const vp = c.viewport ? s.markups.find((m) => m.id === c.viewport) : undefined
 
@@ -53,6 +65,7 @@ export function ScaleDialog() {
     s.set({ scales, calibrating: null, resumeTool: null, ...(resume ? { tool: resume } : {}) })
     s.notify(t(all ? 'scaledialog.aplicada_todas' : 'scaledialog.aplicada', { label: sc.label }) + (resume ? t('scaledialog.pode_medir') : ''))
   }
+  const typed = parseLength(val, unit as 'm') ?? 0
   const fromCalib = () => {
     const meters = parseLength(val, unit as 'm')
     if (!meters || !c.length) return
@@ -65,59 +78,73 @@ export function ScaleDialog() {
     const back = s.tool !== 'calibrate' && s.tool !== 'select' ? s.tool : s.resumeTool
     s.set({ calibrating: null, tool: 'calibrate', resumeTool: back })
   }
+  const labelOf = (n: number) => (system === 'imperial' ? IMPERIAL_SCALES.find((r) => r.n === n)?.label ?? `1:${n}` : `1:${n}`)
+  const list: { n: number; label: string }[] = system === 'imperial' ? IMPERIAL_SCALES.map((r) => ({ n: r.n, label: r.label })) : RATIOS.map((r) => ({ n: r, label: `1:${r}` }))
+  const title = vp ? t('scaledialog.escala_do', { nome: vp.text || 'viewport' }) : c.prompt ? t('scaledialog.esta_folha_ainda_nao_tem') : t('scaledialog.escala_da_folha', { label: sheet?.label ?? '' })
+  const applyRatio = () => apply({ metersPerUnit: paperScale(Number(ratio)), label: labelOf(Number(ratio)) })
 
   return (
-    <div className="modal-back" onMouseDown={close}>
-      <div className="modal" onMouseDown={(e) => e.stopPropagation()} {...a11y}>
-        <h3>{vp ? t('scaledialog.escala_do', { nome: vp.text || 'viewport' }) : c.prompt ? t('scaledialog.esta_folha_ainda_nao_tem') : t('scaledialog.escala_da_folha', { label: sheet?.label ?? '' })}</h3>
-        {c.length > 0 ? (
-          <div className="stack">
-            <p className="muted">{t('scaledialog.medida_real_do_trecho_que')}</p>
-            <div className="row">
-              <input autoFocus className="grow" placeholder={system === 'imperial' ? `ex.: 12'-6"` : 'ex.: 5,00'} value={val} onChange={(e) => setVal(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && fromCalib()} />
-              <select value={unit} onChange={(e) => setUnit(e.target.value)}>
-                {CALIB_UNITS[system].map((u) => <option key={u.id}>{u.id}</option>)}
-              </select>
-            </div>
-            {(parseLength(val, unit as 'm') ?? 0) > 0 && (
-              <p className="muted small">{t('scaledialog.resultado_1', { n: fmt(parseLength(val, unit as 'm')! / c.length / paperScale(1), 0) })}</p>
-            )}
+    <Dlg
+      title={title}
+      onClose={close}
+      width={c.length > 0 ? 440 : 626}
+      footer={<>
+        <button type="button" className="btn" onClick={close}>{c.prompt ? t('scaledialog.agora_nao') : t('scaledialog.cancelar')}</button>
+        {c.length > 0
+          ? <button type="button" className="btn pri" disabled={typed <= 0} onClick={fromCalib}>{t('scaledialog.aplicar')}</button>
+          : <button type="button" className="btn pri" disabled={!Number(ratio)} onClick={applyRatio}>{t('scaledialog.aplicar_1', { ratio: ratio || '?' })}</button>}
+      </>}
+    >
+      {c.length > 0 ? (
+        <>
+          <p>{t('scaledialog.medida_real_do_trecho_que')}</p>
+          <div className="fld">
+            <input className="in n" aria-label={t('scaledialog.medida_real_do_trecho_que')} placeholder={system === 'imperial' ? "ex.: 12'-6\"" : 'ex.: 5,00'} value={val} onChange={(e) => setVal(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && fromCalib()} />
+            <SelectCb className="un" value={unit} onChange={setUnit} label={t('scaledialog.unidade')} current={unit}>
+              {CALIB_UNITS[system].map((u) => <option key={u.id} value={u.id}>{u.id}</option>)}
+            </SelectCb>
           </div>
-        ) : (
-          <div className="stack">
-            {c.prompt && <p className="muted">{t('scaledialog.para_medir_comprimentos_e_areas')}</p>}
-            <button className="choice" onClick={calibrateByDimension}>
-              <Ruler size={18} />
-              <span><b>{t('scaledialog.calibrar_por_uma_cota')}</b><small>{t('scaledialog.trace_sobre_uma_medida_conhecida')}</small></span>
-            </button>
-            {found.length > 0 && (
-              <button className="choice found" onClick={() => apply({ metersPerUnit: paperScale(found[0]), label: `1:${found[0]}` })}>
-                <ScanSearch size={18} />
-                <span><b>{t('scaledialog.usar_1', { v: found[0] })}</b><small>{t('scaledialog.encontrada_no_carimbo')}{found.length > 1 ? t('scaledialog.tambem', { lista: found.slice(1, 4).map((n) => `1:${n}`).join(', ') }) : ''}</small></span>
-              </button>
-            )}
-            <span className="section-label">{t('scaledialog.ou_escolha_a_escala_de')}</span>
-            <div className={`ratio-grid ${system === 'imperial' ? 'imp' : ''}`}>
-              {system === 'imperial'
-                ? IMPERIAL_SCALES.map((r) => <button key={r.label} className={`btn sm ${ratio === String(r.n) ? 'primary' : ''}`} onClick={() => setRatio(String(r.n))} title={`1:${r.n}`}>{r.label}</button>)
-                : RATIOS.map((r) => <button key={r} className={`btn sm ${ratio === String(r) ? 'primary' : ''}`} onClick={() => setRatio(String(r))}>1:{r}</button>)}
+          {typed > 0 && <p className="rsl">{t('scaledialog.resultado_1', { n: fmt(typed / c.length / paperScale(1), 0) })}</p>}
+        </>
+      ) : (
+        <>
+          {c.prompt && <p>{t('scaledialog.para_medir_comprimentos_e_areas')}</p>}
+          <div className="d2">
+            <div className="gbx esc">
+              <h3>{t('scaledialog.escala_de_impressao')}</h3>
+              <div className="lbx" role="listbox" aria-label={t('scaledialog.escala_de_impressao')}>
+                {list.map((r) => (
+                  <button key={r.label} type="button" role="option" aria-selected={ratio === String(r.n)} className={`lbi ${ratio === String(r.n) ? 'on' : ''}`} title={`1:${r.n}`} onClick={() => setRatio(String(r.n))}><span className="n">{r.label}</span></button>
+                ))}
+              </div>
+              <label className="fld">
+                <span>{t('scaledialog.outra_escala')}</span>
+                <span className="pre">1:</span>
+                <input className="in n" aria-label={t('scaledialog.outra_escala')} value={ratio} inputMode="numeric" onChange={(e) => setRatio(e.target.value.replace(/\D/g, ''))} onKeyDown={(e) => e.key === 'Enter' && Number(ratio) && applyRatio()} />
+              </label>
             </div>
-            <div className="row center">
-              <span className="muted">1:</span>
-              <input className="grow" value={ratio} onChange={(e) => setRatio(e.target.value.replace(/\D/g, ''))} />
+            <div className="d2r">
+              {found.length > 0 && (
+                <div className="gbx">
+                  <h3>{t('scaledialog.lida_do_carimbo')}</h3>
+                  <div className="lin">
+                    <span>{t('scaledialog.encontrada_no_carimbo')}{found.length > 1 ? t('scaledialog.tambem', { lista: found.slice(1, 4).map((n) => `1:${n}`).join(', ') }) : ''}</span>
+                    <button type="button" className="tbn txt" onClick={() => apply({ metersPerUnit: paperScale(found[0]), label: `1:${found[0]}` })}>{t('scaledialog.usar_1', { v: found[0] })}</button>
+                  </div>
+                </div>
+              )}
+              <div className="gbx">
+                <h3>{t('scaledialog.calibrar_por_uma_cota')}</h3>
+                <div className="lin">
+                  <span className="wr2">{t('scaledialog.trace_sobre_uma_medida_conhecida')}</span>
+                  <button type="button" className="tbn" onClick={calibrateByDimension}><Icon name="calibrar" size={16} />{t('railtools.calibrar_escala')}</button>
+                </div>
+              </div>
             </div>
           </div>
-        )}
-        {!vp && <label className="check"><input type="checkbox" checked={all} onChange={(e) => setAll(e.target.checked)} /> {t('scaledialog.aplicar_a_todas_as_folhas')}</label>}
-        <div className="modal-actions">
-          <button className="btn ghost" onClick={close}>{c.prompt ? t('scaledialog.agora_nao') : t('scaledialog.cancelar')}</button>
-          {c.length > 0 ? (
-            <button className="btn primary" onClick={fromCalib}>{t('scaledialog.aplicar')}</button>
-          ) : (
-            <button className="btn primary" disabled={!Number(ratio)} onClick={() => apply({ metersPerUnit: paperScale(Number(ratio)), label: system === 'imperial' ? IMPERIAL_SCALES.find((r) => r.n === Number(ratio))?.label ?? `1:${ratio}` : `1:${ratio}` })}>{t('scaledialog.aplicar_1', { ratio: ratio || '?' })}</button>
-          )}
-        </div>
-      </div>
-    </div>
+        </>
+      )}
+      {!vp && <Chk checked={all} onChange={setAll}>{t('scaledialog.aplicar_a_todas_as_folhas')}</Chk>}
+    </Dlg>
   )
 }

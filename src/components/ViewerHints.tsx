@@ -24,14 +24,20 @@ export interface ViewerHintsProps {
   symFound: boolean
   aligning: State['aligning']
   fillGap: number
+  shape?: 'poly' | 'rect' | 'circle' | 'ellipse'
+  /** modo "arrastando": cada arrasto marca um vértice (ver drawMode no store) */
+  drag?: boolean
 }
 
 const POLY_LABEL = { get area() { return t('viewerhints.area') }, get hole() { return t('viewerhints.vazio') }, get space() { return t('viewerhints.ambiente') }, get solid() { return t('viewerhints.solido_base') }, get length() { return t('viewerhints.comprimento') } } as const
 
 /** Faixas de ajuda (HUD) que aparecem sobre a folha conforme a ferramenta ativa. */
-export function ViewerHints({ tool, busy, poly, symFound, aligning, fillGap }: ViewerHintsProps) {
+export function ViewerHints({ tool, busy, poly, symFound, aligning, fillGap, shape = 'poly', drag = false }: ViewerHintsProps) {
+  const polyTool = tool === 'area' || tool === 'hole' || tool === 'space' || tool === 'solid'
   return (
     <>
+      {drag && !busy && !poly && shape === 'poly' && tool === 'length' && <div className="hud">{t('viewerhints.arrastar_comprimento')}</div>}
+      {drag && !busy && !poly && shape === 'poly' && polyTool && <div className="hud"><Rich k="viewerhints.arrastar_poligono" vars={{ label: POLY_LABEL[tool] }} /></div>}
       {busy && <div className="hud busy-hud"><span className="spinner" /> {busy}</div>}
       {aligning && (
         <div className="hud">
@@ -41,6 +47,7 @@ export function ViewerHints({ tool, busy, poly, symFound, aligning, fillGap }: V
       )}
       {tool === 'fill' && !busy && <div className="hud"><Rich k="viewerhints.area_por_clique" vars={{ gap: fillGap }} /></div>}
       {tool === 'symbol' && !symFound && !busy && <div className="hud"><Rich k="viewerhints.contagem_automatica" /></div>}
+      {shape !== 'poly' && !busy && <div className="hud">{t(shape === 'rect' ? 'viewerhints.forma_retangulo' : shape === 'circle' ? 'viewerhints.forma_circulo' : 'viewerhints.forma_elipse')}</div>}
       {tool === 'legend' && <div className="hud">{t('viewerhints.legenda_clique_onde_a_tabela')}</div>}
       {poly && (
         <div className="hud">

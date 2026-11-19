@@ -1,5 +1,5 @@
 // Traço — processo principal do app de PC (Electron)
-const { app, BrowserWindow, ipcMain, dialog, protocol, net, safeStorage, shell, Menu } = require('electron')
+const { app, BrowserWindow, ipcMain, dialog, protocol, net, safeStorage, shell, Menu, screen } = require('electron')
 const path = require('node:path')
 const fs = require('node:fs')
 const http = require('node:http')
@@ -10,6 +10,7 @@ const { pathToFileURL } = require('node:url')
 app.setName('Traco')
 app.setPath('userData', path.join(app.getPath('appData'), 'Traco'))
 const USER = app.getPath('userData')
+const TITLEBAR_H = 30 // altura da barra de título do app (.tb, primeira linha de .rx-top no r3.css); os botões da janela têm a mesma altura
 const DIST = path.join(__dirname, '..', 'dist-desktop')
 let win = null
 let pendingOpen = process.argv.slice(app.isPackaged ? 1 : 2).find((a) => /\.(pdf|traco)$/i.test(a)) ?? null
@@ -28,27 +29,36 @@ app.on('second-instance', (_e, argv) => {
 protocol.registerSchemesAsPrivileged([{ scheme: 'app', privileges: { standard: true, secure: true, supportFetchAPI: true, corsEnabled: true } }])
 
 function createWindow() {
+  // o tamanho acompanha a tela: em notebook (1366×768, escala de 125–150 %) uma janela de 1500 px saía da tela e cortava o lado direito
+  const wa = screen.getPrimaryDisplay().workAreaSize
+  const width = Math.min(1500, wa.width)
+  const height = Math.min(920, wa.height)
   win = new BrowserWindow({
-    width: 1500,
-    height: 920,
-    minWidth: 1000,
-    minHeight: 640,
-    backgroundColor: '#161618',
+    width,
+    height,
+    minWidth: Math.min(820, wa.width),
+    minHeight: Math.min(560, wa.height),
+    show: false,
+    backgroundColor: '#1d1e20',
     title: 'Traço',
     icon: path.join(__dirname, 'icon.png'),
     autoHideMenuBar: true,
+    // Windows: sem a barra de título do sistema, que repetia o nome e o ícone do app logo acima da barra do Traço.
+    // A barra do próprio app vira a área de arrastar (CSS: -webkit-app-region) e os botões de minimizar, maximizar e fechar
+    // ficam por cima dela, na cor do tema (ver 'app:titlebar').
+    ...(process.platform === 'win32' ? { titleBarStyle: 'hidden', titleBarOverlay: { color: '#1d1e20', symbolColor: '#e8e9eb', height: TITLEBAR_H } } : {}),
     webPreferences: { preload: path.join(__dirname, 'preload.cjs'), contextIsolation: true, sandbox: false },
   })
+  // telas pequenas abrem maximizadas (aproveita cada pixel); nas grandes, janela normal centralizada
+  win.once('ready-to-show', () => {
+    if (wa.width < 1600 || wa.height < 900) win.maximize()
+    win.show()
+  })
+  setTimeout(() => win && !win.isVisible() && win.show(), 5000) // garantia: a janela aparece mesmo que o evento não chegue
   win.loadURL('app://traco/index.html')
   win.webContents.setWindowOpenHandler(({ url }) => {
     shell.openExternal(url)
     return { action: 'deny' }
-  })
-  win.webContents.on('did-finish-load', () => {
-    if (pendingOpen) {
-      win.webContents.send('traco:open-path', pendingOpen)
-      pendingOpen = null
-    }
   })
   // pergunta antes de fechar com alterações não salvas
   win.on('close', (e) => {
@@ -72,6 +82,12 @@ function createWindow() {
   })
   win.on('closed', () => (win = null))
 }
+// o arquivo passado pelo Windows ("Abrir com"/duplo clique) é buscado pela tela quando ela já está pronta
+ipcMain.handle('app:take-pending', () => {
+  const p = pendingOpen
+  pendingOpen = null
+  return p
+})
 let dirty = false
 let forceClose = false
 ipcMain.on('app:dirty', (_e, v) => (dirty = !!v))
@@ -151,12 +167,33 @@ ipcMain.handle('secret:set', (_e, k, v) => {
   fs.writeFileSync(SECRETS, JSON.stringify(all))
 })
 
-ipcMain.handle('app:info', () => ({ version: app.getVersion(), platform: process.platform, userData: USER }))
+// o instalador grava HKCU\Software\Traco\Glass = 0 quando a pessoa desliga os efeitos de transparência (poupa a placa de vídeo)
+function glassFromInstaller() {
+  if (process.platform !== 'win32') return undefined
+  try {
+    const out = require('node:child_process').execFileSync('reg', ['query', 'HKCU\\Software\\Traco', '/v', 'Glass'], { encoding: 'utf8', windowsHide: true, stdio: ['ignore', 'pipe', 'ignore'] })
+    const m = /REG_DWORD\s+0x([0-9a-f]+)/i.exec(out)
+    return m ? parseInt(m[1], 16) !== 0 : undefined
+  } catch {
+    return undefined
+  }
+}
+ipcMain.handle('app:info', () => ({ version: app.getVersion(), platform: process.platform, userData: USER, glass: glassFromInstaller() }))
 ipcMain.handle('app:open-external', (_e, url) => {
   if (/^https:\/\//.test(String(url))) return shell.openExternal(String(url))
 })
 ipcMain.on('app:quit', () => win?.close())
 ipcMain.on('app:fullscreen', () => win?.setFullScreen(!win.isFullScreen()))
+// o tema mudou: os botões da janela acompanham a cor da barra do app. Só aceita cores em hex, vindas da própria interface.
+const HEX_COLOR = /^#[0-9a-f]{6}$/i
+ipcMain.on('app:titlebar', (_e, c) => {
+  if (process.platform !== 'win32' || !win || !c || !HEX_COLOR.test(c.color) || !HEX_COLOR.test(c.symbolColor)) return
+  try {
+    win.setTitleBarOverlay({ color: c.color, symbolColor: c.symbolColor, height: TITLEBAR_H })
+  } catch (e) {
+    console.warn('titlebar', e)
+  }
+})
 
 // ---------------- atualização automática (GitHub Releases; token só para repositório privado) ----------------
 const UPDATE_REPO = { owner: 'joseroverato', repo: 'traco' }

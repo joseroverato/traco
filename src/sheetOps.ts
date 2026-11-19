@@ -1,4 +1,5 @@
 import { useStore } from './store'
+import { t } from './i18n'
 import type { Markup, Pt, Sheet } from './types'
 
 /** Gira pontos da marcação junto com a folha. */
@@ -19,4 +20,12 @@ export function rotateSheets(ids: string[], dir: 90 | -90) {
     s.sheets.map((sh) => (set.has(sh.id) ? { ...sh, rot: (((sh.rot + dir) % 360) + 360) % 360, width: sh.height, height: sh.width } : sh)),
     { markups },
   )
+}
+
+/** Exclui uma folha (nunca a última; Ctrl+Z desfaz). */
+export function deleteSheet(id: string) {
+  const s = useStore.getState()
+  if (s.sheets.length < 2 || !s.sheets.some((x) => x.id === id)) return s.notify(t('leftpanel.mantenha_ao_menos_uma_folha'), 'err')
+  s.setSheets(s.sheets.filter((x) => x.id !== id))
+  s.notify(t('leftpanel.folha_excluida_ctrl_z_desfaz'))
 }

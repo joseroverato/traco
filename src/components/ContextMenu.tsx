@@ -1,13 +1,18 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import type { LucideIcon } from 'lucide-react'
 import { Check } from 'lucide-react'
+import { Icon } from './Icon'
 
 export type MenuItem =
   | { sep: true }
+  /** título de seção (ex.: "Folha atual", "Biblioteca"): não é selecionável */
+  | { title: string }
   | {
       id: string
       label: string
       icon?: LucideIcon
+      /** ícone próprio do Traço (id do sprite), no lugar do ícone genérico */
+      iconId?: string
       /** tecla de atalho mostrada à direita */
       hint?: string
       onClick: () => void
@@ -18,6 +23,8 @@ export type MenuItem =
     }
 
 const isSep = (i: MenuItem): i is { sep: true } => 'sep' in i
+const isTitle = (i: MenuItem): i is { title: string } => 'title' in i
+const isItem = (i: MenuItem): i is Exclude<MenuItem, { sep: true } | { title: string }> => !isSep(i) && !isTitle(i)
 
 /**
  * Menu do botão direito: abre no ponteiro, cabe sempre na janela, fecha ao clicar fora, rolar, redimensionar ou com Esc.
@@ -25,16 +32,19 @@ const isSep = (i: MenuItem): i is { sep: true } => 'sep' in i
  */
 export function ContextMenu({ x, y, items, onClose }: { x: number; y: number; items: MenuItem[]; onClose: () => void }) {
   const box = useRef<HTMLDivElement>(null)
-  const [pos, setPos] = useState({ left: x, top: y })
+  const [pos, setPos] = useState<{ left: number; top: number; transformOrigin?: string }>({ left: x, top: y })
   const [cur, setCur] = useState(-1)
-  const enabled = items.map((i, n) => (!isSep(i) && !i.disabled ? n : -1)).filter((n) => n >= 0)
+  const enabled = items.map((i, n) => (isItem(i) && !i.disabled ? n : -1)).filter((n) => n >= 0)
 
   useLayoutEffect(() => {
     const el = box.current
     if (!el) return
     const r = el.getBoundingClientRect()
     const m = 8
-    setPos({ left: Math.max(m, Math.min(x, innerWidth - r.width - m)), top: Math.max(m, Math.min(y, innerHeight - r.height - m)) })
+    const left = Math.max(m, Math.min(x, innerWidth - r.width - m))
+    const top = Math.max(m, Math.min(y, innerHeight - r.height - m))
+    // o menu cresce a partir do ponteiro, mesmo quando foi empurrado para caber na janela
+    setPos({ left, top, transformOrigin: `${x - left}px ${y - top}px` })
     el.focus()
   }, [x, y])
 
@@ -58,7 +68,7 @@ export function ContextMenu({ x, y, items, onClose }: { x: number; y: number; it
   }, [onClose])
 
   const run = (i: MenuItem) => {
-    if (isSep(i) || i.disabled) return
+    if (!isItem(i) || i.disabled) return
     onClose()
     i.onClick()
   }
@@ -76,14 +86,15 @@ export function ContextMenu({ x, y, items, onClose }: { x: number; y: number; it
   }
 
   return (
-    <div ref={box} className="ctxmenu" role="menu" tabIndex={-1} style={pos} onKeyDown={onKey} onContextMenu={(e) => e.preventDefault()}>
+    <div ref={box} className="ctxmenu rx mn ctxm" role="menu" tabIndex={-1} style={pos} onKeyDown={onKey} onContextMenu={(e) => e.preventDefault()}>
       {items.map((it, n) => {
-        if (isSep(it)) return <div key={`s${n}`} className="ctx-sep" role="separator" />
+        if (isSep(it)) return <div key={`s${n}`} className="mn-s" role="separator" />
+        if (isTitle(it)) return <div key={`t${n}`} className="mn-h" role="presentation">{it.title}</div>
         const I = it.icon
         return (
-          <button key={it.id} role={it.checked === undefined ? 'menuitem' : 'menuitemcheckbox'} aria-checked={it.checked} disabled={it.disabled} className={`ctx-item ${it.danger ? 'danger' : ''} ${cur === n ? 'cur' : ''}`} onMouseEnter={() => setCur(n)} onClick={() => run(it)}>
-            <span className="ctx-ico">{it.checked ? <Check size={14} /> : I ? <I size={15} /> : null}</span>
-            <span className="ctx-label">{it.label}</span>
+          <button key={it.id} type="button" role={it.checked === undefined ? 'menuitem' : 'menuitemcheckbox'} aria-checked={it.checked} disabled={it.disabled} className={`mn-i${it.danger ? ' dg' : ''}${cur === n ? ' on' : ''}${it.disabled ? ' off' : ''}`} onMouseEnter={() => setCur(n)} onClick={() => run(it)}>
+            <span className="mn-v">{it.checked ? <Check size={14} /> : it.iconId ? <Icon name={it.iconId} size={16} /> : I ? <I size={15} /> : null}</span>
+            <span className="sl">{it.label}</span>
             {it.hint && <kbd>{it.hint}</kbd>}
           </button>
         )

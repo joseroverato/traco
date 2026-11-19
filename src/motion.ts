@@ -1,6 +1,7 @@
 import { flushSync } from 'react-dom'
 import { useStore } from './store'
 import type { State } from './store'
+import { applyPalette } from './theme'
 
 /**
  * Movimento do app. Trocas grandes de tela usam a View Transitions API: o navegador guarda uma imagem da tela antiga e anima até a nova.
@@ -10,7 +11,9 @@ type VTDoc = Document & { startViewTransition?: (cb: () => void | Promise<void>)
 
 export type Dir = 'fwd' | 'back' | 'up' | 'down' | 'fade' | 'theme'
 
-const reduced = () => typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches
+/** A pessoa pediu menos movimento no sistema? Vale também para o que é animado por código (zoom, rolagem, painéis). */
+export const reducedMotion = () => typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches
+const reduced = reducedMotion
 
 // com View Transitions a entrada dos modos é feita por ela; sem, o CSS usa uma animação simples. A marca é fixa (nunca sai do <html>):
 // tirar a marca no fim da transição fazia a animação de entrada recomeçar, e a tela piscava.
@@ -24,6 +27,21 @@ export function withTransition(update: () => void, dir: Dir = 'fade') {
   const vt = d.startViewTransition(() => flushSync(update))
   const clear = () => { delete root.dataset.vt }
   vt.finished.then(clear, clear)
+}
+
+/** Troca o tema claro/escuro (com a transição de tema). Compartilhada pela barra de título e pela aba Exibir da faixa. */
+export function toggleTheme() {
+  const next = useStore.getState().theme === 'dark' ? 'light' : 'dark'
+  try {
+    localStorage.setItem('traco.theme', JSON.stringify(next))
+  } catch {
+    /* sem storage */
+  }
+  withTransition(() => {
+    applyPalette(next)
+    document.documentElement.dataset.theme = next // já dentro da transição, para o navegador guardar o "depois" com o tema novo
+    useStore.getState().set({ theme: next })
+  }, 'theme')
 }
 
 /** Ordem dos modos na barra: ir para a direita desliza para a esquerda, e vice-versa. */

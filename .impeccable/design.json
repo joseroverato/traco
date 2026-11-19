@@ -1,0 +1,909 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-19T12:00:00.000Z",
+  "title": "Design System: Traço",
+  "extensions": {
+    "colorMeta": {
+      "bg": {
+        "role": "neutral",
+        "displayName": "Moldura da Mesa",
+        "canonical": "oklch(23.5% 0.004 264)",
+        "tonalRamp": [
+          "#0b0b0c",
+          "#212223",
+          "#393a3d",
+          "#545558",
+          "#707174",
+          "#8e8f92",
+          "#b6b7b9",
+          "#e7e8e9"
+        ]
+      },
+      "rib": {
+        "role": "neutral",
+        "displayName": "Corpo da Faixa",
+        "canonical": "oklch(30.1% 0.006 271)",
+        "tonalRamp": [
+          "#0b0b0c",
+          "#212223",
+          "#393a3d",
+          "#545558",
+          "#707175",
+          "#8e8f93",
+          "#b6b7ba",
+          "#e7e8e9"
+        ]
+      },
+      "rib2": {
+        "role": "neutral",
+        "displayName": "Fileira de Abas",
+        "canonical": "oklch(27.2% 0.004 265)",
+        "tonalRamp": [
+          "#0b0b0c",
+          "#212223",
+          "#393a3d",
+          "#545557",
+          "#707174",
+          "#8e8f92",
+          "#b6b7b9",
+          "#e7e8e9"
+        ]
+      },
+      "pal": {
+        "role": "neutral",
+        "displayName": "Grafite de Paleta",
+        "canonical": "oklch(27.7% 0.006 271)",
+        "tonalRamp": [
+          "#0b0b0c",
+          "#212223",
+          "#393a3e",
+          "#545558",
+          "#707175",
+          "#8e8f93",
+          "#b6b7ba",
+          "#e7e8e9"
+        ]
+      },
+      "ph": {
+        "role": "neutral",
+        "displayName": "Barra de Paleta",
+        "canonical": "oklch(33.3% 0.007 275)",
+        "tonalRamp": [
+          "#0b0b0c",
+          "#212124",
+          "#393a3e",
+          "#545559",
+          "#707176",
+          "#8e8f94",
+          "#b6b7bb",
+          "#e7e8e9"
+        ]
+      },
+      "ph-hi": {
+        "role": "neutral",
+        "displayName": "Filete de Barra",
+        "canonical": "oklch(40.5% 0.009 268)",
+        "tonalRamp": [
+          "#0b0b0c",
+          "#202224",
+          "#383a3f",
+          "#53555a",
+          "#6f7177",
+          "#8d8f95",
+          "#b5b7bc",
+          "#e7e8ea"
+        ]
+      },
+      "cell": {
+        "role": "neutral",
+        "displayName": "Célula",
+        "canonical": "oklch(25.6% 0.004 264)",
+        "tonalRamp": [
+          "#0b0b0c",
+          "#212223",
+          "#393a3d",
+          "#545558",
+          "#707174",
+          "#8e8f92",
+          "#b6b7b9",
+          "#e7e8e9"
+        ]
+      },
+      "in": {
+        "role": "neutral",
+        "displayName": "Fundo de Campo",
+        "canonical": "oklch(22.2% 0.004 264)",
+        "tonalRamp": [
+          "#0b0b0c",
+          "#212223",
+          "#393a3d",
+          "#545558",
+          "#707174",
+          "#8e8f92",
+          "#b6b7b9",
+          "#e7e8e9"
+        ]
+      },
+      "btn": {
+        "role": "neutral",
+        "displayName": "Botão de Barra",
+        "canonical": "oklch(32.2% 0.007 275)",
+        "tonalRamp": [
+          "#0b0b0c",
+          "#212124",
+          "#393a3e",
+          "#545559",
+          "#707176",
+          "#8e8f94",
+          "#b6b7bb",
+          "#e7e8e9"
+        ]
+      },
+      "ln": {
+        "role": "neutral",
+        "displayName": "Divisória Forte",
+        "canonical": "oklch(19.1% 0.003 248)",
+        "tonalRamp": [
+          "#0b0b0b",
+          "#212222",
+          "#393b3c",
+          "#545557",
+          "#707273",
+          "#8e8f91",
+          "#b6b7b8",
+          "#e7e8e8"
+        ]
+      },
+      "ln2": {
+        "role": "neutral",
+        "displayName": "Contorno de Controle",
+        "canonical": "oklch(39.8% 0.009 268)",
+        "tonalRamp": [
+          "#0b0b0c",
+          "#202225",
+          "#383a3f",
+          "#53555a",
+          "#6f7177",
+          "#8d8f95",
+          "#b5b7bc",
+          "#e7e8ea"
+        ]
+      },
+      "ln3": {
+        "role": "neutral",
+        "displayName": "Linha de Grade",
+        "canonical": "oklch(32.9% 0.009 268)",
+        "tonalRamp": [
+          "#0b0b0c",
+          "#202225",
+          "#383a3f",
+          "#53555b",
+          "#6f7177",
+          "#8d8f95",
+          "#b5b7bc",
+          "#e7e8ea"
+        ]
+      },
+      "hi": {
+        "role": "neutral",
+        "displayName": "Ativo",
+        "canonical": "oklch(40.5% 0.012 267)",
+        "tonalRamp": [
+          "#0a0b0d",
+          "#202226",
+          "#383a41",
+          "#52555c",
+          "#6e7179",
+          "#8c8f97",
+          "#b4b7be",
+          "#e7e8ea"
+        ]
+      },
+      "hi2": {
+        "role": "neutral",
+        "displayName": "Realce Fraco",
+        "canonical": "oklch(36.0% 0.009 268)",
+        "tonalRamp": [
+          "#0b0b0c",
+          "#202225",
+          "#383a3f",
+          "#53555a",
+          "#6f7177",
+          "#8d8f95",
+          "#b5b7bc",
+          "#e7e8ea"
+        ]
+      },
+      "hi2-ln": {
+        "role": "neutral",
+        "displayName": "Contorno do Realce",
+        "canonical": "oklch(55.2% 0.013 269)",
+        "tonalRamp": [
+          "#0a0b0d",
+          "#202226",
+          "#383a41",
+          "#52555d",
+          "#6e7179",
+          "#8c8f97",
+          "#b5b7be",
+          "#e7e8ea"
+        ]
+      },
+      "canvas": {
+        "role": "neutral",
+        "displayName": "Feltro da Mesa",
+        "canonical": "oklch(42.0% 0.009 268)",
+        "tonalRamp": [
+          "#0b0b0c",
+          "#202224",
+          "#393a3f",
+          "#53555a",
+          "#6f7177",
+          "#8d8f95",
+          "#b5b7bc",
+          "#e7e8ea"
+        ]
+      },
+      "st": {
+        "role": "neutral",
+        "displayName": "Barra de Status",
+        "canonical": "oklch(26.0% 0.004 264)",
+        "tonalRamp": [
+          "#0b0b0c",
+          "#212223",
+          "#393a3d",
+          "#545557",
+          "#707174",
+          "#8e8f92",
+          "#b6b7b9",
+          "#e7e8e9"
+        ]
+      },
+      "menu": {
+        "role": "neutral",
+        "displayName": "Menu e Diálogo",
+        "canonical": "oklch(30.9% 0.006 271)",
+        "tonalRamp": [
+          "#0b0b0c",
+          "#212223",
+          "#393a3d",
+          "#545558",
+          "#707175",
+          "#8e8f93",
+          "#b6b7ba",
+          "#e7e8e9"
+        ]
+      },
+      "ico": {
+        "role": "neutral",
+        "displayName": "Tinta dos Ícones",
+        "canonical": "oklch(90.9% 0.006 265)",
+        "tonalRamp": [
+          "#0b0b0c",
+          "#212224",
+          "#393a3e",
+          "#545559",
+          "#707275",
+          "#8d8f93",
+          "#b6b7ba",
+          "#e7e8e9"
+        ]
+      },
+      "text": {
+        "role": "neutral",
+        "displayName": "Giz",
+        "canonical": "oklch(93.4% 0.003 265)",
+        "tonalRamp": [
+          "#0b0b0c",
+          "#212223",
+          "#3a3a3c",
+          "#545557",
+          "#717173",
+          "#8e8f91",
+          "#b6b7b9",
+          "#e7e8e8"
+        ]
+      },
+      "text-2": {
+        "role": "neutral",
+        "displayName": "Giz Apagado",
+        "canonical": "oklch(82.9% 0.008 261)",
+        "tonalRamp": [
+          "#0a0b0c",
+          "#202224",
+          "#383b3f",
+          "#53555a",
+          "#6f7276",
+          "#8c8f94",
+          "#b5b7bb",
+          "#e7e8e9"
+        ]
+      },
+      "text-3": {
+        "role": "neutral",
+        "displayName": "Giz de Legenda",
+        "canonical": "oklch(74.7% 0.011 262)",
+        "tonalRamp": [
+          "#0a0b0d",
+          "#202225",
+          "#373b40",
+          "#52555c",
+          "#6e7278",
+          "#8b8f96",
+          "#b4b7bd",
+          "#e7e8ea"
+        ]
+      },
+      "tx-hi": {
+        "role": "neutral",
+        "displayName": "Número em Destaque",
+        "canonical": "oklch(100.0% 0.000 0)",
+        "tonalRamp": [
+          "#0b0b0b",
+          "#222222",
+          "#3a3a3a",
+          "#555555",
+          "#717171",
+          "#8f8f8f",
+          "#b7b7b7",
+          "#e8e8e8"
+        ]
+      },
+      "ac": {
+        "role": "primary",
+        "displayName": "Ciano de Traço",
+        "canonical": "oklch(76.5% 0.091 222)",
+        "tonalRamp": [
+          "#000e14",
+          "#022631",
+          "#0a4151",
+          "#045f75",
+          "#227d97",
+          "#469cb7",
+          "#82c2d9",
+          "#d5ecf5"
+        ]
+      },
+      "on-accent": {
+        "role": "primary",
+        "displayName": "Texto sobre o Ciano",
+        "canonical": "oklch(21.9% 0.027 226)",
+        "tonalRamp": [
+          "#070c0e",
+          "#182428",
+          "#2b3e45",
+          "#455961",
+          "#61757e",
+          "#7e939c",
+          "#a9bbc2",
+          "#e2e9ec"
+        ]
+      },
+      "ctx": {
+        "role": "secondary",
+        "displayName": "Contexto (roxo)",
+        "canonical": "oklch(75.1% 0.128 297)",
+        "tonalRamp": [
+          "#0d071b",
+          "#271545",
+          "#442573",
+          "#5e4292",
+          "#7a5fb2",
+          "#987dd3",
+          "#beaaf1",
+          "#eae4fd"
+        ]
+      },
+      "claude-orange": {
+        "role": "secondary",
+        "displayName": "Laranja do Claude",
+        "canonical": "oklch(67.2% 0.131 39)",
+        "tonalRamp": [
+          "#1a0401",
+          "#3f0f01",
+          "#662006",
+          "#8f3412",
+          "#b05233",
+          "#d17050",
+          "#f1a085",
+          "#fee1d7"
+        ]
+      },
+      "claude-text": {
+        "role": "secondary",
+        "displayName": "Laranja do Claude (texto)",
+        "canonical": "oklch(78.9% 0.096 39)",
+        "tonalRamp": [
+          "#160603",
+          "#3a1407",
+          "#62240e",
+          "#81402a",
+          "#a15d46",
+          "#c17a62",
+          "#e3a793",
+          "#fae2da"
+        ]
+      },
+      "danger-text": {
+        "role": "tertiary",
+        "displayName": "Vermelho de Pendência (texto)",
+        "canonical": "oklch(73.7% 0.161 20)",
+        "tonalRamp": [
+          "#1d0103",
+          "#45020d",
+          "#6f0c1d",
+          "#9b1b2e",
+          "#bd3f4a",
+          "#e05f66",
+          "#ff9496",
+          "#ffdfde"
+        ]
+      },
+      "warn": {
+        "role": "tertiary",
+        "displayName": "Âmbar de Aviso",
+        "canonical": "oklch(81.7% 0.164 76)",
+        "tonalRamp": [
+          "#140900",
+          "#301d00",
+          "#4f3404",
+          "#714e10",
+          "#956717",
+          "#bd8211",
+          "#e7ab4c",
+          "#fbe4c4"
+        ]
+      },
+      "warn-text": {
+        "role": "tertiary",
+        "displayName": "Âmbar de Aviso (texto)",
+        "canonical": "oklch(87.8% 0.125 83)",
+        "tonalRamp": [
+          "#130900",
+          "#2d1f01",
+          "#4b3708",
+          "#6e5002",
+          "#916a01",
+          "#b4871d",
+          "#d7b26a",
+          "#f4e6cc"
+        ]
+      },
+      "warn-bg": {
+        "role": "tertiary",
+        "displayName": "Fundo do Aviso",
+        "canonical": "oklch(32.2% 0.046 88)",
+        "tonalRamp": [
+          "#0e0b05",
+          "#282110",
+          "#44391d",
+          "#605437",
+          "#7d7053",
+          "#9b8e6f",
+          "#c1b79d",
+          "#ece8de"
+        ]
+      },
+      "ok-text": {
+        "role": "tertiary",
+        "displayName": "Verde de Conferido (texto)",
+        "canonical": "oklch(77.9% 0.165 157)",
+        "tonalRamp": [
+          "#001005",
+          "#002a16",
+          "#064629",
+          "#14653f",
+          "#1c8655",
+          "#17a96a",
+          "#65d195",
+          "#cef3db"
+        ]
+      },
+      "light-bg": {
+        "role": "neutral",
+        "displayName": "Moldura da Mesa (tema claro)",
+        "canonical": "oklch(72.7% 0.010 258)",
+        "tonalRamp": [
+          "#0a0b0d",
+          "#202225",
+          "#373b40",
+          "#52555b",
+          "#6e7277",
+          "#8c8f95",
+          "#b4b8bc",
+          "#e7e8ea"
+        ]
+      },
+      "light-rib": {
+        "role": "neutral",
+        "displayName": "Corpo da Faixa (tema claro)",
+        "canonical": "oklch(84.7% 0.006 255)",
+        "tonalRamp": [
+          "#0b0b0c",
+          "#202224",
+          "#383b3e",
+          "#535559",
+          "#6f7275",
+          "#8d8f93",
+          "#b5b7bb",
+          "#e7e8e9"
+        ]
+      },
+      "light-pal": {
+        "role": "neutral",
+        "displayName": "Grafite de Paleta (tema claro)",
+        "canonical": "oklch(83.1% 0.007 248)",
+        "tonalRamp": [
+          "#0a0b0c",
+          "#202224",
+          "#383b3e",
+          "#525659",
+          "#6e7276",
+          "#8c9093",
+          "#b5b8bb",
+          "#e7e8e9"
+        ]
+      },
+      "light-canvas": {
+        "role": "neutral",
+        "displayName": "Feltro da Mesa (tema claro)",
+        "canonical": "oklch(56.4% 0.012 257)",
+        "tonalRamp": [
+          "#0a0b0d",
+          "#1f2226",
+          "#363b41",
+          "#51565c",
+          "#6d7279",
+          "#8a9097",
+          "#b3b8be",
+          "#e6e8ea"
+        ]
+      },
+      "light-text": {
+        "role": "neutral",
+        "displayName": "Giz (tema claro)",
+        "canonical": "oklch(17.7% 0.007 258)",
+        "tonalRamp": [
+          "#0b0b0c",
+          "#202224",
+          "#383b3e",
+          "#535559",
+          "#6f7276",
+          "#8d8f93",
+          "#b5b7bb",
+          "#e7e8e9"
+        ]
+      },
+      "light-ac": {
+        "role": "primary",
+        "displayName": "Ciano de Traço (tema claro)",
+        "canonical": "oklch(43.6% 0.081 226)",
+        "tonalRamp": [
+          "#010d14",
+          "#002633",
+          "#034154",
+          "#0f5e77",
+          "#357b95",
+          "#549ab5",
+          "#8bc1d7",
+          "#d8ecf4"
+        ]
+      },
+      "light-ctx": {
+        "role": "secondary",
+        "displayName": "Contexto (tema claro)",
+        "canonical": "oklch(40.6% 0.175 291)",
+        "tonalRamp": [
+          "#0c0521",
+          "#250d53",
+          "#41158c",
+          "#5a38ac",
+          "#7558ce",
+          "#9277f0",
+          "#b8aafb",
+          "#e7e4fe"
+        ]
+      },
+      "text-box": {
+        "role": "neutral",
+        "displayName": "Papel (caixa de texto)",
+        "canonical": "oklch(100.0% 0.000 0)",
+        "tonalRamp": [
+          "#0b0b0b",
+          "#222222",
+          "#3a3a3a",
+          "#555555",
+          "#717171",
+          "#8f8f8f",
+          "#b7b7b7",
+          "#e8e8e8"
+        ]
+      },
+      "handle-fill": {
+        "role": "neutral",
+        "displayName": "Papel (alça)",
+        "canonical": "oklch(100.0% 0.000 0)",
+        "tonalRamp": [
+          "#0b0b0b",
+          "#222222",
+          "#3a3a3a",
+          "#555555",
+          "#717171",
+          "#8f8f8f",
+          "#b7b7b7",
+          "#e8e8e8"
+        ]
+      },
+      "accent-soft": {
+        "role": "primary",
+        "displayName": "Véu de Acento",
+        "canonical": "color-mix(in srgb, var(--accent) 30%, transparent)"
+      },
+      "label-halo": {
+        "role": "neutral",
+        "displayName": "Halo de Rótulo",
+        "canonical": "rgba(255, 255, 255, 0.92)"
+      }
+    },
+    "typographyMeta": {
+      "base": {
+        "displayName": "Base",
+        "purpose": "Toda a casca R3 (faixa, paletas, tabelas, diálogos): 12px, altura 1,25, algarismos tabulares. O corpo legado fora da casca ainda usa 13px."
+      },
+      "strong": {
+        "displayName": "Forte",
+        "purpose": "Nome de arquivo na barra, aba ativa, botão principal, título de diálogo e rótulo da ferramenta ativa; peso 600."
+      },
+      "value": {
+        "displayName": "Valor medido",
+        "purpose": "Número do cartão de medição; 24px, peso 650, algarismos tabulares. Maior texto da interface."
+      },
+      "mono": {
+        "displayName": "Mono",
+        "purpose": "Código, variáveis de fórmula, registro e campos .mono; 11.5px."
+      }
+    },
+    "shadows": [
+      {
+        "name": "sheet-shadow",
+        "value": "0 2px 6px rgba(0, 0, 0, 0.4), 0 18px 50px rgba(0, 0, 0, 0.45)",
+        "purpose": "Sombra de papel: só a folha e a folha do Comparar (tema escuro)."
+      },
+      {
+        "name": "light-sheet-shadow",
+        "value": "0 1px 3px rgba(0, 0, 0, 0.12), 0 12px 40px rgba(0, 0, 0, 0.14)",
+        "purpose": "Sombra de papel no tema claro."
+      },
+      {
+        "name": "edge",
+        "value": "0 0 0 0 transparent",
+        "purpose": "Nulo de propósito: as superfícies não têm sombra nem realce."
+      },
+      {
+        "name": "float-shadow",
+        "value": "0 6px 20px rgba(0, 0, 0, 0.3)",
+        "purpose": "Só o que flutua: peças sobre a planta, menu de contexto, dica, painéis do 3D."
+      },
+      {
+        "name": "light-float-shadow",
+        "value": "0 6px 20px rgba(0, 0, 0, 0.12)",
+        "purpose": "Sombra flutuante no tema claro."
+      },
+      {
+        "name": "sombra",
+        "value": "0 6px 18px rgba(0, 0, 0, 0.45)",
+        "purpose": "Diálogo, dica rica e menu; 0.25 no claro. Sobre o véu --veu (rgba(0, 0, 0, 0.45))."
+      },
+      {
+        "name": "glass-bg",
+        "value": "color-mix(in srgb, var(--panel) 72%, transparent)",
+        "purpose": "Fundo do vidro opcional; 68 % no tema claro."
+      },
+      {
+        "name": "glass-blur",
+        "value": "blur(28px) saturate(1.3)",
+        "purpose": "backdrop-filter do vidro; desligado por padrão (data-glass=\"off\") e com prefers-reduced-transparency."
+      },
+      {
+        "name": "over-plan-bg",
+        "value": "color-mix(in srgb, var(--panel) 94%, transparent)",
+        "purpose": "Fundo das peças que flutuam sobre a planta, sem desfoque (valor literal, sem token)."
+      }
+    ],
+    "motion": [
+      {
+        "name": "t-fast",
+        "value": "120ms",
+        "purpose": "Hover, cor, clique e saídas."
+      },
+      {
+        "name": "t-med",
+        "value": "200ms",
+        "purpose": "Entradas, painéis e diálogos."
+      },
+      {
+        "name": "t-slow",
+        "value": "280ms",
+        "purpose": "Troca de modo e de tema. Nada passa disso."
+      },
+      {
+        "name": "ease-out",
+        "value": "cubic-bezier(0.22, 1, 0.36, 1)",
+        "purpose": "Curva padrão de desaceleração."
+      },
+      {
+        "name": "ease-spring",
+        "value": "cubic-bezier(0.34, 1.56, 0.64, 1)",
+        "purpose": "Uso restrito e em revisão: pílula dos modos, balão do controle deslizante e amostras de cor."
+      },
+      {
+        "name": "tip-delay",
+        "value": "350ms",
+        "purpose": "Atraso da primeira dica simples; as seguintes abrem na hora (valor literal, sem token)."
+      },
+      {
+        "name": "press-scale",
+        "value": "scale: 0.97",
+        "purpose": "Estado pressionado; 0.94 em botão de ícone (valor literal, sem token)."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "barra-apertada (layout .estreita)",
+        "value": "1320px"
+      },
+      {
+        "name": "casca-de-celular",
+        "value": "820px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Botão grande da faixa",
+      "kind": "button",
+      "refersTo": "button-big",
+      "description": "Ferramenta principal de um grupo da faixa: ícone de 32px sobre o rótulo. Uma ativa por tela: fundo hi e contorno ac.",
+      "html": "<div class=\"ds-grp\"><button class=\"ds-bb\"><svg width=\"32\" height=\"32\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M3 17 17 3l4 4L7 21z\"/><path d=\"m7.5 12.5 2 2\"/><path d=\"m10.5 9.5 2 2\"/></svg><span class=\"ds-bl\">Comprimento</span></button><button class=\"ds-bb ds-on\"><svg width=\"32\" height=\"32\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M4 4h16v16H4z\"/><path d=\"M4 12h8v8\"/></svg><span class=\"ds-bl\">Área</span></button></div>",
+      "css": ".ds-grp { display: inline-flex; gap: 2px; padding: 3px 6px 0; background: var(--rib); border-right: 1px solid var(--ln2); } .ds-bb { min-width: 56px; height: 72px; padding: 6px 6px 0; display: flex; flex-direction: column; align-items: center; border: 1px solid transparent; border-radius: var(--r-xs); background: transparent; color: var(--text); font: inherit; font-size: 12px; cursor: pointer; } .ds-bl { margin-top: 5px; text-align: center; line-height: 14px; white-space: nowrap; } .ds-bb:hover { background: var(--hi2); } .ds-bb.ds-on { background: var(--hi); border-color: var(--ac); } .ds-bb.ds-on .ds-bl { color: var(--tx-hi); font-weight: 600; } .ds-bb:focus-visible { outline: 2px solid var(--ac); outline-offset: 1px; } .ds-bb:active { scale: 0.97; }"
+    },
+    {
+      "name": "Botão pequeno da faixa",
+      "kind": "button",
+      "refersTo": "button-small",
+      "description": "Comando em pilha de até três: ícone de 16px e rótulo. A opção escolhida usa realce fraco.",
+      "html": "<div class=\"ds-stack\"><button class=\"ds-sb\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><circle cx=\"11\" cy=\"11\" r=\"7\"/><path d=\"m20 20-3.5-3.5\"/></svg><span>Zoom (Z)</span></button><button class=\"ds-sb ds-sel\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M4 4h16v16H4z\"/></svg><span>Ajustar</span></button></div>",
+      "css": ".ds-stack { display: inline-flex; flex-direction: column; background: var(--rib); padding: 3px 6px; } .ds-sb { height: 24px; display: flex; align-items: center; gap: 6px; padding: 0 7px 0 4px; border: 1px solid transparent; border-radius: var(--r-xs); background: transparent; color: var(--text); font: inherit; font-size: 12px; white-space: nowrap; cursor: pointer; } .ds-sb:hover { background: var(--hi2); } .ds-sb.ds-sel { background: var(--hi2); border-color: var(--hi2-ln); } .ds-sb:focus-visible { outline: 2px solid var(--ac); outline-offset: 1px; }"
+    },
+    {
+      "name": "Aba da faixa",
+      "kind": "nav",
+      "refersTo": "ribbon-tabs",
+      "description": "Fileira de abas sobre a faixa. A ativa (25px) funde com a faixa e leva filete de 2px em ac no topo; a contextual leva ctx.",
+      "html": "<div class=\"ds-rt\"><button class=\"ds-rtb ds-on\">Início</button><button class=\"ds-rtb\">Anotar</button><button class=\"ds-rtb\">Pranchas</button><button class=\"ds-rtb ds-ctx\">Medir</button></div>",
+      "css": ".ds-rt { display: flex; align-items: flex-end; background: var(--rib2); padding: 0 6px 0 4px; border-bottom: 1px solid var(--ln); } .ds-rtb { height: 24px; padding: 0 13px; display: inline-flex; align-items: center; color: var(--text-2); border: 1px solid transparent; border-bottom: 0; border-radius: var(--r-xs) var(--r-xs) 0 0; margin-bottom: -1px; background: transparent; font: inherit; font-size: 12px; cursor: pointer; } .ds-rtb:hover { color: var(--text); } .ds-rtb.ds-on { background: var(--rib); color: var(--text); font-weight: 600; border-color: var(--ln2); box-shadow: inset 0 2px 0 var(--ac); height: 25px; } .ds-rtb.ds-ctx { color: var(--ctx); border-color: var(--ln2); box-shadow: inset 0 2px 0 var(--ctx); margin-left: 10px; } .ds-rtb:focus-visible { outline: 2px solid var(--ac); outline-offset: 1px; }"
+    },
+    {
+      "name": "Botão de barra",
+      "kind": "button",
+      "refersTo": "toolbar-button",
+      "description": "Comando de barra de paleta e de aviso: 22px, ícone de 16px e rótulo, fundo btn e contorno ln2.",
+      "html": "<button class=\"ds-tbn\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M12 3v12\"/><path d=\"m7 10 5 5 5-5\"/><path d=\"M5 21h14\"/></svg><span>Exportar</span></button>",
+      "css": ".ds-tbn { display: inline-flex; align-items: center; gap: 5px; height: 22px; padding: 0 7px 0 4px; border: 1px solid var(--ln2); background: var(--btn); color: var(--text); border-radius: var(--r-xs); font: inherit; font-size: 12px; white-space: nowrap; cursor: pointer; } .ds-tbn:hover { background: var(--hi2); } .ds-tbn:focus-visible { outline: 2px solid var(--ac); outline-offset: 1px; } .ds-tbn:active { scale: 0.97; }"
+    },
+    {
+      "name": "Botão de diálogo",
+      "kind": "button",
+      "refersTo": "dialog-button",
+      "description": "Ação de rodapé de diálogo: 26px, 84px de largura mínima. O principal é contornado em ac, não preenchido, com peso 600.",
+      "html": "<button class=\"ds-btn ds-pri\">Definir escala</button> <button class=\"ds-btn\">Cancelar</button>",
+      "css": ".ds-btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 26px; min-width: 84px; padding: 0 12px; border: 1px solid var(--ln2); background: var(--btn); color: var(--text); border-radius: var(--r-xs); font: inherit; font-size: 12px; white-space: nowrap; cursor: pointer; } .ds-btn:hover { background: var(--hi2); } .ds-btn.ds-pri { border-color: var(--ac); box-shadow: inset 0 0 0 1px var(--ac); font-weight: 600; } .ds-btn:focus-visible { outline: 2px solid var(--ac); outline-offset: 1px; } .ds-btn:active { scale: 0.97; } .ds-btn:disabled { opacity: 0.45; cursor: default; }"
+    },
+    {
+      "name": "Campo de texto",
+      "kind": "input",
+      "refersTo": "field",
+      "description": "Campo de 22px, fundo in, contorno ln2 e respiro de 6px; valor em text, dica em text-3. O foco troca o contorno para ac.",
+      "html": "<input class=\"ds-in\" type=\"text\" value=\"Alvenaria 14 cm\" aria-label=\"Nome do marcador\">",
+      "css": ".ds-in { display: flex; align-items: center; height: 22px; width: 200px; padding: 0 6px; background: var(--in); border: 1px solid var(--ln2); color: var(--text); border-radius: var(--r-xs); font: inherit; font-size: 12px; outline: none; } .ds-in::placeholder { color: var(--text-3); } .ds-in:focus, .ds-in:focus-visible { border-color: var(--ac); }"
+    },
+    {
+      "name": "Barra de paleta",
+      "kind": "card",
+      "refersTo": "palette-bar",
+      "description": "Título de paleta: 25px, fundo ph, filete claro ph-hi no topo, título em 600 e contador em text-3.",
+      "html": "<div class=\"ds-pal\"><div class=\"ds-ph\"><h2>Marcadores</h2><span class=\"ds-cnt\">10</span></div><div class=\"ds-pb\">Sem seleção</div></div>",
+      "css": ".ds-pal { width: 240px; background: var(--pal); border: 1px solid var(--ln); color: var(--text); font-size: 12px; } .ds-ph { height: 25px; display: flex; align-items: center; gap: 6px; padding: 0 6px 0 8px; background: var(--ph); border-top: 1px solid var(--ph-hi); border-bottom: 1px solid var(--ln); } .ds-ph h2 { margin: 0; font: inherit; font-weight: 600; } .ds-cnt { color: var(--text-3); font-variant-numeric: tabular-nums; } .ds-pb { padding: 10px 8px; color: var(--text-2); }"
+    },
+    {
+      "name": "Diálogo",
+      "kind": "card",
+      "refersTo": "dialog",
+      "description": "Janela modal de canto de 3px: barra de título de 30px, corpo com 12px de respiro e rodapé de botões sobre cell.",
+      "html": "<div class=\"ds-dlg\"><div class=\"ds-dlg-t\">Definir escala</div><div class=\"ds-dlg-b\">Informe a escala da folha.</div><div class=\"ds-dlg-f\"><button class=\"ds-btn ds-pri\">Definir</button><button class=\"ds-btn\">Cancelar</button></div></div>",
+      "css": ".ds-dlg { width: 320px; background: var(--pal); border: 1px solid var(--hi2-ln); box-shadow: var(--sombra); border-radius: var(--r-lg); color: var(--text); font-size: 12px; } .ds-dlg-t { height: 30px; display: flex; align-items: center; padding: 0 10px; background: var(--ph); border-bottom: 1px solid var(--ln); font-weight: 600; } .ds-dlg-b { padding: 12px; color: var(--text-2); line-height: 17px; } .ds-dlg-f { display: flex; justify-content: flex-end; gap: 6px; padding: 9px 12px; border-top: 1px solid var(--ln2); background: var(--cell); } .ds-btn { height: 26px; min-width: 84px; padding: 0 12px; border: 1px solid var(--ln2); background: var(--btn); color: var(--text); border-radius: var(--r-xs); font: inherit; font-size: 12px; cursor: pointer; } .ds-btn.ds-pri { border-color: var(--ac); box-shadow: inset 0 0 0 1px var(--ac); font-weight: 600; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "A Prancheta de CAD",
+    "overview": "A folha fica no centro, sobre a mesa cinza. Em volta, o que um desenhista de AutoCAD ou Revit espera encontrar: barra de título com acesso rápido, abas e faixa de opções com grupos, paletas empilhadas com árvore de projeto, barra de status com a instrução da ferramenta. Nada fica em cima do desenho. Tudo o que não é planta é mobiliário: cinza neutro, contornos de 1px, cantos de 2px, sem brilho.\n\nO sistema é de trabalho. A densidade é alta (texto de 12px, botões de 22 a 26px, botão grande de 72px na faixa), porque a pessoa passa horas medindo num notebook de 14 a 15 polegadas com escala de 125 a 150 %. A cor aparece pouco e sempre com função: **ciano** (`--ac`) para o que está ativo, selecionado ou é a ação principal; roxo claro (`--ctx`) para a aba e o grupo contextuais; âmbar para o que falta (escala não definida); vermelho e verde para estado. O tema escuro é o padrão; o claro é um cinza médio de CAD (faixa e paletas entre 78 e 84 % de luminosidade, mesa mais escura que as paletas, a folha como único plano quase branco).\n\nO movimento serve à interface em volta da planta e nunca à planta. Três durações (`--t-fast` 120 ms, `--t-med` 200 ms, `--t-slow` 280 ms) e uma curva de desaceleração (`--ease-out`). A saída é mais curta que a entrada, ação por atalho de teclado não anima e o valor medido troca na hora.",
+    "keyCharacteristics": [
+      "A folha é o único plano quase branco e o único com sombra de papel.",
+      "Superfícies neutras em degraus próximos (`bg`, `rib2`, `rib`, `pal`, `ph`, `hi`), separadas por contorno de 1px e não por contraste forte.",
+      "Um acento só (`--ac`, ciano), em um único token; mudar a cor é editar uma linha.",
+      "Ícones próprios em sprite (`src/assets/icones-*.svg`), tinta `--ico`; cor de função só dentro do ícone.",
+      "Números medidos em algarismos tabulares, sem animação.",
+      "Cantos de 2px (3px no diálogo); sem sombra nas superfícies, só no que flutua.",
+      "Vidro é opção (interruptor em Configurações › Aparência), desligado por padrão."
+    ],
+    "rules": [
+      {
+        "name": "Regra do Estado como Texto",
+        "body": "Cor de estado escrita como texto usa sempre a variante `-text`. O token sem sufixo é só para preenchimento, ponto e borda.",
+        "section": "colors"
+      },
+      {
+        "name": "Regra do Laranja Reservado",
+        "body": "O laranja pertence ao Claude. Não marca seleção, aviso nem destaque em nenhum outro lugar.",
+        "section": "colors"
+      },
+      {
+        "name": "Regra do Acento Derivado",
+        "body": "Texto ou ícone colorido sobre painel usa `--accent-text`, nunca um hex escrito à mão. Quando a pessoa troca as cores, `src/theme.ts` recalcula `accent`, `on-accent`, `accent-text` e `accent-soft` e garante 4,5:1; cor escrita à mão no CSS fica fora dessa garantia.",
+        "section": "colors"
+      },
+      {
+        "name": "Regra do Número Sagrado",
+        "body": "Valor de medição, zoom, escala, número de página e coluna numérica usam `font-variant-numeric: tabular-nums` e trocam na hora, sem transição.",
+        "section": "typography"
+      },
+      {
+        "name": "Regra da Planta que Manda",
+        "body": "A área da planta só muda de tamanho de uma vez. Painel abre e fecha com `transform` e opacidade enquanto a coluna da grade troca num único passo; nada anima largura de coluna.",
+        "section": "layout"
+      },
+      {
+        "name": "Regra da Mão no Teclado",
+        "body": "Ação disparada por atalho de teclado é imediata, sem transição de painel (`body.panels-instant`).",
+        "section": "layout"
+      },
+      {
+        "name": "Regra do Vidro Fora da Planta",
+        "body": "Nada que flutua sobre a planta usa `backdrop-filter`. O fundo dessas peças muda a cada quadro de pan e zoom, e o desfoque seria recalculado junto.",
+        "section": "elevation"
+      },
+      {
+        "name": "Regra da Sombra de Papel",
+        "body": "`--sheet-shadow` é da folha. Paleta, cartão e menu usam contorno, e só o que flutua usa `--float-shadow`.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "**Faça** a folha ser a única superfície quase branca e a única com `--sheet-shadow`.",
+      "**Faça** cor sobre painel pelos tokens (`--ac`, `--accent-text`, `--danger-text`, `--warn-text`, `--ok-text`).",
+      "**Faça** todo número que muda (medida, zoom, escala, página) com `tabular-nums` e troca imediata.",
+      "**Faça** transições listando as propriedades e usando `--t-fast`, `--t-med` ou `--t-slow` com `--ease-out`; a saída mais curta que a entrada.",
+      "**Faça** painéis entrarem e saírem com `transform` e opacidade, com a coluna da grade trocando de uma vez.",
+      "**Faça** raios novos com `--r-xs`, `--r-sm`, `--r-md`, `--r-lg` ou `--r-pill`.",
+      "**Faça** ícones novos no sprite próprio (`Icon`/`Glyph`) e o mapa comando→ícone em `src/ribbonIcons.json`; todo controle tem texto legível.",
+      "**Faça** o foco de teclado visível (contorno de 2px em `--ac`).",
+      "**Faça** chave nova de texto nos sete idiomas (`npm run i18n:check`)."
+    ],
+    "donts": [
+      "**Regra do autor: não escreva o nome \"Traço\" ao lado do logo na barra nem na faixa.** A barra mostra só o logo. O nome aparece em frases de diálogo e em Configurações › Sobre, e uma vez por janela (título do sistema). Verificado por `src/components/TitleBar.test.tsx`.",
+      "**Não** coloque nada fixo em cima da planta além das peças flutuantes que já existem.",
+      "**Não** use `backdrop-filter` em peça que flutua sobre a planta.",
+      "**Não** anime pan, zoom, medição ou desenho, nem atrase essas ações com transição da interface.",
+      "**Não** anime a grade nem a largura de coluna de painel.",
+      "**Não** anime ação disparada por atalho de teclado.",
+      "**Não** escreva `transition: all` nem duração em número solto.",
+      "**Não** use `danger`, `warn` ou `ok` sem sufixo como cor de texto.",
+      "**Não** use o laranja `#d97757` fora do painel e das entradas do Claude.",
+      "**Não** use brilho colorido, gradiente de texto, cartões iguais de ícone mais título como estrutura, nem emoji no lugar de ícone.",
+      "**Não** trate `--ease-spring` como curva padrão.",
+      "**Não** crie mais um tamanho de fonte, peso, raio literal ou cor hex fora de token.",
+      "**Não** crie mais um desenho para \"selecionado\": é `--hi` com contorno ou filete em `--ac`.",
+      "**Não** quebre o celular: a casca `MobileShell` e `useIsMobile` seguem valendo."
+    ]
+  }
+}

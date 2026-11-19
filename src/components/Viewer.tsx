@@ -8,6 +8,7 @@ import { bbox, dist, scaleFor, snapAngle } from '../geometry'
 import { DRAWING_TOOLS, computeLayout, markupsInRect, snapAllowed } from '../viewerLogic'
 import { useElementSize, usePageRender, useZoomControls } from './viewerHooks'
 import { buildDraft, commitDraw, commitFill, commitPolygon, minVertices, placeAt } from '../viewerActions'
+import type { PolyKind } from '../viewerActions'
 import { Magnet, Move } from 'lucide-react'
 import { fillAt, findSymbols, reasonText } from '../geoWorker'
 import { OverlayCanvas } from './OverlayCanvas'
@@ -17,7 +18,7 @@ import { SymbolResult } from './SymbolResult'
 import { findSnap, snapIndexFor } from '../snap'
 import { SnapMarker } from './SnapMarker'
 import { ViewerHints } from './ViewerHints'
-import { ScaleBanner } from './ScaleBanner'
+import { ScaleAlert } from './ScaleAlert'
 import { openSample } from '../tour'
 import { ViewerEmpty } from './ViewerEmpty'
 import { AlignPoints, DashedRect, SearchHighlights, SelectionHandles, SymbolMatches } from './ViewerOverlays'
@@ -31,6 +32,9 @@ import { ContextMenu } from './ContextMenu'
 import type { MenuItem } from './ContextMenu'
 import { viewerMenu } from '../contextMenu'
 import { textInRect } from '../search'
+import { shapePoints } from '../shapes'
+import type { PolyShape } from '../shapes'
+import { currentZoom, useZoom } from '../liveZoom'
 
 
 type Drag =
@@ -41,12 +45,16 @@ type Drag =
   | { type: 'handle'; id: string; idx: number; moved: boolean }
   | { type: 'pan'; sx: number; sy: number; sl: number; st: number }
   | { type: 'marquee'; start: Pt }
+  | { type: 'shape'; tool: PolyKind; shape: Exclude<PolyShape, 'poly'>; start: Pt }
+  // modo "arrastar": pressionou com uma ferramenta de polígono; soltar acrescenta o vértice onde soltou
+  | { type: 'segment' }
 
 const TWO_POINT: Array<MarkupKind | 'calibrate'> = ['rect', 'ellipse', 'cloud', 'arrow', 'line', 'viewport', 'redact', 'calibrate']
 
 export function Viewer({ onOpen }: { onOpen: () => void }) {
   const s = useStore()
-  const { zoom, tool } = s
+  const { tool } = s
+  const zoom = useZoom() // durante a animação de zoom vem de liveZoom, sem passar pelo store principal
   const sheet = curSheet(s)
   const info = sheet
   const page = sheet?.id ?? ''
@@ -60,7 +68,9 @@ export function Viewer({ onOpen }: { onOpen: () => void }) {
   const space = useRef(false)
   const countId = useRef<string | null>(null)
   const [draft, setDraft] = useState<Markup | null>(null)
-  const [poly, setPoly] = useState<{ kind: 'length' | 'area' | 'hole' | 'space' | 'solid'; points: Pt[]; hover: Pt | null } | null>(null)
+  const [poly, setPoly] = useState<{ kind: PolyKind; points: Pt[]; hover: Pt | null } | null>(null)
+  // forma regular (retângulo, círculo, elipse) sendo arrastada
+  const [shapeDraft, setShapeDraft] = useState<{ kind: PolyKind; pts: Pt[] } | null>(null)
   const [busy, setBusy] = useState<string | null>(null)
   const [symRect, setSymRect] = useState<{ a: Pt; b: Pt } | null>(null)
   const [symFound, setSymFound] = useState<{ rect: { x: number; y: number; w: number; h: number }; centers: Pt[] } | null>(null)
@@ -178,7 +188,7 @@ export function Viewer({ onOpen }: { onOpen: () => void }) {
     setBusy(t('viewer.detectando_contorno'))
     try {
       const r = await fillAt(sheet, snapIdx.current, p, st.fillGap)
-      if (!r.ok) return st.notify(reasonText(r.reason) ?? t('viewer.nao_foi_possivel_detectar_o'))
+      if (!r.ok) return st.notify(reasonText(r.reason) ?? t('viewer.nao_foi_possivel_detectar_o'), 'err')
       const refine = (ring: Pt[]) => refineRing(snapIdx.current, ring, r.halfLine ?? 1)
       const outer = refine(r.outer!)
       const holes = filterHoles(page, r.holes!.map(refine).filter((h) => h.length >= 3))
@@ -234,6 +244,7 @@ export function Viewer({ onOpen }: { onOpen: () => void }) {
         if (poly) setPoly(null)
         countId.current = null
         setDraft(null)
+        setShapeDraft(null)
         drag.current = null
       }
       if (e.key === 'Backspace' && poly) {
@@ -258,10 +269,11 @@ export function Viewer({ onOpen }: { onOpen: () => void }) {
   useEffect(() => {
     setPoly(null)
     setDraft(null)
+    setShapeDraft(null)
     setCalStart(null)
     setCopyMode(false)
     countId.current = null
-  }, [tool, s.activePreset])
+  }, [tool, s.activePreset, s.polyShape])
 
   // ---------- pan (botão do meio, Espaço ou ferramenta Mão) ----------
   const onPanDown = (e: React.PointerEvent) => {
@@ -343,6 +355,8 @@ export function Viewer({ onOpen }: { onOpen: () => void }) {
   const DRAWING = DRAWING_TOOLS
 
   const mkDraft = (kind: MarkupKind | 'calibrate', pts: Pt[]): Markup => buildDraft(kind, pts, page, zoom)
+  // formas só nas ferramentas de polígono e no PC (no celular a mira marca ponto a ponto)
+  const shaped = !mobile && s.polyShape !== 'poly' && (tool === 'area' || tool === 'hole' || tool === 'space' || tool === 'solid')
 
   /**
    * Ponto de snap do alinhamento. Passos pares marcam um ponto do desenho sobreposto (snap na geometria dele, em coordenadas próprias);
@@ -463,9 +477,26 @@ export function Viewer({ onOpen }: { onOpen: () => void }) {
       placeAt('text', page, p)
       return
     }
+    if (shaped && (tool === 'area' || tool === 'hole' || tool === 'space' || tool === 'solid')) {
+      // forma regular: arrasta do canto (ou do centro, no círculo) até o ponto oposto
+      drag.current = { type: 'shape', tool, shape: s.polyShape as Exclude<PolyShape, 'poly'>, start: p }
+      setShapeDraft({ kind: tool, pts: shapePoints(s.polyShape as Exclude<PolyShape, 'poly'>, p, p) })
+      return
+    }
     if (tool === 'length' || tool === 'area' || tool === 'hole' || tool === 'space' || tool === 'solid') {
       if (e.detail >= 2) return // duplo clique finaliza (onDoubleClick)
       const q = p
+      if (s.drawMode === 'drag' && !mobile) {
+        // arrastar: comprimento sai de onde pressionou até onde soltou; nos polígonos cada arrasto acrescenta um vértice ao soltar
+        if (tool === 'length') {
+          drag.current = { type: 'draw', kind: 'length', start: q }
+          setDraft(mkDraft('length', [q, q]))
+          return
+        }
+        if (!poly || poly.kind !== tool) setPoly({ kind: tool, points: [q], hover: q })
+        drag.current = { type: 'segment' }
+        return
+      }
       if (poly && poly.kind === tool) {
         // fechar polígono clicando no primeiro vértice
         if (tool !== 'length' && poly.points.length >= 3 && dist(q, poly.points[0]) < 8 / zoom) return finishPoly()
@@ -486,14 +517,14 @@ export function Viewer({ onOpen }: { onOpen: () => void }) {
     const p = toPage(e)
     const st = useStore.getState()
     if (!d && st.aligning) return setSnapHit(alignHit(p, e.altKey)?.show ?? null)
-    if (!d && DRAWING.includes(tool)) {
+    if ((!d || d.type === 'segment') && DRAWING.includes(tool)) {
       const q = resolve(p, e, poly?.points[poly.points.length - 1])
       if (poly) setPoly({ ...poly, hover: q })
     } else if (!d && snapHit) setSnapHit(null)
-    if (!d || d.type === 'pan') return
+    if (!d || d.type === 'pan' || d.type === 'segment') return
     if (d.type === 'symbol' || d.type === 'copy') return setSymRect({ a: d.start, b: p })
     if (d.type === 'draw') {
-      const q = resolve(p, e, ['arrow', 'line', 'calibrate'].includes(d.kind) ? d.start : undefined)
+      const q = resolve(p, e, ['arrow', 'line', 'calibrate', 'length'].includes(d.kind) ? d.start : undefined)
       setDraft(mkDraft(d.kind, [d.start, q]))
     } else if (d.type === 'move') {
       const dx = p.x - d.start.x, dy = p.y - d.start.y
@@ -520,6 +551,9 @@ export function Viewer({ onOpen }: { onOpen: () => void }) {
       st.updateMarkup(d.id, { points: pts }, false)
     } else if (d.type === 'marquee') {
       setMarquee({ a: d.start, b: p })
+    } else if (d.type === 'shape') {
+      const q = resolve(p, e)
+      setShapeDraft({ kind: d.tool, pts: shapePoints(d.shape, d.start, q, e.shiftKey) })
     }
   }
 
@@ -529,6 +563,16 @@ export function Viewer({ onOpen }: { onOpen: () => void }) {
     if (d?.type === 'handle') setSnapHit(null)
     const st = useStore.getState()
     if (!d) return
+    if (d.type === 'segment') {
+      const pl = polyRef.current
+      const q = pl?.hover
+      if (!pl || !q) return
+      const last = pl.points[pl.points.length - 1]
+      if (dist(q, last) * zoom < 4) return // soltou no mesmo lugar: nada acrescentado
+      if (pl.kind !== 'length' && pl.points.length >= 3 && dist(q, pl.points[0]) < 8 / zoom) return finishPoly()
+      setPoly({ ...pl, points: [...pl.points, q] })
+      return
+    }
     if (d.type === 'copy' && symRect) {
       const r = bbox([symRect.a, symRect.b])
       setSymRect(null)
@@ -563,6 +607,14 @@ export function Viewer({ onOpen }: { onOpen: () => void }) {
       setDraft(null)
       if (tiny) return
       commitDraw(d.kind, page, a, b)
+    }
+    if (d.type === 'shape') {
+      const pts = shapeDraft?.pts
+      setShapeDraft(null)
+      // um clique sem arrastar não cria forma nenhuma
+      if (!pts || pts.length < 3 || bbox(pts).w * zoom < 4 || bbox(pts).h * zoom < 4) return
+      commitPolygon(d.tool, page, pts)
+      return
     }
     if (d.type === 'marquee' && marquee) {
       const r = bbox([marquee.a, marquee.b])
@@ -726,7 +778,7 @@ export function Viewer({ onOpen }: { onOpen: () => void }) {
       setMarquee(null)
       setSymRect(null)
       const { d, cx, cy } = two()
-      const z0 = useStore.getState().zoom
+      const z0 = currentZoom()
       const l = layoutFor(z0)
       g = { d0: d, z0, px: (el.scrollLeft + cx - l.left) / z0, py: (el.scrollTop + cy - l.top) / z0 }
       e.stopPropagation()
@@ -768,12 +820,15 @@ export function Viewer({ onOpen }: { onOpen: () => void }) {
   const sheetScale = s.scales[page]
   const stampCtx = { n: s.page + 1, total: s.sheets.length, label: sheet?.label ?? '', file: s.fileName, author: s.author }
   const sel = s.selected.length === 1 ? pageMarkups.find((m) => m.id === s.selected[0]) : undefined
-  const polyDraft = poly ? { ...mkDraft(poly.kind === 'hole' ? 'area' : poly.kind, poly.hover ? [...poly.points, poly.hover] : poly.points), ...(poly.kind === 'hole' ? { color: '#ff6369', fill: '#ff6369', fillOpacity: 0.15, presetId: null } : {}) } : null
+  const draftSrc = poly ? { kind: poly.kind, pts: poly.hover ? [...poly.points, poly.hover] : poly.points } : shapeDraft
+  const polyDraft = draftSrc ? { ...mkDraft(draftSrc.kind === 'hole' ? 'area' : draftSrc.kind, draftSrc.pts), ...(draftSrc.kind === 'hole' ? { color: '#ff6369', fill: '#ff6369', fillOpacity: 0.15, presetId: null } : {}) } : null
   const editing = s.editingText ? s.markups.find((m) => m.id === s.editingText) : undefined
   const cursor = copyMode ? 'text' : space.current || tool === 'pan' ? (drag.current?.type === 'pan' ? 'grabbing' : 'grab') : tool === 'select' ? 'default' : tool === 'fill' ? 'cell' : 'crosshair'
 
   return (
     <div className="viewer-wrap">
+      {/* faixa de alerta fixa acima da mesa (R3 16): empurra a planta, não flutua sobre ela */}
+      {sheet && (s.tour === null || s.tour === 0) && found?.sheet === sheet.id && !found.hidden && <ScaleAlert sheetId={sheet.id} detected={found.n} current={s.scales[sheet.id]} onHide={() => setFound({ ...found, hidden: true })} />}
       <div
         className={`viewer ${dragOver ? 'drag' : ''}`}
         ref={box}
@@ -832,19 +887,21 @@ export function Viewer({ onOpen }: { onOpen: () => void }) {
           {editing && editing.page === page && <TextEditor m={editing} zoom={zoom} left={L.left} top={L.top} />}
         </div>
       </div>
-        {sheet && (s.tour === null || s.tour === 0) && found?.sheet === sheet.id && !found.hidden && <ScaleBanner sheetId={sheet.id} detected={found.n} current={s.scales[sheet.id]} onHide={() => setFound({ ...found, hidden: true })} />}
-        <div className="view-tools" onPointerDown={(e) => e.stopPropagation()}>
-          <button className={s.snap ? 'on' : ''} onClick={() => { const v = !s.snap; s.set({ snap: v }); try { localStorage.setItem('traco.snap', JSON.stringify(v)) } catch { /* */ } }} data-tip={t('viewer.snap_na_geometria_do_pdf')}>
-            <Magnet size={14} /> Snap{s.snap && snapState === 'loading' ? '…' : ''}
-          </button>
-          <button className={s.ortho ? 'on' : ''} onClick={() => s.set({ ortho: !s.ortho })} data-tip={t('viewer.ortogonal_so_0_e_90')}>
-            <Move size={14} /> {t('viewer.orto')}</button>
-        </div>
+        {/* no PC, Snap e Orto ficam na barra de status e a forma da área no grupo contextual da faixa (R3); o celular mantém esta peça */}
+        {mobile && (
+          <div className="view-tools" onPointerDown={(e) => e.stopPropagation()}>
+            <button className={s.snap ? 'on' : ''} onClick={() => { const v = !s.snap; s.set({ snap: v }); try { localStorage.setItem('traco.snap', JSON.stringify(v)) } catch { /* */ } }} data-tip={t('viewer.snap_na_geometria_do_pdf')}>
+              <Magnet size={14} /> Snap{s.snap && snapState === 'loading' ? '…' : ''}
+            </button>
+            <button className={s.ortho ? 'on' : ''} onClick={() => s.set({ ortho: !s.ortho })} data-tip={t('viewer.ortogonal_so_0_e_90')}>
+              <Move size={14} /> {t('viewer.orto')}</button>
+          </div>
+        )}
         {symFound && <SymbolResult found={symFound} sheetId={page} onClose={() => setSymFound(null)} />}
         {mira && <div className="mira" aria-hidden />}
         {copyMode && <div className="hud">{t('viewerhints.copiar_texto')}</div>}
         {menu && <ContextMenu x={menu.x} y={menu.y} items={menu.items} onClose={() => setMenu(null)} />}
-        {!mira && <ViewerHints tool={tool} busy={busy} poly={poly} symFound={!!symFound} aligning={s.aligning} fillGap={s.fillGap} />}
+        {!mira && <ViewerHints tool={tool} busy={busy} poly={poly} symFound={!!symFound} aligning={s.aligning} fillGap={s.fillGap} shape={shaped ? s.polyShape : 'poly'} drag={s.drawMode === 'drag' && !mobile} />}
     </div>
   )
 }

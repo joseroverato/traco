@@ -1,6 +1,11 @@
 import { create } from 'zustand'
 import type { CustomColumn, Markup, MarkupKind, OcrResult, Overlay, PageScale, Preset, Sheet, StatusDef, Tool } from './types'
 import type { Source } from './pdf'
+import type { PolyShape } from './shapes'
+import { loadPalPrefs } from './palModel'
+import type { PalPrefs } from './palModel'
+
+export type DrawMode = 'click' | 'drag'
 import { pushHistory } from './history'
 import { onLangChange, t as tNow, translator } from './i18n'
 import type { Lang } from './i18n'
@@ -68,6 +73,8 @@ const ls = {
 const loadPresets = () => ls.get<Preset[]>('traco.presets', defaultPresets()).map((p) => ({ ...p, formula: p.formula ?? '' }))
 
 export type Mode = 'review' | 'pages' | 'compare' | '3d'
+/** Aba da faixa de opções no modo Revisar (nos outros modos a aba é a do próprio modo). Não é persistida. */
+export type RibbonTab = 'inicio' | 'anotar' | 'exibir' | 'claude'
 interface Snapshot {
   markups: Markup[]
   sheets: Sheet[]
@@ -81,6 +88,7 @@ export interface State {
   zoom: number
   tool: Tool
   mode: Mode
+  ribbonTab: RibbonTab
   activePreset: string | null
   markups: Markup[]
   presets: Preset[]
@@ -96,10 +104,17 @@ export interface State {
   resumeTool: Tool | null
   editingText: string | null
   panels: { left: boolean; right: boolean; bottom: boolean }
+  /** estado (aberta, recolhida, fechada) de cada paleta da esquerda, por aba da faixa; persistido em traco.palettes (ver palModel.ts) */
+  palettes: PalPrefs
+  /** filtros da lista de Compatibilização (paleta e botões da faixa usam o mesmo filtro) e texto do relatório em andamento */
+  issueFilter: { status: string; assignee: string; onlyCur: boolean }
+  issuesBusy: string
   dialog: null | 'export' | 'stamp' | 'statuses' | 'meta' | 'claude-settings' | 'prices' | 'columns' | 'updates' | 'recover' | 'claude-desktop' | 'close'
   bottomH: number
   rightW: number
   toast: string | null
+  /** `err` quando o aviso é de falha (contorno âmbar); o texto continua em `toast` */
+  toastKind: 'err' | null
   fitReq: { mode: 'page' | 'width'; n: number } | null
   pendingImage: string | null
   meta: { title: string; author: string; subject: string; keywords: string }
@@ -130,6 +145,13 @@ export interface State {
   solidDefaults: { color: string; height: number }
   /** tela dividida: planta + 3D ao vivo (modo Revisar) */
   split3d: boolean
+  /** abas: um documento por aba (o estado do documento ativo fica nos campos acima; o das outras, em tabs.ts) */
+  /** forma usada pelas ferramentas de área, vazio, ambiente e sólido */
+  polyShape: PolyShape
+  /** comprimento e polígonos: 'click' marca um vértice por clique; 'drag' pressiona num vértice, arrasta e solta no próximo */
+  drawMode: DrawMode
+  tabs: { id: string; title: string }[]
+  activeTab: string | null
 
   set: (p: Partial<State>) => void
   setTool: (t: Tool) => void
@@ -144,7 +166,8 @@ export interface State {
   rememberSolid: (p: Partial<{ color: string; height: number }>) => void
   setStatus: (ids: string[], s: string) => void
   setSheets: (sheets: Sheet[], extra?: Partial<State>) => void
-  notify: (msg: string) => void
+  /** Aviso transitório. `err`: falha (contorno âmbar). */
+  notify: (msg: string, kind?: 'err') => void
 }
 
 export const curSheet = (s: Pick<State, 'sheets' | 'page'>) => s.sheets[s.page] as Sheet | undefined
@@ -157,6 +180,7 @@ export const useStore = create<State>((set, get) => ({
   zoom: 1,
   tool: 'select',
   mode: 'review',
+  ribbonTab: 'inicio',
   activePreset: null,
   markups: [],
   presets: loadPresets(),
@@ -172,10 +196,14 @@ export const useStore = create<State>((set, get) => ({
   resumeTool: null,
   editingText: null,
   panels: { left: true, right: true, bottom: true },
+  palettes: loadPalPrefs(),
+  issueFilter: { status: '', assignee: '', onlyCur: false },
+  issuesBusy: '',
   dialog: null,
-  bottomH: ls.get('traco.bottomH', 240),
-  rightW: ls.get('traco.rightW', 300),
+  bottomH: ls.get('traco.bottomH', 132),
+  rightW: ls.get('traco.rightW', 240),
   toast: null,
+  toastKind: null,
   fitReq: null,
   pendingImage: null,
   meta: { title: '', author: '', subject: '', keywords: '' },
@@ -204,9 +232,19 @@ export const useStore = create<State>((set, get) => ({
   holeTarget: null,
   solidDefaults: { color: '#2f9e8f', height: 2.8, ...ls.get<Partial<{ color: string; height: number }>>('traco.solid', {}) },
   split3d: false,
+  polyShape: ls.get<PolyShape>('traco.polyShape', 'poly'),
+  drawMode: ls.get<DrawMode>('traco.drawMode', 'click'),
+  tabs: [],
+  activeTab: null,
 
   set: (p) => set(p),
-  setTool: (t) => set({ tool: t, selected: t === 'select' ? get().selected : [] }),
+  // trocar de ferramenta solta o marcador ativo quando ele não é daquela medida (senão a lista o mostrava marcado com "Selecionar" ativa
+  // e o clique seguinte nele o DESativava em vez de ativar)
+  setTool: (t) => {
+    const s = get()
+    const pr = s.presets.find((p) => p.id === s.activePreset)
+    set({ tool: t, selected: t === 'select' ? s.selected : [], ...(pr && pr.measure !== t ? { activePreset: null } : {}) })
+  },
 
   addMarkup: (kind, page, points, extra = {}) => {
     const s = get()
@@ -294,9 +332,9 @@ export const useStore = create<State>((set, get) => ({
       ...extra,
     })
   },
-  notify: (msg) => {
-    set({ toast: msg })
-    setTimeout(() => get().toast === msg && set({ toast: null }), 2800)
+  notify: (msg, kind) => {
+    set({ toast: msg, toastKind: kind ?? null })
+    setTimeout(() => get().toast === msg && set({ toast: null, toastKind: null }), 2800)
   },
 }))
 

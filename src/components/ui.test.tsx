@@ -7,7 +7,7 @@ import { useStore } from '../store'
 import { sheet } from '../testUtils'
 import { ViewerEmpty } from './ViewerEmpty'
 import { DashedRect, SearchHighlights, SelectionHandles } from './ViewerOverlays'
-import { ScaleBanner } from './ScaleBanner'
+import { ScaleAlert } from './ScaleAlert'
 import { Tour } from './Tour'
 
 vi.mock('../project', () => ({ loadFile: vi.fn() })) // o passo a passo importa o carregador de PDF (pesado, não é o que se testa aqui)
@@ -67,11 +67,11 @@ describe('camadas do SVG da folha', () => {
   })
 })
 
-describe('ScaleBanner', () => {
+describe('ScaleAlert', () => {
   beforeEach(() => useStore.setState({ scales: {}, toast: null }))
 
   it('folha sem escala: oferece a escala lida do carimbo e aplica ao clicar', () => {
-    render(<ScaleBanner sheetId="s1" detected={50} onHide={() => {}} />)
+    render(<ScaleAlert sheetId="s1" detected={50} onHide={() => {}} />)
     expect(screen.getByText(/Folha sem escala/)).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: /Usar 1:50 do carimbo/ }))
     expect(useStore.getState().scales.s1.label).toBe('1:50')
@@ -79,13 +79,13 @@ describe('ScaleBanner', () => {
   })
 
   it('folha com escala igual à do carimbo: não mostra nada', () => {
-    const { container } = render(<ScaleBanner sheetId="s1" detected={50} current={{ metersPerUnit: paperScale(50), label: '1:50' }} onHide={() => {}} />)
+    const { container } = render(<ScaleAlert sheetId="s1" detected={50} current={{ metersPerUnit: paperScale(50), label: '1:50' }} onHide={() => {}} />)
     expect(container.firstChild).toBeNull()
   })
 
   it('escala diferente do carimbo: avisa e deixa escolher entre usar o carimbo ou manter', () => {
     const onHide = vi.fn()
-    render(<ScaleBanner sheetId="s1" detected={50} current={{ metersPerUnit: paperScale(75), label: '1:75' }} onHide={onHide} />)
+    render(<ScaleAlert sheetId="s1" detected={50} current={{ metersPerUnit: paperScale(75), label: '1:75' }} onHide={onHide} />)
     expect(screen.getByText(/1:75\) difere da do carimbo \(1:50/)).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: /Manter 1:75/ }))
     expect(onHide).toHaveBeenCalled()
@@ -97,7 +97,7 @@ describe('ScaleBanner', () => {
 
 describe('Tour (passo a passo)', () => {
   const anchors = () => {
-    document.body.insertAdjacentHTML('beforeend', '<div class="scale-banner">aviso</div><nav class="rail"></nav><aside class="panel right"></aside><section class="panel bottom"></section><header class="topbar"><button>3D</button></header>')
+    document.body.insertAdjacentHTML('beforeend', '<div class="al-host"><div class="al">aviso</div></div><div class="rx-top"><div class="rb"><div class="grp" data-grp="measure"></div></div><div class="rt-l"><button>3D</button></div></div><section class="pal-sec" data-pal="marc"></section><section class="rx pal-col bottom"><div class="pal pb"></div></section>')
   }
   beforeEach(() => {
     localStorage.clear()
@@ -138,7 +138,7 @@ describe('Tour (passo a passo)', () => {
   })
 
   it('passo cujo elemento não existe é pulado', () => {
-    document.querySelector('.rail')!.remove()
+    document.querySelector('.rx-top .grp')!.remove()
     render(<Tour />)
     fireEvent.click(screen.getByRole('button', { name: 'Próximo' })) // do passo 1 (escala): o 2 (ferramentas) não existe, vai ao 3
     expect(useStore.getState().tour).toBe(2)

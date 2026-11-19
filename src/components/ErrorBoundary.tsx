@@ -15,11 +15,11 @@ export class ErrorBoundary extends Component<{ children: ReactNode }, { failed: 
   render() {
     if (!this.state.failed) return this.props.children
     return (
-      <div className="crash" role="alert">
+      <div className="crash rx" role="alert">
         <h2>{t('crash.titulo')}</h2>
         <p>{t('crash.explicacao')}</p>
         <div className="row">
-          <button className="btn primary" onClick={() => location.reload()}>{t('crash.reabrir')}</button>
+          <button className="btn pri" onClick={() => location.reload()}>{t('crash.reabrir')}</button>
           <button className="btn" onClick={async () => this.setState({ copied: await copyDiagnostic() })}>{this.state.copied ? t('dialogs.diagnostico_copiado') : t('dialogs.copiar_diagnostico')}</button>
         </div>
       </div>

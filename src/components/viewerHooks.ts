@@ -11,6 +11,8 @@ import type { Source } from '../pdf'
 import type { Sheet } from '../types'
 import { clampZoom, fitZoom, wheelFactor, zoomStep } from '../viewerLogic'
 import type { Layout } from '../viewerLogic'
+import { currentZoom, useLiveZoom } from '../liveZoom'
+import { reducedMotion } from '../motion'
 
 const MAX_BASE_PIXELS = 14e6
 
@@ -46,6 +48,17 @@ export function useZoomControls({ box, hasDoc, info, doc, page, size, zoom, layo
   const anchor = useRef<{ px: number; py: number; cx: number; cy: number } | null>(null)
   const zoomAnim = useRef<{ target: number; px: number; py: number; cx: number; cy: number; raf: number } | null>(null)
 
+  /** Interrompe a animação de zoom e grava no store o ponto em que ela parou (ver liveZoom.ts). */
+  const stopAnim = useCallback(() => {
+    if (zoomAnim.current) cancelAnimationFrame(zoomAnim.current.raf)
+    zoomAnim.current = null
+    const live = useLiveZoom.getState().z
+    if (live === null) return
+    useStore.setState({ zoom: live })
+    useLiveZoom.setState({ z: null })
+  }, [])
+  useEffect(() => stopAnim, [stopAnim])
+
   // encaixar ao abrir documento / trocar de página
   useEffect(() => {
     if (info) useStore.setState({ fitReq: { mode: 'page', n: Date.now() } })
@@ -62,6 +75,7 @@ export function useZoomControls({ box, hasDoc, info, doc, page, size, zoom, layo
     lastFit.current = f.n
     // offsetWidth inclui a área das barras de rolagem: medida estável
     const z = fitZoom(f.mode, { w: el.offsetWidth, h: el.offsetHeight }, info)
+    stopAnim()
     anchor.current = null
     useStore.setState({ zoom: z })
     requestAnimationFrame(() => {
@@ -78,7 +92,7 @@ export function useZoomControls({ box, hasDoc, info, doc, page, size, zoom, layo
   const smoothZoom = useCallback((factor: number, cx: number, cy: number) => {
     const el = box.current
     if (!el) return
-    const cur = useStore.getState().zoom
+    const cur = currentZoom()
     const a = zoomAnim.current
     const base = a ? a.target : cur
     const target = clampZoom(base * factor)
@@ -86,17 +100,31 @@ export function useZoomControls({ box, hasDoc, info, doc, page, size, zoom, layo
     const px = (el.scrollLeft + cx - l.left) / cur
     const py = (el.scrollTop + cy - l.top) / cur
     if (a) cancelAnimationFrame(a.raf)
+    if (reducedMotion()) {
+      // sem animação: vai direto ao alvo
+      stopAnim()
+      if (target === useStore.getState().zoom) return
+      anchor.current = { px, py, cx, cy }
+      useStore.setState({ zoom: target })
+      return
+    }
     const anim = { target, px, py, cx, cy, raf: 0 }
     zoomAnim.current = anim
     const step = () => {
-      const { zoom: nz, done } = zoomStep(useStore.getState().zoom, anim.target)
+      const { zoom: nz, done } = zoomStep(currentZoom(), anim.target)
       anchor.current = { px: anim.px, py: anim.py, cx: anim.cx, cy: anim.cy }
-      useStore.setState({ zoom: nz })
-      if (done) zoomAnim.current = null
-      else anim.raf = requestAnimationFrame(step)
+      if (done) {
+        // só o valor final vai para o store principal; os quadros intermediários ficam no liveZoom
+        zoomAnim.current = null
+        useStore.setState({ zoom: nz })
+        useLiveZoom.setState({ z: null })
+      } else {
+        useLiveZoom.setState({ z: nz })
+        anim.raf = requestAnimationFrame(step)
+      }
     }
     anim.raf = requestAnimationFrame(step)
-  }, [box])
+  }, [box, stopAnim])
 
   // reposiciona a rolagem para o ponto sob o cursor continuar no mesmo lugar
   useLayoutEffect(() => {
@@ -134,10 +162,7 @@ export function useZoomControls({ box, hasDoc, info, doc, page, size, zoom, layo
   const zoomAt = useCallback((z: number, px: number, py: number, cx: number, cy: number) => {
     const el = box.current
     if (!el) return
-    if (zoomAnim.current) {
-      cancelAnimationFrame(zoomAnim.current.raf)
-      zoomAnim.current = null
-    }
+    stopAnim()
     const nz = clampZoom(z)
     const place = () => {
       const l = layoutRef.current(useStore.getState().zoom)
@@ -159,7 +184,7 @@ export function useZoomControls({ box, hasDoc, info, doc, page, size, zoom, layo
       anchor.current = null
       place()
     })
-  }, [box])
+  }, [box, stopAnim])
 
   // centraliza um ponto da folha (busca, lista de itens)
   useEffect(() => {
@@ -168,7 +193,7 @@ export function useZoomControls({ box, hasDoc, info, doc, page, size, zoom, layo
       if (!el) return
       const p = (e as CustomEvent<{ x: number; y: number }>).detail
       const l = layoutFor(zoom)
-      el.scrollTo({ left: p.x * zoom + l.left - el.clientWidth / 2, top: p.y * zoom + l.top - el.clientHeight / 2, behavior: 'smooth' })
+      el.scrollTo({ left: p.x * zoom + l.left - el.clientWidth / 2, top: p.y * zoom + l.top - el.clientHeight / 2, behavior: reducedMotion() ? 'auto' : 'smooth' })
     }
     window.addEventListener('traco:center', h)
     return () => window.removeEventListener('traco:center', h)

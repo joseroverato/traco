@@ -9,7 +9,8 @@ import { OverlayPanel } from './OverlayPanel'
 import { IssuesPanel } from './IssuesPanel'
 import { t } from '../i18n'
 import { Rich } from './Rich'
-import { setModeAnimated, withTransition } from '../motion'
+import { setModeAnimated } from '../motion'
+import { TabPill } from './TabPill'
 import { TickSlider } from './TickSlider'
 
 function Thumbs() {
@@ -21,7 +22,7 @@ function Thumbs() {
         const n = markups.filter((m) => m.page === sh.id && m.kind !== 'viewport').length
         const vps = markups.filter((m) => m.page === sh.id && m.kind === 'viewport').length
         return (
-          <button key={sh.id} className={`thumb ${i === page ? 'active' : ''}`} onClick={() => withTransition(() => set({ page: i, selected: [] }), 'fade')}>
+          <button key={sh.id} className={`thumb ${i === page ? 'active' : ''}`} onClick={() => set({ page: i, selected: [] })}>
             <Thumb sheet={sh} width={200} />
             <div className="thumb-meta">
               <span className="thumb-label">{sh.label}</span>
@@ -65,7 +66,7 @@ function EditPanel() {
       <Action icon={RotateCw} label={t('leftpanel.girar_a_direita')} onClick={() => sh && rotateSheets([sh.id], 90)} />
       <Action icon={RotateCcw} label={t('leftpanel.girar_a_esquerda')} onClick={() => sh && rotateSheets([sh.id], -90)} />
       <Action icon={Trash2} label={t('leftpanel.excluir_folha')} danger onClick={() => {
-        if (!sh || s.sheets.length < 2) return s.notify(t('leftpanel.mantenha_ao_menos_uma_folha'))
+        if (!sh || s.sheets.length < 2) return s.notify(t('leftpanel.mantenha_ao_menos_uma_folha'), 'err')
         s.setSheets(s.sheets.filter((x) => x.id !== sh.id))
         s.notify(t('leftpanel.folha_excluida_ctrl_z_desfaz'))
       }} />
@@ -94,6 +95,17 @@ function MeasurePanel() {
         </div>
       </div>
       <div className="dock-group">{t('leftpanel.medir')}</div>
+      <div className="field dock-field"><span>{t('leftpanel.modo_desenho')}</span>
+        <div className="seg wide" role="radiogroup" aria-label={t('leftpanel.modo_desenho')}>
+          <TabPill />
+          {(['click', 'drag'] as const).map((m) => (
+            <button key={m} role="radio" aria-checked={s.drawMode === m} className={s.drawMode === m ? 'active' : ''} onClick={() => { s.set({ drawMode: m }); try { localStorage.setItem('traco.drawMode', JSON.stringify(m)) } catch { /* sem storage */ } }}>
+              {t(m === 'click' ? 'leftpanel.modo_clique' : 'leftpanel.modo_arrastar')}
+            </button>
+          ))}
+        </div>
+      </div>
+      <p className="muted small dock-note">{t('leftpanel.modo_desenho_ajuda')}</p>
       <Action icon={Scaling} label={t('leftpanel.calibrar_por_cota')} hint="S" active={s.tool === 'calibrate'} onClick={() => tool('calibrate')} />
       <Action icon={Ruler} label={t('leftpanel.comprimento')} hint="L" active={s.tool === 'length'} onClick={() => tool('length')} />
       <Action icon={Pentagon} label={t('leftpanel.area_vertice_a_vertice')} hint="K" active={s.tool === 'area'} onClick={() => tool('area')} />

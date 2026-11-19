@@ -1,4 +1,5 @@
 import './index.css'
+import './r3.css' // casca R3 (barra de título, faixa, barra de status): depois do index.css para valer sobre ele
 import './theme'
 import { initI18n } from './i18n'
 

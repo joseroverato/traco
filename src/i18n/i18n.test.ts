@@ -62,7 +62,7 @@ describe('t()', () => {
 
   it('troca de idioma muda o texto', async () => {
     await setLang('en', false)
-    expect(t('topbar.revisar')).toBe('Review')
+    expect(t('topbar.pranchas')).toBe('Sheets')
     await setLang('de', false)
     expect(t('railtools.tarja_corrigir_texto')).toBe('Schwärzen / Text korrigieren')
     await setLang('pt', false)

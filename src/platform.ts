@@ -23,7 +23,8 @@ export interface UpdateState {
   checkedAt?: number
 }
 export interface DesktopApi {
-  info(): Promise<{ version: string; platform: string; userData: string }>
+  /** `glass`: escolha feita no instalador (false = painéis opacos); undefined quando não houve. */
+  info(): Promise<{ version: string; platform: string; userData: string; glass?: boolean }>
   openFile(): Promise<{ name: string; path: string; data: ArrayBuffer } | null>
   readPath(path: string): Promise<{ name: string; path: string; data: ArrayBuffer }>
   saveFile(opts: { defaultName: string; data: Uint8Array | string; filters?: { name: string; extensions: string[] }[]; path?: string }): Promise<string | null>
@@ -36,9 +37,12 @@ export interface DesktopApi {
   openExternal?(url: string): Promise<void>
   quit?(): void
   toggleFullScreen?(): void
+  /** Cor dos botões da janela (minimizar, maximizar, fechar), que no Windows ficam sobre a barra do app. */
+  setTitleBar?(c: { color: string; symbolColor: string }): void
   onCommand(handler: (req: { id: string; name: string; args: Record<string, unknown> }) => void): void
   replyCommand(id: string, result: { content: ToolContent[]; isError?: boolean }): void
   onOpenPath(handler: (path: string) => void): void
+  takePending?(): Promise<string | null>
   setDirty?(v: boolean): void
   closeNow?(): void
   onSaveAndClose?(h: () => void): void
@@ -62,5 +66,6 @@ export interface DesktopApi {
   }
 }
 
-export const desktop: DesktopApi | undefined = (window as unknown as { traco?: DesktopApi }).traco
+// `window` não existe nos testes que rodam fora do navegador (ex.: theme.test.ts)
+export const desktop: DesktopApi | undefined = typeof window === 'undefined' ? undefined : (window as unknown as { traco?: DesktopApi }).traco
 export const IS_DESKTOP = !!desktop

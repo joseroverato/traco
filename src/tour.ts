@@ -14,11 +14,11 @@ const q = (sel: string) => () => document.querySelector<HTMLElement>(sel)
 const byText = (sel: string, text: string) => () => Array.from(document.querySelectorAll<HTMLElement>(sel)).find((e) => e.textContent?.trim() === text) ?? null
 
 export const TOUR_STEPS: TourStep[] = [
-  { get title() { return t('tour.1_defina_a_escala') }, get text() { return t('tour.toda_medida_depende_dela_o') }, find: q('.scale-banner') },
-  { get title() { return t('tour.2_escolha_uma_ferramenta') }, get text() { return t('tour.passe_o_mouse_em_qualquer') }, find: q('.rail') },
-  { get title() { return t('tour.3_marcadores_servicos') }, get text() { return t('tour.cada_marcador_e_um_servico') }, find: q('aside.panel.right') },
-  { get title() { return t('tour.4_o_quantitativo') }, get text() { return t('tour.aqui_aparece_o_total_de') }, find: q('section.panel.bottom') },
-  { get title() { return t('tour.5_veja_em_3d') }, get text() { return t('tour.desenhe_um_solido_sobre_a') }, find: byText('.topbar button', '3D') },
+  { get title() { return t('tour.1_defina_a_escala') }, get text() { return t('tour.toda_medida_depende_dela_o') }, find: () => q('.al-host .al')() ?? q('.rx-bot .stb.esc')() }, // o aviso de escala; sem ele, o controle Escala da folha da barra de status
+  { get title() { return t('tour.2_escolha_uma_ferramenta') }, get text() { return t('tour.passe_o_mouse_em_qualquer') }, find: q('.rx-top .rb .grp[data-grp="measure"]') }, // grupo Medir da faixa de opções (R3)
+  { get title() { return t('tour.3_marcadores_servicos') }, get text() { return t('tour.cada_marcador_e_um_servico') }, find: q('.pal-sec[data-pal="marc"]') }, // paleta Marcadores (pilha da esquerda)
+  { get title() { return t('tour.4_o_quantitativo') }, get text() { return t('tour.aqui_aparece_o_total_de') }, find: q('.rx.pal-col.bottom .pal.pb') }, // paleta inferior (Quantitativo)
+  { get title() { return t('tour.5_veja_em_3d') }, get text() { return t('tour.desenhe_um_solido_sobre_a') }, find: byText('.rx-top .rt-l button', '3D') }, // aba 3D da faixa
 ]
 
 const KEY = 'traco.tourDone'
@@ -27,6 +27,15 @@ export const tourDone = () => {
 }
 export const markTourDone = () => {
   try { localStorage.setItem(KEY, '1') } catch { /* sem storage */ }
+}
+
+const WELCOME_KEY = 'traco.welcomed'
+/** Primeira abertura do app de PC depois da instalação: ainda não mostramos as boas-vindas. */
+export const firstRun = () => {
+  try { return localStorage.getItem(WELCOME_KEY) !== '1' && localStorage.getItem(KEY) !== '1' } catch { return false }
+}
+export const markWelcomed = () => {
+  try { localStorage.setItem(WELCOME_KEY, '1') } catch { /* sem storage */ }
 }
 
 export const startTour = () => useStore.setState({ tour: 0 })
@@ -44,7 +53,7 @@ export async function openSample() {
     if (await loadFile(file) && !isMobileNow()) startTour()
   } catch (e) {
     console.error(e)
-    st.notify(t('tour.nao_foi_possivel_abrir_a'))
+    st.notify(t('tour.nao_foi_possivel_abrir_a'), 'err')
   }
 }
 

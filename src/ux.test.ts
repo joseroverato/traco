@@ -14,7 +14,7 @@ const cross = () => {
   idx.add(50, 0, 50, 100)
   return idx
 }
-const ids = (items: MenuItem[]) => items.filter((i): i is Exclude<MenuItem, { sep: true }> => !('sep' in i)).map((i) => i.id)
+const ids = (items: MenuItem[]) => items.filter((i): i is Exclude<MenuItem, { sep: true } | { title: string }> => !('sep' in i) && !('title' in i)).map((i) => i.id)
 
 describe('snap por tipo de ponto (alinhamento de sobreposição)', () => {
   it('só interseções: acha o cruzamento e ignora extremidades', () => {

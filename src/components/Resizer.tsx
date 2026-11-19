@@ -1,7 +1,7 @@
 import { useStore } from '../store'
 import { t } from '../i18n'
 
-const LIMITS = { h: [120, 0.7], v: [260, 0.5] } as const
+const LIMITS = { h: [96, 0.7], v: [232, 0.5] } as const
 
 /** Alça para arrastar e mudar a altura do quantitativo (h) ou a largura do painel direito (v). Duplo clique volta ao padrão. */
 export function Resizer({ dir }: { dir: 'h' | 'v' }) {
@@ -38,7 +38,7 @@ export function Resizer({ dir }: { dir: 'h' | 'v' }) {
     el.addEventListener('pointerup', up)
   }
   const reset = () => {
-    const v = dir === 'h' ? 240 : 300
+    const v = dir === 'h' ? 132 : 240
     useStore.setState({ [key]: v } as Partial<ReturnType<typeof useStore.getState>>)
     save(v)
   }

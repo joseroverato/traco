@@ -1,13 +1,15 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Cloud, FileUp, Minus, Plus } from 'lucide-react'
 import { uid, useStore } from '../store'
-import { addSourceOnly } from '../project'
 import { renderSheet } from '../pdf'
-import type { Sheet } from '../types'
-import { t } from '../i18n'
+import { t, tp } from '../i18n'
+import { TabPill } from './TabPill'
+import { useIsMobile } from '../mobile'
+import { Glyph } from './Icon'
+import { clearCompare, compareSelection, compareZoomBy, pickOtherPdf, publishCompare, regionsLabel, resetCompareUi, setCompareA, setCompareB, setCompareView, useCompareUi } from '../compareShare'
+import type { CompareView as View, CompareOption } from '../compareShare'
 
 interface Region { x: number; y: number; w: number; h: number; px: number }
-type View = 'overlay' | 'side' | 'diff'
 
 const RES = 2200 // largura de renderização para comparação (px)
 
@@ -51,24 +53,69 @@ function findRegions(A: ImageData, B: ImageData, cell = 14, minPx = 6): Region[]
   return out.sort((a, b) => b.px - a.px)
 }
 
+
+/** Barra do celular (sem faixa de opções): revisões A e B, carregar PDF, modo, aviso e Nuvens em B. No PC isso fica na faixa. */
+function MobileSide({ options, aId, bId, view, mismatch, busy, regions, bIsLocal, toClouds }: {
+  options: CompareOption[]; aId: string; bId: string; view: View; mismatch: boolean; busy: boolean; regions: number; bIsLocal: boolean; toClouds: () => void
+}) {
+  const Select = ({ value, onChange }: { value: string; onChange: (v: string) => void }) => (
+    <select value={value} onChange={(e) => onChange(e.target.value)}>
+      <optgroup label={t('compareview.conjunto_atual')}>{options.filter((o) => !o.ext).map((o, i) => <option key={o.sh.id} value={o.sh.id}>{i + 1}. {o.sh.label}</option>)}</optgroup>
+      {options.some((o) => o.ext) && <optgroup label={t('compareview.outro_pdf')}>{options.filter((o) => o.ext).map((o) => <option key={o.sh.id} value={o.sh.id}>{o.sh.label}</option>)}</optgroup>}
+    </select>
+  )
+  return (
+    <aside className="panel compare-side">
+      <div className="pad stack">
+        <label className="field"><span><i className="sw red" /> {t('compareview.revisao_antiga_a')}</span><Select value={aId} onChange={setCompareA} /></label>
+        <label className="field"><span><i className="sw blue" /> {t('compareview.revisao_nova_b')}</span><Select value={bId} onChange={setCompareB} /></label>
+        <button className="btn sm" onClick={pickOtherPdf}><FileUp size={14} /> {t('compareview.carregar_outro_pdf')}</button>
+        <div className="seg wide"><TabPill />
+          <button className={view === 'overlay' ? 'active' : ''} onClick={() => setCompareView('overlay')}>{t('compareview.sobrepor')}</button>
+          <button className={view === 'diff' ? 'active' : ''} onClick={() => setCompareView('diff')}>{t('compareview.so_diferencas')}</button>
+          <button className={view === 'side' ? 'active' : ''} onClick={() => setCompareView('side')}>{t('compareview.lado_a_lado')}</button>
+        </div>
+        {mismatch && <span className="warn">{t('compareview.as_folhas_tem_tamanhos_diferentes')}</span>}
+      </div>
+      <div className="region-head">
+        <span>{busy ? t('compareview.analisando') : regionsLabel(regions)}</span>
+        <button className="btn sm primary" disabled={!regions || !bIsLocal} onClick={toClouds} title={bIsLocal ? '' : t('compareview.a_revisao_nova_precisa_estar')}><Cloud size={14} /> {t('compareview.nuvens_em_b')}</button>
+      </div>
+    </aside>
+  )
+}
+
+/** Cabeçalho de um painel do lado a lado: letra da revisão com a cor dela, nome e a folha. */
+function PaneHead({ letter, title, sheet, file }: { letter: 'A' | 'B'; title: string; sheet: string; file: string }) {
+  return (
+    <div className="rx pnh">
+      <span className="tag"><i className={`sw cz ${letter === 'A' ? 'red' : 'blue'}`} />{letter}</span>
+      <b>{title}</b>
+      <span>{sheet} · {file}</span>
+    </div>
+  )
+}
+
 export function CompareView() {
   const s = useStore()
-  const [extra, setExtra] = useState<Sheet[]>([])
-  const options = useMemo(() => [...s.sheets.map((x) => ({ sh: x, ext: false })), ...extra.map((x) => ({ sh: x, ext: true }))], [s.sheets, extra])
-  const [aId, setA] = useState<string>(s.sheets[0]?.id ?? '')
-  const [bId, setB] = useState<string>(s.sheets[1]?.id ?? s.sheets[0]?.id ?? '')
-  const [view, setView] = useState<View>('overlay')
-  const [zoom, setZoom] = useState(0.5)
+  const ui = useCompareUi()
+  const mobile = useIsMobile()
+  const { view, zoom } = ui
+  const cs = compareSelection(s.sheets, ui)
   const [regions, setRegions] = useState<Region[]>([])
   const [busy, setBusy] = useState(false)
   const [dims, setDims] = useState({ w: 0, h: 0, scale: 1, mismatch: false })
   const canvas = useRef<HTMLCanvasElement>(null)
-  const side = useRef<HTMLCanvasElement>(null)
+  const sideA = useRef<HTMLCanvasElement>(null)
+  const sideB = useRef<HTMLCanvasElement>(null)
+  const scrollMain = useRef<HTMLDivElement>(null)
+  const scrollA = useRef<HTMLDivElement>(null)
+  const scrollB = useRef<HTMLDivElement>(null)
+  const syncing = useRef(false)
   const data = useRef<{ A?: ImageData; B?: ImageData }>({})
-  const input = useRef<HTMLInputElement>(null)
-  const A = options.find((o) => o.sh.id === aId)?.sh
-  const B = options.find((o) => o.sh.id === bId)?.sh
-  const bIsLocal = !!B && s.sheets.some((x) => x.id === B.id)
+  const A = cs.a?.sh
+  const B = cs.b?.sh
+  const bIsLocal = !!cs.b && !cs.b.ext
 
   useEffect(() => {
     let alive = true
@@ -97,17 +144,16 @@ export function CompareView() {
     const { A: ia, B: ib } = data.current
     if (!ia || !ib || !dims.w) return
     if (view === 'side') {
-      const c = side.current!
-      c.width = ia.width + ib.width + 24
-      c.height = Math.max(ia.height, ib.height)
-      const ctx = c.getContext('2d')!
-      ctx.fillStyle = '#888'
-      ctx.fillRect(0, 0, c.width, c.height)
-      ctx.putImageData(ia, 0, 0)
-      ctx.putImageData(ib, ia.width + 24, 0)
+      for (const [c, img] of [[sideA.current, ia], [sideB.current, ib]] as const) {
+        if (!c) continue
+        c.width = img.width
+        c.height = img.height
+        c.getContext('2d')!.putImageData(img, 0, 0)
+      }
       return
     }
-    const c = canvas.current!
+    const c = canvas.current
+    if (!c) return
     c.width = dims.w
     c.height = dims.h
     const ctx = c.getContext('2d')!
@@ -147,82 +193,92 @@ export function CompareView() {
       ],
     })
     useStore.setState({ mode: 'review', page: s.sheets.findIndex((x) => x.id === B.id), tool: 'select', selected: [] })
-    s.notify(t('compareview.nuvens_criadas_em', { length: ms.length, label: B.label }))
+    s.notify(tp('compareview.nuvens_criadas', ms.length, { label: B.label }))
   }
 
-  const onFile = async (f: File) => {
-    const { sheets } = await addSourceOnly(f)
-    const named = sheets.map((x) => ({ ...x, label: `${f.name.replace(/\.pdf$/i, '')} · ${x.label}` }))
-    setExtra([...extra, ...named])
-    setA(named[0].id)
-    s.notify(t('compareview.carregado_para_comparacao', { name: f.name }))
-  }
-
+  /** Leva a vista até o centro da região, em cada painel de rolagem (um só, ou os dois no lado a lado). */
   const goTo = (r: Region) => {
-    const el = canvas.current?.parentElement?.parentElement
-    if (!el) return
-    el.scrollTo({ left: (r.x + r.w / 2) * zoom - el.clientWidth / 2, top: (r.y + r.h / 2) * zoom - el.clientHeight / 2, behavior: 'smooth' })
+    const pairs: [HTMLDivElement | null, HTMLCanvasElement | null][] = view === 'side' ? [[scrollA.current, sideA.current], [scrollB.current, sideB.current]] : [[scrollMain.current, canvas.current]]
+    for (const [el, c] of pairs) {
+      if (!el || !c) continue
+      const er = el.getBoundingClientRect(), cr = c.getBoundingClientRect()
+      el.scrollTo({
+        left: el.scrollLeft + (cr.left - er.left) + (r.x + r.w / 2) * zoom - el.clientWidth / 2,
+        top: el.scrollTop + (cr.top - er.top) + (r.y + r.h / 2) * zoom - el.clientHeight / 2,
+        behavior: 'smooth',
+      })
+    }
   }
 
-  if (!s.sheets.length) return <div className="pages-view empty"><p className="muted">{t('compareview.abra_um_pdf_para_comparar')}</p></div>
+  // a paleta "Regiões alteradas", a faixa (Nuvens em B) e a barra de status leem o resultado daqui; chamam sempre a versão mais nova das funções
+  const latest = useRef<{ toClouds: () => void; goTo: (i: number) => void }>({ toClouds, goTo: () => {} })
+  latest.current = { toClouds, goTo: (i) => regions[i] && goTo(regions[i]) }
+  useEffect(() => {
+    publishCompare({
+      regions: regions.map((r) => ({ w: Math.round(r.w / dims.scale), h: Math.round(r.h / dims.scale), px: r.px })),
+      scale: dims.scale, busy, mismatch: dims.mismatch, bLocal: bIsLocal,
+      goTo: (i) => latest.current.goTo(i), toClouds: () => latest.current.toClouds(),
+    })
+  }, [regions, dims.scale, dims.mismatch, busy, bIsLocal])
+  useEffect(() => () => { clearCompare(); resetCompareUi() }, [])
 
-  const Select = ({ value, onChange }: { value: string; onChange: (v: string) => void }) => (
-    <select value={value} onChange={(e) => onChange(e.target.value)}>
-      <optgroup label={t('compareview.conjunto_atual')}>{options.filter((o) => !o.ext).map((o, i) => <option key={o.sh.id} value={o.sh.id}>{i + 1}. {o.sh.label}</option>)}</optgroup>
-      {extra.length > 0 && <optgroup label={t('compareview.outro_pdf')}>{options.filter((o) => o.ext).map((o) => <option key={o.sh.id} value={o.sh.id}>{o.sh.label}</option>)}</optgroup>}
-    </select>
-  )
+  if (!s.sheets.length) return <div className="pages-view empty rx"><p className="vz">{t('compareview.abra_um_pdf_para_comparar')}</p></div>
+
+  const sync = (from: HTMLDivElement, to: HTMLDivElement | null) => {
+    if (!to || syncing.current) return
+    syncing.current = true
+    to.scrollLeft = from.scrollLeft
+    to.scrollTop = from.scrollTop
+    requestAnimationFrame(() => { syncing.current = false })
+  }
+  const fileOf = (o: CompareOption | undefined) => (o && !o.ext ? s.fileName : t('compareview.outro_pdf'))
+  const sheetW = dims.w * zoom, sheetH = dims.h * zoom
 
   return (
     <div className="compare">
-      <aside className="panel compare-side">
-        <div className="pad stack">
-          <label className="field"><span><i className="sw red" /> {t('compareview.revisao_antiga_a')}</span><Select value={aId} onChange={setA} /></label>
-          <label className="field"><span><i className="sw blue" /> {t('compareview.revisao_nova_b')}</span><Select value={bId} onChange={setB} /></label>
-          <button className="btn sm" onClick={() => input.current?.click()}><FileUp size={14} /> {t('compareview.carregar_outro_pdf')}</button>
-          <div className="seg wide">
-            <button className={view === 'overlay' ? 'active' : ''} onClick={() => setView('overlay')}>{t('compareview.sobrepor')}</button>
-            <button className={view === 'diff' ? 'active' : ''} onClick={() => setView('diff')}>{t('compareview.so_diferencas')}</button>
-            <button className={view === 'side' ? 'active' : ''} onClick={() => setView('side')}>{t('compareview.lado_a_lado')}</button>
-          </div>
-          <div className="legend small">
-            <span><i className="sw red" /> {t('compareview.so_na_antiga_removido')}</span>
-            <span><i className="sw blue" /> {t('compareview.so_na_nova_acrescentado')}</span>
-            <span><i className="sw black" /> {t('compareview.igual_nas_duas')}</span>
-          </div>
-          {dims.mismatch && <span className="warn">{t('compareview.as_folhas_tem_tamanhos_diferentes')}</span>}
+      {mobile && <MobileSide options={cs.options} aId={cs.aId} bId={cs.bId} view={view} mismatch={dims.mismatch} busy={busy} regions={regions.length} bIsLocal={bIsLocal} toClouds={toClouds} />}
+      {!mobile && dims.mismatch && (
+        <div className="rx al-host">
+          <div className="al" role="alert"><Glyph name="alerta" size={12} /><span><b>{t('compareview.as_folhas_tem_tamanhos_diferentes')}</b></span></div>
         </div>
-        <div className="region-head">
-          <span>{busy ? t('compareview.analisando') : t('compareview.regiao_oes_alterada_s', { length: regions.length })}</span>
-          <button className="btn sm primary" disabled={!regions.length || !bIsLocal} onClick={toClouds} title={bIsLocal ? '' : t('compareview.a_revisao_nova_precisa_estar')}><Cloud size={14} /> {t('compareview.nuvens_em_b')}</button>
-        </div>
-        <div className="regions">
-          {regions.map((r, i) => (
-            <button key={i} className="region" onClick={() => goTo(r)}>
-              <span className="badge">{i + 1}</span>
-              <span>{Math.round(r.w / dims.scale)}×{Math.round(r.h / dims.scale)} pt</span>
-              <span className="muted small">{r.px} px</span>
-            </button>
-          ))}
-        </div>
-      </aside>
+      )}
       <div className="compare-stage">
-        <div className="compare-zoom">
-          <button className="icon-btn" onClick={() => setZoom(Math.max(0.1, zoom / 1.25))}><Minus size={16} /></button>
-          <span className="zoom-val">{Math.round(zoom * 100)}%</span>
-          <button className="icon-btn" onClick={() => setZoom(Math.min(4, zoom * 1.25))}><Plus size={16} /></button>
-        </div>
-        <div className="compare-scroll">
-          <div className="compare-canvas" style={{ width: (view === 'side' ? dims.w * 2 + 24 : dims.w) * zoom, height: dims.h * zoom }}>
-            <canvas ref={canvas} style={{ display: view === 'side' ? 'none' : 'block', width: dims.w * zoom, height: dims.h * zoom }} />
-            <canvas ref={side} style={{ display: view === 'side' ? 'block' : 'none', width: (dims.w * 2 + 24) * zoom, height: dims.h * zoom }} />
-            {view !== 'side' && regions.map((r, i) => (
-              <div key={i} className="region-box" style={{ left: r.x * zoom, top: r.y * zoom, width: r.w * zoom, height: r.h * zoom }}><span>{i + 1}</span></div>
-            ))}
+        {mobile && (
+          <div className="compare-zoom">
+            <button className="icon-btn" onClick={() => compareZoomBy(1 / 1.25)}><Minus size={16} /></button>
+            <span className="zoom-val">{Math.round(zoom * 100)}%</span>
+            <button className="icon-btn" onClick={() => compareZoomBy(1.25)}><Plus size={16} /></button>
           </div>
-        </div>
+        )}
+        {view === 'side' ? (
+          <div className="rx cmp-side">
+            <div className="cmp-pane" aria-label={t('compareview.revisao_antiga_a')}>
+              <PaneHead letter="A" title={t('compareview.revisao_antiga_a')} sheet={A?.label ?? ''} file={fileOf(cs.a)} />
+              <div className="cmp-scroll" ref={scrollA} onScroll={(e) => sync(e.currentTarget, scrollB.current)}>
+                <div className="cmp-mesa"><div className="cmp-sheet" style={{ width: sheetW, height: sheetH }}><canvas ref={sideA} style={{ width: sheetW, height: sheetH }} /></div></div>
+              </div>
+            </div>
+            <i className="dvs" />
+            <div className="cmp-pane" aria-label={t('compareview.revisao_nova_b')}>
+              <PaneHead letter="B" title={t('compareview.revisao_nova_b')} sheet={B?.label ?? ''} file={fileOf(cs.b)} />
+              <div className="cmp-scroll" ref={scrollB} onScroll={(e) => sync(e.currentTarget, scrollA.current)}>
+                <div className="cmp-mesa"><div className="cmp-sheet" style={{ width: sheetW, height: sheetH }}><canvas ref={sideB} style={{ width: sheetW, height: sheetH }} /></div></div>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="rx cmp-scroll" ref={scrollMain}>
+            <div className="cmp-mesa">
+              <div className="cmp-sheet" style={{ width: sheetW, height: sheetH }}>
+                <canvas ref={canvas} style={{ width: sheetW, height: sheetH }} />
+                {regions.map((r, i) => (
+                  <div key={i} className="region-box" style={{ left: r.x * zoom, top: r.y * zoom, width: r.w * zoom, height: r.h * zoom }}><span>{i + 1}</span></div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
-      <input ref={input} type="file" accept=".pdf" hidden onChange={(e) => { const f = e.target.files?.[0]; if (f) onFile(f); e.target.value = '' }} />
     </div>
   )
 }

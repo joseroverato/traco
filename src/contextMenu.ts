@@ -3,6 +3,7 @@ import { curSheet, useStore } from './store'
 import { requestCloseProject } from './project'
 import { duplicateMarkups } from './viewerActions'
 import { t } from './i18n'
+import { currentZoom } from './liveZoom'
 import type { MenuItem } from './components/ContextMenu'
 
 /** Comandos que o Viewer entende (ele guarda o estado local: contagem em andamento, modo de copiar texto). */
@@ -58,7 +59,7 @@ export function viewerMenu(hitId: string | null): MenuItem[] {
     { id: 'scale', label: t('menu.ajustar_escala'), icon: Scaling, disabled: !sh, onClick: () => sh && st.set({ calibrating: { page: sh.id, length: 0 } }) },
     { id: 'fitp', label: t('menu.ajustar_a_folha'), icon: Maximize, hint: '0', disabled: !sh, onClick: () => st.set({ fitReq: { mode: 'page', n: Date.now() } }) },
     { id: 'fitw', label: t('menu.ajustar_a_largura'), icon: MoveHorizontal, hint: 'W', disabled: !sh, onClick: () => st.set({ fitReq: { mode: 'width', n: Date.now() } }) },
-    { id: 'z100', label: t('menu.zoom_100'), icon: ZoomIn, disabled: !sh, onClick: () => zoomBy(1 / (useStore.getState().zoom || 1)) },
+    { id: 'z100', label: t('menu.zoom_100'), icon: ZoomIn, disabled: !sh, onClick: () => zoomBy(1 / (currentZoom() || 1)) },
     { sep: true },
     { id: 'snap', label: t('menu.snap'), icon: Magnet, hint: 'F3', checked: st.snap, onClick: () => st.set({ snap: !st.snap }) },
     { id: 'ortho', label: t('menu.ortogonal'), icon: Move, hint: 'F8', checked: st.ortho, onClick: () => st.set({ ortho: !st.ortho }) },

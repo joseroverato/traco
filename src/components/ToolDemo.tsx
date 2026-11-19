@@ -111,7 +111,7 @@ function Box({ s }: { s: Extract<DemoShape, { t: 'box' }> }) {
       <Appear at={t1}>
         <g transform={`translate(${f(cx)} ${f(topY(h))})`}>
           <animateTransform attributeName="transform" type="translate" values={handle} keyTimes={times(...ks)} {...loop} />
-          <polygon points="-5,2 5,2 0,-9" fill="#ff8a1f" stroke="#fff" strokeWidth={0.8} strokeLinejoin="round" />
+          <polygon points="-5,2 5,2 0,-9" fill="var(--demo-ac)" stroke="#fff" strokeWidth={0.8} strokeLinejoin="round" />
         </g>
       </Appear>
     </g>
@@ -143,7 +143,7 @@ function Shape({ s }: { s: DemoShape }) {
       return <Stroke d={ellipseD(s.c, s.rx, s.ry)} color={s.color ?? '#e5484d'} from={t0} to={t1} />
     case 'dots': {
       const r = s.r ?? 4
-      const c = s.color ?? '#f76b15'
+      const c = s.color ?? 'var(--demo-ac)'
       const tt = s.pts.length > 1 ? cursorTimes(s.pts, t0, t1) : [t0]
       return (
         <g>

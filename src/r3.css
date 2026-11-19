@@ -1,0 +1,896 @@
+/* ================================================================ R3 — casca do app (fase 1)
+   Barra de título, abas e faixa de opções (.rx-top) e barra de status (.rx-bot). Gerado a partir de rodada2/base.css
+   (seções 2–6, 13, 14, 16, 19–21 e 28), com o prefixo `.tr ` trocado por `.rx ` para não vazar para o resto do app.
+   Os tokens (--bg, --rib, --ph, --hi, --ac…) vêm do :root em index.css e da paleta do usuário (theme.ts): nada é redefinido aqui,
+   só os apelidos que a base usa (--tx, --tx2, --tx3, --err, --sb…). Tema claro: :root[data-theme='light']. */
+.rx {
+  --tx: var(--text); --tx2: var(--text-2); --tx3: var(--text-3);
+  --ac-soft: color-mix(in srgb, var(--ac) 30%, transparent);
+  --on-ac: var(--on-accent);
+  --err: var(--danger-text);
+  --sb: #2f3033; --sb-th: #74777e;
+  box-sizing: border-box; color: var(--tx);
+  font: 12px/1.25 "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif; font-variant-numeric: tabular-nums;
+  -webkit-font-smoothing: antialiased; cursor: default; user-select: none;
+}
+:root[data-theme='light'] .rx { --sb: #b8bcc1; --sb-th: #6a6f77; --warn: #8a5800; }
+:root[data-theme='light'] .rx .bb.on { box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.25); }
+.rx *, .rx *::before, .rx *::after { box-sizing: border-box; }
+.rx button { font: inherit; color: inherit; background: none; border: 0; padding: 0; margin: 0; cursor: default; text-align: left; border-radius: 0; }
+.rx button:focus-visible { outline: 2px solid var(--ac); outline-offset: -2px; }
+.rx button:disabled { opacity: 0.4; }
+.rx h2, .rx h3, .rx p { font: inherit; margin: 0; }
+.rx svg { flex: none; display: block; }
+
+/* o conjunto barra de título + abas + faixa (30 / 27 / 96 px) e a barra de status (24 px) */
+.rx-top { position: relative; z-index: 20; display: grid; grid-template-rows: 30px 27px 96px; grid-template-columns: minmax(0, 1fr); background: var(--bg); min-width: 0; }
+.rx-top > * { min-width: 0; }
+.rx-bot { min-width: 0; }
+.rx-bot > .st { height: 24px; }
+.app:not(.mobile) { grid-template-rows: auto minmax(0, 1fr) 24px; }
+.app:not(.mobile) > .rx-top { grid-row: 1; }
+.app:not(.mobile) > .shell { grid-row: 2; }
+.app:not(.mobile) > .rx-bot { grid-row: 3; }
+
+/* app de PC: a barra de título arrasta a janela; os botões do sistema (titleBarOverlay) ficam à direita, então reserva o respiro */
+.app:not(.mobile) .rx .tb { -webkit-app-region: drag; padding-right: calc(100vw - env(titlebar-area-x, 0px) - env(titlebar-area-width, 100vw) + 6px); }
+.rx .tb :is(button, input, select, a) { -webkit-app-region: no-drag; }
+.rx .tb .tt { pointer-events: none; }
+.rx .tb .tt .tu { font-size: 12px; }
+.rx .ib.badge { position: relative; }
+.rx .ib.badge::after { content: ""; position: absolute; top: 3px; right: 3px; width: 7px; height: 7px; background: var(--ac); border: 1px solid var(--bg); }
+.rx .ib.on { background: var(--hi2); box-shadow: inset 0 -2px 0 var(--ac); }
+.rx .rt-l button:disabled { opacity: 0.45; }
+.rx .bb[aria-disabled="true"], .rx .sb[aria-disabled="true"] { opacity: 0.45; }
+.rx .sb .gl { margin-left: 2px; }
+.rx .sb .sl em { font-style: normal; color: var(--tx3); }
+.rx .grp > .gb > .vs2 { align-self: center; }
+.rx .mn { top: 56px; left: 4px; }
+.rx .mn-i:hover:not(:disabled), .rx .mn-i:focus-visible { background: var(--hi2); border-color: var(--hi2-ln); }
+.rx .mn-i:disabled { opacity: 0.45; }
+
+/* ---------- 2. miudezas ---------- */
+.rx .ic { color: var(--ico); }                /* ícone de função (32 ou 16 px) */
+.rx .gl { color: var(--tx2); }                /* glifo de interface (12 ou 10 px) */
+.rx .n { font-variant-numeric: tabular-nums; }
+.rx .mut { color: var(--tx3); }
+.rx .sp { flex: 1 1 auto; }
+.rx kbd { font: inherit; color: var(--tx3); }
+.rx .lb { color: var(--tx3); white-space: nowrap; }
+.rx .cnt { color: var(--tx3); font-weight: 400; }
+.rx .vs { width: 1px; height: 16px; background: var(--ln2); margin: 0 4px; flex: none; }
+.rx .cz { width: 11px; height: 11px; flex: none; border: 1px solid var(--tx3); }            /* amostra de cor */
+.rx .ck { width: 13px; height: 13px; flex: none; border: 1px solid var(--tx3); background: var(--in); display: inline-flex; align-items: center; justify-content: center; } /* caixa de marcar */
+.rx .ck .gl { color: var(--tx); }
+
+/* ---------- 3. botões e campos ---------- */
+.rx .ib { width: 24px; height: 22px; display: inline-flex; align-items: center; justify-content: center; border-radius: 2px; flex: none; } /* botão só de ícone: só para comandos de janela e de paleta */
+.rx .ib:hover { background: rgba(128, 128, 128, 0.22); }
+.rx .tbn { display: inline-flex; align-items: center; gap: 5px; height: 22px; padding: 0 7px 0 4px; border: 1px solid var(--ln2); background: var(--btn); border-radius: 2px; white-space: nowrap; flex: none; } /* botão de barra: ícone 16 + rótulo */
+.rx .tbn.txt { padding: 0 8px; }
+.rx .btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 26px; min-width: 84px; padding: 0 12px; border: 1px solid var(--ln2); background: var(--btn); border-radius: 2px; white-space: nowrap; } /* botão de diálogo */
+.rx .btn.pri { border-color: var(--ac); box-shadow: inset 0 0 0 1px var(--ac); font-weight: 600; }
+.rx .in { display: flex; align-items: center; height: 22px; padding: 0 6px; background: var(--in); border: 1px solid var(--ln2); color: var(--tx3); border-radius: 2px; white-space: nowrap; overflow: hidden; } /* campo de texto (vazio = dica em --tx3) */
+.rx .in.v { color: var(--tx); }
+.rx .cb { display: inline-flex; align-items: center; gap: 6px; height: 22px; padding: 0 6px; background: var(--in); border: 1px solid var(--ln2); border-radius: 2px; white-space: nowrap; min-width: 0; } /* lista suspensa fechada */
+.rx .cb > span { overflow: hidden; text-overflow: ellipsis; flex: 1 1 auto; }
+.rx .sg { display: inline-flex; }
+
+/* ---------- 4. barra de título + acesso rápido (30 px) ---------- */
+.rx .tb { display: flex; align-items: center; background: var(--bg); border-bottom: 1px solid var(--ln); padding-left: 8px; position: relative; }
+.rx .logo { display: flex; margin-right: 8px; }                                   /* só o logo, nunca o nome ao lado */
+.rx .qa { display: flex; align-items: center; }
+.rx .tt { position: absolute; left: 50%; top: 0; height: 29px; transform: translateX(-50%); display: flex; align-items: center; gap: 10px; white-space: nowrap; }
+.rx .tn { font-weight: 600; }
+.rx .tu { color: var(--tx3); }
+.rx .tr2 { margin-left: auto; display: flex; align-items: center; gap: 2px; padding-right: 6px; }
+.rx .wc { display: flex; align-self: stretch; }
+.rx .ib.w { width: 44px; height: 100%; border-radius: 0; }
+.rx .ib.w .gl { color: var(--tx); }
+
+/* ---------- 5. abas da faixa (27 px) ---------- */
+.rx .rt { display: flex; align-items: flex-end; background: var(--rib2); padding: 0 6px 0 4px; border-bottom: 1px solid var(--ln); }
+.rx .am-btn { align-self: center; height: 21px; padding: 0 8px 0 10px; margin-right: 6px; display: inline-flex; align-items: center; gap: 6px; background: var(--btn); border: 1px solid var(--hi2-ln); border-radius: 2px; font-weight: 600; } /* menu Arquivo */
+.rx .am-btn.on { background: var(--hi); border-color: var(--ac); }
+.rx .rt-l { display: flex; align-self: stretch; align-items: flex-end; }
+.rx .rt-l button { height: 24px; padding: 0 13px; display: inline-flex; align-items: center; gap: 5px; color: var(--tx2); border: 1px solid transparent; border-bottom: 0; border-radius: 2px 2px 0 0; margin-bottom: -1px; }
+.rx .rt-l button.on { background: var(--rib); color: var(--tx); font-weight: 600; border-color: var(--ln2); box-shadow: inset 0 2px 0 var(--ac); height: 25px; }
+.rx .rt-l button.ctx { color: var(--ctx); border-color: var(--ln2); box-shadow: inset 0 2px 0 var(--ctx); margin-left: 10px; } /* aba contextual: aparece com a ferramenta */
+.rx .rt-l button.ctx.on { color: var(--tx); }
+.rx .rt-r { margin-left: auto; display: flex; align-items: center; height: 26px; }
+
+/* ---------- 6. faixa de opções (96 px) ---------- */
+.rx .rb { display: flex; align-items: stretch; background: var(--rib); border-bottom: 1px solid var(--ln); padding: 0 2px; overflow: hidden; }
+.rx .grp { display: flex; flex-direction: column; padding: 3px 6px 0; border-right: 1px solid var(--ln2); flex: none; }
+.rx .gb { display: flex; align-items: flex-start; gap: 3px; height: 74px; }
+.rx .gn { height: 18px; line-height: 17px; text-align: center; color: var(--tx3); white-space: nowrap; }          /* nome do grupo, embaixo */
+.rx .grp.ctx { box-shadow: inset 0 2px 0 var(--ctx); }                                                         /* grupo contextual: sempre o último */
+.rx .grp.ctx .gb { padding-top: 11px; }
+.rx .grp.ctx .gn { color: var(--tx2); }
+.rx .bb { min-width: 56px; height: 72px; padding: 6px 6px 0; display: flex; flex-direction: column; align-items: center; border: 1px solid transparent; border-radius: 2px; } /* botão grande: ícone 32 + rótulo */
+.rx .bb .bl { margin-top: 5px; text-align: center; line-height: 14px; white-space: nowrap; }
+.rx .b2 { display: block; }                                                                                    /* segunda linha do rótulo (no lugar de quebra de linha) */
+.rx .bb:hover, .rx .sb:hover { background: rgba(128, 128, 128, 0.16); border-color: var(--ln2); }
+.rx .bb.on { background: var(--hi); border-color: var(--ac); }                                                 /* ferramenta ativa: UMA por tela */
+.rx .bb.on .bl { color: var(--tx-hi); font-weight: 600; }
+.rx .bb.off, .rx .sb.off { opacity: 0.45; }
+.rx .stk { display: flex; flex-direction: column; gap: 1px; }                                                  /* pilha de até 3 botões pequenos */
+.rx .sb { height: 24px; display: flex; align-items: center; gap: 6px; padding: 0 7px 0 4px; border: 1px solid transparent; border-radius: 2px; white-space: nowrap; } /* botão pequeno: ícone 16 + rótulo (+ atalho entre parênteses) */
+.rx .sb .sl { flex: 1 1 auto; }
+.rx .sb.sel { background: var(--hi2); border-color: var(--hi2-ln); }                                           /* opção escolhida: realce fraco */
+.rx .vs2 { width: 1px; height: 50px; background: var(--ln2); margin: 0 3px; flex: none; }
+
+
+/* ---------- 13. barra de status (24 px) ---------- */
+.rx .st { display: flex; align-items: stretch; background: var(--st); border-top: 1px solid var(--ln); padding-left: 6px; white-space: nowrap; }
+.rx .st-h { display: flex; align-items: center; gap: 6px; color: var(--tx2); min-width: 0; overflow: hidden; }  /* instrução da ferramenta */
+.rx .st-h b { color: var(--tx); font-weight: 600; }
+.rx .st-c { display: flex; align-items: center; gap: 5px; padding: 0 10px; border-left: 1px solid var(--ln2); }
+.rx .st .k { color: var(--tx3); }
+.rx .st-c .n { min-width: 54px; }
+.rx .stb { display: inline-flex; align-items: center; gap: 5px; padding: 0 9px; border-left: 1px solid var(--ln2); }
+.rx .stb.esc { background: var(--btn); padding: 0 10px; gap: 6px; }                                            /* escala da folha: sempre visível */
+.rx .stb.esc b { font-size: 13px; font-weight: 700; color: var(--tx-hi); padding: 0 5px; border: 1px solid var(--hi2-ln); line-height: 17px; background: var(--in); }
+.rx .stb.esc.sem { background: var(--warn-bg); }                                                               /* folha sem escala */
+.rx .stb.esc.sem b, .rx .stb.esc.sem .k { color: var(--warn-tx); border-color: var(--warn); }
+.rx .stb.tg.on { background: var(--hi2); box-shadow: inset 0 -2px 0 var(--ac); color: var(--tx-hi); }           /* alternador ligado */
+.rx .stb.tg:not(.on) { color: var(--tx2); }
+.rx .zm { display: flex; align-items: center; gap: 1px; padding: 0 4px; border-left: 1px solid var(--ln2); }
+.rx .zm .n { width: 38px; text-align: center; }
+.rx .ib.onz { background: var(--hi2); }
+
+/* ---------- 14. menu suspenso aberto ---------- */
+.rx .mn { position: absolute; z-index: 30; min-width: 200px; padding: 3px; background: var(--menu); border: 1px solid var(--hi2-ln); box-shadow: var(--sombra); border-radius: 2px; } /* left/top no style */
+.rx .mn-i { width: 100%; height: 24px; display: flex; align-items: center; gap: 8px; padding: 0 10px 0 6px; white-space: nowrap; border: 1px solid transparent; }
+.rx .mn-i .sl { flex: 1 1 auto; }
+.rx .mn-i kbd { padding-left: 18px; }
+.rx .mn-i.on { background: var(--hi); border-color: var(--ac); }
+.rx .mn-i.on kbd { color: var(--tx2); }
+.rx .mn-i.off { color: var(--tx3); }
+.rx .mn-s { height: 1px; margin: 3px 0; background: var(--ln2); }
+.rx .mn-h { height: 20px; padding: 0 6px; display: flex; align-items: center; color: var(--tx3); }
+.rx .mn-v { width: 16px; display: inline-flex; justify-content: center; }                                    /* lugar do ícone ou do visto */
+
+
+/* ---------- 16. faixa de alerta ---------- */
+.rx .al { display: flex; align-items: center; gap: 8px; height: 30px; flex: none; padding: 0 6px 0 8px; background: var(--warn-bg); border-bottom: 1px solid var(--warn); color: var(--warn-tx); white-space: nowrap; }
+.rx .al b { font-weight: 600; }
+.rx .al .tbn { color: var(--tx); }
+.rx .al.info { background: var(--hi2); border-color: var(--ac); color: var(--tx); }
+
+
+/* ---------- 19. menu de aplicativo (menu Arquivo): variante larga do menu ---------- */
+.rx .amn { padding: 4px 3px; }
+.rx .amn .mn-i { height: 26px; }
+.rx .amn .mn-h { height: 22px; padding-top: 2px; font-weight: 600; color: var(--tx2); }
+.rx .mn.ctxm .mn-i { height: 23px; }                                            /* menu de contexto: itens mais baixos */
+.rx .mn-i.off .ic { opacity: 0.45; }                                            /* item indisponível: o ícone também apaga */
+.rx .mn-i.dg { color: var(--err); }                                             /* item perigoso (excluir, descartar) */
+.rx .mn-i.dg kbd { color: var(--err); }
+
+/* ---------- 20. botões e estados ---------- */
+.rx .tbn.pri { border-color: var(--ac); box-shadow: inset 0 0 0 1px var(--ac); font-weight: 600; } /* botão de barra principal */
+.rx .tbn.off, .rx .btn.off { opacity: 0.5; }                                    /* botão indisponível */
+.rx .ib.off { opacity: 0.4; }                                                   /* botão só de ícone indisponível */
+.rx .btn.sm { height: 24px; min-width: 0; padding: 0 10px; }                    /* botão de diálogo pequeno */
+.rx .sb.on { background: var(--hi); border-color: var(--ac); }                  /* botão pequeno ativo (alternador ligado) */
+.rx .sb.on .sl { color: var(--tx-hi); font-weight: 600; }
+.rx .sb.on kbd { color: var(--tx2); }
+
+/* ---------- 21. grupo recolhido da faixa (janela estreita) e grupo aberto ---------- */
+.rx .grp.rec { padding: 3px 3px 0; }                                            /* grupo recolhido: um botão com ícone, nome e seta */
+.rx .gx { height: 90px; min-width: 58px; padding: 6px 7px 0; display: flex; flex-direction: column; align-items: center; border: 1px solid transparent; border-radius: 2px; }
+.rx .gx .bl { margin-top: 5px; text-align: center; line-height: 14px; white-space: nowrap; }
+.rx .gx .b2 { line-height: 13px; }
+.rx .gx .gl { margin-top: auto; margin-bottom: 3px; }
+.rx .gx.ab { border-color: var(--hi2-ln); border-bottom-color: transparent; border-radius: 2px 2px 0 0; } /* grupo recolhido que está aberto */
+.rx .fly { position: absolute; z-index: 30; display: flex; flex-direction: column; padding: 5px 7px 0; background: var(--rib); border: 1px solid var(--hi2-ln); box-shadow: var(--sombra); border-radius: 0 2px 2px 2px; } /* grupo aberto: desce da faixa, left/top no style */
+.rx .fly .gb { height: 72px; }
+.rx .fly .gn { border-top: 1px solid var(--ln2); margin: 2px -7px 0; }
+
+/* ---------- 28. logo: segue o acento ---------- */
+.rx .lm-bg { fill: var(--ac); }
+.rx .lm-tr { fill: none; stroke: var(--on-ac); stroke-width: 1.7; stroke-linecap: round; }
+
+/* ---------- fase 1: o que a base não traz ---------- */
+.rx .st-h { padding-right: 12px; }
+.rx .st-d { overflow: hidden; text-overflow: ellipsis; color: var(--tx2); }
+.rx .st-h b { flex: none; }
+.rx .stb { color: var(--tx); }
+.rx .stb:hover, .rx .zm .ib:hover { background: rgba(128, 128, 128, 0.16); }
+.rx .stb kbd { color: var(--tx3); }
+.rx .stb.tg.on kbd { color: var(--tx2); }
+.rx .stb.esc .k { white-space: nowrap; }
+.rx .zm .n { width: 40px; text-align: center; color: var(--tx); }
+/* campo numérico de grupo contextual (Fechar aberturas até N pt; Ignorar vazios menores que N m²) */
+.rx .nf { display: flex; flex-direction: column; justify-content: flex-start; gap: 6px; padding: 4px 6px 0; max-width: 176px; }
+.rx .nf .k { color: var(--tx2); white-space: normal; line-height: 14px; }
+.rx .nfi { display: flex; align-items: center; gap: 6px; }
+.rx .nfi input { width: 64px; height: 22px; padding: 0 6px; background: var(--in); color: var(--tx); border: 1px solid var(--ln2); border-radius: 2px; font: inherit; font-variant-numeric: tabular-nums; text-align: right; user-select: text; }
+.rx .nfi input:focus-visible { outline: 2px solid var(--ac); outline-offset: -2px; }
+.rx .nfi em { font-style: normal; color: var(--tx3); }
+.rx .stb.esc[data-warn] { background: var(--warn-bg); }
+.rx .stb.esc[data-warn] b, .rx .stb.esc[data-warn] .k { color: var(--warn-tx); border-color: var(--warn); }
+/* o kbd global do app (caixa com borda) não vale na faixa: o atalho é texto discreto, entre parênteses */
+.rx kbd { background: none; border: 0; border-radius: 0; padding: 0; font-size: 12px; font-family: inherit; }
+.rx .st-h b::after { content: " ·"; font-weight: 400; color: var(--tx3); }
+
+/* ================================================================ R3 — fase 2: paletas (pilha à esquerda, Propriedades, Quantitativo)
+   Copiado de rodada2/base.css (seções 7–12, 23, 25, 29, 33) com o prefixo trocado para `.rx`. A classe .rx fica na raiz de cada coluna de paletas. */
+.rx .pal { background: var(--pal); display: flex; flex-direction: column; min-height: 0; min-width: 0; }
+.rx .ph { height: 25px; flex: none; display: flex; align-items: center; gap: 6px; padding: 0 2px 0 3px; background: var(--ph); border-top: 1px solid var(--ph-hi); border-bottom: 1px solid var(--ln); } /* barra de título da paleta */
+.rx .ph h2 { font-weight: 600; }
+.rx .ph .grip .gl { color: var(--tx3); }
+.rx .pcs { margin-top: auto; flex: none; }
+.rx .pcx { width: 100%; height: 25px; display: flex; align-items: center; gap: 6px; padding: 0 8px 0 6px; background: var(--ph); border-top: 1px solid var(--ph-hi); border-bottom: 1px solid var(--ln); font-weight: 600; color: var(--tx2); } /* paleta recolhida */
+.rx .ptabs { height: 24px; flex: none; display: flex; align-items: flex-start; background: var(--rib2); border-top: 1px solid var(--ln); padding-left: 2px; margin-top: auto; }               /* abas no pé da paleta */
+.rx .ptabs button { height: 22px; padding: 0 9px 0 7px; display: inline-flex; align-items: center; gap: 4px; color: var(--tx2); border: 1px solid transparent; border-top: 0; border-radius: 0 0 2px 2px; margin-top: -1px; }
+.rx .ptabs button.on { background: var(--pal); color: var(--tx); font-weight: 600; border-color: var(--ln2); box-shadow: inset 0 -2px 0 var(--ac); }
+.rx .pbar { display: flex; align-items: center; gap: 3px; padding: 4px; flex: none; }                          /* barra de ferramentas dentro da paleta */
+.rx .pbar .in { flex: 1 1 auto; min-width: 0; }
+
+/* ---------- 8. árvore do projeto ---------- */
+.rx .tree { flex: none; padding: 2px 0 3px; }
+.rx .tr-row { height: 20px; display: flex; align-items: center; gap: 4px; padding-right: 8px; white-space: nowrap; }   /* recuo: padding-left = 3 + nível × 11 px */
+.rx .tw { width: 10px; height: 12px; flex: none; display: flex; align-items: center; justify-content: center; }     /* seta de abrir/fechar (vazia nas folhas) */
+.rx .tx { flex: 1 1 auto; overflow: hidden; text-overflow: ellipsis; }
+.rx .tx i { font-style: normal; color: var(--tx2); }
+.rx .tv { color: var(--tx2); padding-left: 6px; }                                                                  /* valor à direita */
+.rx .tr-row.ativa .tx { font-weight: 600; }
+.rx .tr-row.ativa .tv { color: var(--tx); border: 1px solid var(--ln2); padding: 0 4px; line-height: 15px; border-radius: 2px; }
+.rx .tr-row.sel { background: var(--hi); box-shadow: inset 0 0 0 1px var(--ac); }                                  /* selecionado */
+.rx .tr-row.des { background: var(--hi2); box-shadow: inset 0 0 0 1px var(--ac); }                                 /* em desenho */
+.rx .tr-row.sel .tv, .rx .tr-row.des .tv { color: var(--tx-hi); }
+.rx .tr-row.sel .tx i { color: var(--tx); }
+.rx .tr-row.vz .tx, .rx .tr-row.vz .tv { color: var(--tx3); }
+.rx .tr-row.alerta .tv { color: var(--warn-tx); border-color: var(--warn); }
+
+/* ---------- 9. biblioteca de marcadores ---------- */
+.rx .bib { flex: none; border-top: 1px solid var(--ln3); }
+.rx .bg-t { height: 20px; display: flex; align-items: center; gap: 5px; padding: 0 8px 0 5px; background: var(--cell); border-bottom: 1px solid var(--ln3); font-weight: 600; color: var(--tx2); }
+.rx .bg-t span { flex: 1 1 auto; }
+.rx .bg-t em { font-style: normal; font-weight: 400; color: var(--tx3); }
+.rx .bm { width: 100%; height: 21px; display: flex; align-items: center; gap: 6px; padding: 0 8px 0 12px; white-space: nowrap; }
+.rx .bm .bn { flex: 1 1 auto; overflow: hidden; text-overflow: ellipsis; }
+.rx .bm .bd { color: var(--tx3); }
+.rx .bm.on { background: var(--hi); box-shadow: inset 0 0 0 1px var(--ac); }                                       /* marcador em uso */
+.rx .bm.on .bd { color: var(--tx); }
+
+/* abas de documento (sec. 10) */
+.rx .dt { height: 24px; flex: none; display: flex; align-items: flex-end; background: var(--rib2); border-bottom: 1px solid var(--ln); padding: 0 4px 0 3px; }
+.rx .dt-l { display: flex; align-items: flex-end; gap: 3px; height: 23px; }
+.rx .dt-l .ib { height: 21px; }
+.rx .doc { height: 21px; display: inline-flex; align-items: center; gap: 6px; padding: 0 7px 0 6px; color: var(--tx2); border: 1px solid transparent; border-bottom: 0; border-radius: 2px 2px 0 0; }
+.rx .doc.on { background: var(--hi2); color: var(--tx); border-color: var(--ln2); box-shadow: inset 0 2px 0 var(--ac); font-weight: 600; }
+.rx .doc .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--warn); }                          /* alteração não salva */
+.rx .dt-r { margin-left: auto; display: flex; align-items: center; gap: 2px; height: 23px; }
+.rx .cb.fs { height: 20px; border-color: transparent; background: transparent; }
+.rx .cb.fs em { font-style: normal; color: var(--tx3); }
+/* ---------- 11. tabela densa (quantitativo) ---------- */
+.rx .pb { border-top: 1px solid var(--ln); }
+.rx .pb .ph { height: 26px; gap: 6px; padding-right: 3px; }
+.rx .phtabs { display: flex; align-self: stretch; margin-right: 6px; }                                           /* abas dentro da barra da paleta */
+.rx .phtabs button { padding: 0 10px; display: inline-flex; align-items: center; gap: 5px; color: var(--tx2); border-left: 1px solid transparent; border-right: 1px solid transparent; }
+.rx .phtabs button.on { background: var(--pal); color: var(--tx); font-weight: 600; border-color: var(--ln); box-shadow: inset 0 2px 0 var(--ac); }
+.rx .pb .cb, .rx .pb .tbn { height: 20px; flex: none; }
+.rx .ph .tot { display: inline-flex; align-items: baseline; gap: 6px; padding: 0 8px; border-left: 1px solid var(--ln2); white-space: nowrap; } /* total na barra da paleta (só dentro de .ph) */
+.rx .ph .tot b { color: var(--tx-hi); font-size: 13px; }
+.rx .qw { position: relative; flex: 1 1 auto; min-height: 0; overflow: hidden; padding-right: 12px; }
+.rx .qt { width: 100%; border-collapse: collapse; table-layout: fixed; }
+.rx .qt th, .rx .qt td { height: 21px; padding: 0 8px; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; border-right: 1px solid var(--ln3); border-bottom: 1px solid var(--ln3); font-weight: 400; }
+.rx .qt thead th { background: var(--cell); color: var(--tx2); font-weight: 600; border-bottom: 1px solid var(--ln2); }
+.rx .qt .num { text-align: right; }
+.rx .qt .c0 { width: 34px; padding: 0 0 0 6px; }                                                               /* coluna da amostra */
+.rx .qt .q { font-weight: 700; color: var(--tx-hi); }                                                          /* a quantidade: o número que vale */
+.rx .qt tr.cur td { background: var(--hi2); }
+.rx .qt tr.sel td { background: var(--hi); }
+.rx .qt tr.gr th { background: var(--ph); font-weight: 600; }                                                  /* linha de grupo */
+
+/* ---------- 12. propriedades ---------- */
+.rx .oh { flex: none; padding: 5px 5px 6px; border-bottom: 1px solid var(--ln); }                              /* cabeçalho da seleção */
+.rx .cb.ot { width: 100%; height: 24px; font-weight: 600; }                                                    /* seletor de marcador (tipo) */
+.rx .ol { display: flex; align-items: baseline; justify-content: space-between; padding: 6px 3px 0 3px; white-space: nowrap; }
+.rx .ol > span:first-child { display: inline-flex; align-items: center; gap: 5px; color: var(--tx2); }
+.rx .ol > span:first-child b { color: var(--tx); font-weight: 600; }
+.rx .ov2 { color: var(--tx2); font-size: 13px; }                                                               /* o valor medido: UMA vez na paleta */
+.rx .ov2 b { font-size: 19px; line-height: 22px; font-weight: 600; color: var(--tx-hi); margin-right: 2px; }
+.rx .pg { flex: none; }
+.rx .pc-h { height: 22px; display: flex; align-items: center; gap: 5px; padding: 0 3px 0 5px; background: var(--ph); border-bottom: 1px solid var(--ln); font-weight: 600; } /* categoria recolhível */
+.rx .pc-h span { flex: 1 1 auto; }
+.rx .pc-h .tbn { height: 18px; font-weight: 400; }
+.rx .pr { display: flex; min-height: 24px; border-bottom: 1px solid var(--ln3); }
+.rx .pk { width: 104px; flex: none; padding: 0 4px 0 20px; display: flex; align-items: center; color: var(--tx2); border-right: 1px solid var(--ln3); white-space: nowrap; }
+.rx .pv { flex: 1 1 auto; padding: 0 8px 0 6px; display: flex; align-items: center; gap: 6px; min-width: 0; white-space: nowrap; background: var(--cell); }
+.rx .pv b { font-weight: 600; color: var(--tx-hi); margin-right: -2px; }
+.rx .pr.ed .pv { padding: 0; background: var(--in); }                                                          /* linha editável */
+.rx .pr.ed .cb, .rx .pr.ed .in { border: 0; width: 100%; height: 23px; background: transparent; padding-right: 8px; }
+.rx .ds { margin-top: auto; flex: none; height: 56px; padding: 6px 8px; border-top: 1px solid var(--ln2); background: var(--cell); display: flex; flex-direction: column; gap: 2px; line-height: 15px; } /* descrição da propriedade */
+.rx .ds b { font-weight: 600; }
+.rx .ds span { color: var(--tx2); }
+.rx .pr2 .ptabs { margin-top: 0; }
+
+/* ---------- 23. Propriedades: texto de apoio, barra de ações, linhas especiais ---------- */
+.rx .pvz { padding: 10px 8px; color: var(--tx2); line-height: 17px; white-space: normal; }    /* texto de apoio da paleta (estado vazio) */
+.rx .pbar.ac { border-bottom: 1px solid var(--ln); gap: 4px; }                                /* barra de ações logo abaixo do cabeçalho: Duplicar, Excluir (Del) */
+.rx .pbar.ac.eq { gap: 3px; }                                                                 /* variante de botões iguais (3D: Ver na planta, Duplicar, Excluir (Del)) */
+.rx .pbar.ac.eq .tbn { flex: 1 1 auto; justify-content: center; padding: 0 4px; }
+.rx .pbar.ac .tbn.pri { padding-left: 6px; }
+.rx .oh.so { padding-top: 2px; }                                                              /* cabeçalho só com o seletor (sem resumo) */
+.rx .pv.wr { white-space: normal; padding-top: 4px; padding-bottom: 4px; line-height: 16px; } /* valor que quebra em linhas */
+.rx .pr .tbn { height: 20px; margin-left: auto; }                                             /* botão no fim da linha da propriedade */
+.rx .pr.sub .pk { padding-left: 30px; color: var(--tx); }                                     /* subitem de uma linha (ex.: Vazio 1) */
+.rx .pk.top { align-items: flex-start; padding-top: 4px; }
+.rx .pr.ed .pv.wr { padding: 4px 0; }
+.rx .ta { display: block; white-space: normal; line-height: 16px; color: var(--tx); padding: 0 6px; } /* campo de várias linhas, dentro de .pv */
+.rx .in.ml { height: auto; min-height: 42px; align-items: flex-start; padding-top: 4px; white-space: normal; line-height: 16px; } /* campo de texto de várias linhas */
+.rx .pc-h .cnt { font-style: normal; margin-left: 3px; }
+.rx .ds.fx { height: auto; min-height: 56px; }                                                /* descrição com altura que acompanha o texto */
+.rx .ds.alta { height: 86px; }
+
+/* ---------- 25. item de lista de duas linhas (itens de compatibilização) ---------- */
+.rx .it { width: 100%; display: grid; grid-template-columns: 24px minmax(0, 1fr) auto; column-gap: 6px; row-gap: 2px; padding: 4px 6px 5px 5px; border-bottom: 1px solid var(--ln3); line-height: 15px; }
+.rx .it.on { background: var(--hi); box-shadow: inset 0 0 0 1px var(--ac); }
+.rx .it-n { grid-row: 1 / span 3; align-self: start; text-align: center; font-weight: 700; line-height: 16px; border: 1px solid var(--ln2); background: var(--in); } /* número do item */
+.rx .it.on .it-n { border-color: var(--ac); color: var(--tx-hi); }
+.rx .it-t { white-space: normal; }                                                            /* título */
+.rx .it.on .it-t { font-weight: 600; color: var(--tx-hi); }
+.rx .it-d { justify-self: end; color: var(--tx2); }                                           /* data ou prazo */
+.rx .it-p { justify-self: end; color: var(--tx2); }
+.rx .it-m { grid-column: 2; display: flex; align-items: center; gap: 5px; color: var(--tx2); white-space: nowrap; } /* metadados */
+.rx .it-r { grid-column: 2 / span 2; color: var(--tx2); white-space: nowrap; }
+.rx .it.on .it-d, .rx .it.on .it-m, .rx .it.on .it-r, .rx .it.on .it-p { color: var(--tx); }
+.rx .it-pri { display: inline-flex; align-items: center; gap: 4px; }                         /* prioridade, dentro de .it-m */
+
+/* ---------- 29. paleta recolhida com contador (regra única: "Marcadores 10" em toda tela) ---------- */
+.rx .pcx .cnt { font-weight: 400; color: var(--tx3); }
+.rx .pcx .cnt::before { content: none; }
+
+/* ---------- 33. aba lateral para reabrir paleta fechada (.etb) e miniatura 2 x 2 do grupo recolhido (.gx .gm) ---------- */
+.rx .etb { position: absolute; right: 0; top: 50%; margin-top: -48px; width: 24px; height: 96px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; background: var(--rib2); border: 1px solid var(--ln2); border-right: 0; writing-mode: vertical-rl; color: var(--tx); }
+.rx .gx .gm { display: grid; grid-template-columns: 16px 16px; grid-auto-rows: 16px; }          /* os quatro ícones do grupo, dentro do botão recolhido */
+
+/* menu do botão direito (ContextMenu.tsx): o menu denso da base (.mn.ctxm), fixo na tela, no lugar do ponteiro */
+.rx.ctxmenu.mn { position: fixed; z-index: 300; min-width: 200px; max-width: 320px; outline: none; animation: ctxin var(--t-fast) var(--ease-out); transform-origin: top left; }
+.rx.ctxmenu .mn-i { text-overflow: ellipsis; }
+.rx.ctxmenu .mn-i .sl { overflow: hidden; text-overflow: ellipsis; }
+
+/* lista suspensa com <select> nativo por cima (SelectCb): vale para .cb e para a linha editável de Propriedades */
+.rx .cb.sel { position: relative; }
+.rx .cb.sel > select { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: default; font: inherit; }
+.rx .cb.sel:focus-within { outline: 2px solid var(--ac); outline-offset: -2px; }
+.rx .cb.sel > select option { color: initial; background: initial; }
+/* campos de texto e número reais dentro das paletas, com a aparência de .in */
+.rx input.in, .rx textarea.in { font: inherit; color: var(--tx); font-variant-numeric: tabular-nums; user-select: text; text-overflow: ellipsis; width: 100%; min-width: 0; }
+.rx input.in::placeholder, .rx textarea.in::placeholder { color: var(--tx3); opacity: 1; }
+.rx input.in:focus-visible, .rx textarea.in:focus-visible { outline: 2px solid var(--ac); outline-offset: -2px; }
+.rx input.in[type="color"] { padding: 2px 3px; height: 22px; cursor: default; }
+.rx .pr.ed input.in, .rx .pr.ed textarea.in { border: 0; height: 23px; background: transparent; padding: 0 8px 0 6px; }
+.rx .pr.ed textarea.in { height: auto; min-height: 42px; padding-top: 4px; resize: none; line-height: 16px; }
+.rx .pr.ed input.in[type="color"] { width: 100%; padding: 2px 6px; }
+.rx input[type="checkbox"] { accent-color: var(--ac); margin: 0 4px 0 0; }
+
+/* ---------- fase 2: pilha de paletas ---------- */
+.rx.pal-col { display: flex; flex-direction: column; min-height: 0; min-width: 0; background: var(--pal); }
+.rx.pal-col > .pal { flex: 1 1 auto; position: relative; }
+.rx .pal-sec { display: flex; flex-direction: column; min-height: 0; flex: 0 1 auto; max-height: 62%; }
+.rx .pal-sec.fill { flex: 1 1 0; max-height: none; min-height: 96px; }
+.rx .pal-body { flex: 1 1 auto; min-height: 0; overflow: auto; position: relative; scrollbar-gutter: stable; }
+.rx .ph-t { font-weight: 600; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rx .ph-t:hover { color: var(--tx-hi); }
+.rx .ph { border-top: 1px solid var(--ph-hi); }
+.rx .pbar .tbn { height: 22px; }
+.rx .pbar input.in { width: 100%; }
+.rx .bg-t { width: 100%; text-align: left; }
+.rx .bib { border-top: 0; }
+.rx .bm:hover, .rx .tr-row:hover { background: rgba(128, 128, 128, 0.14); }
+.rx .tr-row { cursor: default; }
+.rx .tr-row:focus-visible, .rx .bm:focus-visible, .rx .pcx:focus-visible, .rx .it:focus-visible { outline: 2px solid var(--ac); outline-offset: -2px; }
+.rx .tr-row .gl, .rx .tr-row .ic { color: inherit; }
+.rx .tr-row .ic { color: var(--ico); }
+.rx .am { flex: none; }
+.rx .pvz { font-size: 12px; }
+.rx .ph .ib.on { background: var(--hi2); box-shadow: inset 0 -2px 0 var(--ac); }
+.rx .pcx:hover { background: var(--hi2); color: var(--tx); }
+.rx .pcx > span:first-of-type { flex: 0 1 auto; }
+.rx .grow { flex: 1 1 auto; min-width: 0; }
+.rx .pbar.chk { gap: 6px; color: var(--tx); }
+.rx .ovb { border-top: 1px solid var(--ln3); }
+.rx .ovi { display: flex; align-items: center; gap: 8px; padding: 2px 6px 2px 8px; color: var(--tx2); white-space: nowrap; }
+.rx .ovi .k { flex: none; }
+.rx .ovi input[type="range"] { flex: 1 1 auto; min-width: 0; accent-color: var(--ac); }
+.rx input.cor-in { width: 30px; flex: none; }
+.rx .ib .ck { pointer-events: none; }
+.rx .it { text-align: left; }
+.rx .it:hover:not(.on) { background: rgba(128, 128, 128, 0.14); }
+.rx .lgd { padding: 6px 8px; display: flex; flex-direction: column; gap: 6px; }
+.rx .lgd > div { display: flex; align-items: center; gap: 6px; }
+.rx .lgd .sw { margin: 0; width: 12px; height: 12px; border-radius: 0; }
+.rx .qt tbody tr[tabindex] { cursor: default; }
+.rx .qt tbody tr[tabindex]:hover td { background: var(--hi2); }
+.rx .qt tbody tr:focus-visible { outline: 2px solid var(--ac); outline-offset: -2px; }
+
+/* abas de borda (reabrir o que foi fechado): ficam sobre o canto da mesa, nunca sobre a folha */
+.rx.etb-layer { position: absolute; inset: 0; pointer-events: none; z-index: 6; }
+.rx.etb-layer .etb { pointer-events: auto; }
+.rx .etb-col { position: absolute; left: 0; top: 8px; display: flex; flex-direction: column; gap: 4px; }
+.rx .etb-col .etb { position: static; margin: 0; height: auto; min-height: 64px; padding: 8px 0; border-left: 0; border-right: 1px solid var(--ln2); }
+.rx .etb.dir { right: 0; }
+.rx .etb.inf { right: auto; left: 50%; top: auto; bottom: 0; margin: 0 0 0 -48px; width: 96px; height: 24px; flex-direction: row; writing-mode: horizontal-tb; border: 1px solid var(--ln2); border-bottom: 0; }
+.rx .etb:hover { background: var(--hi2); }
+.rx .etb:focus-visible { outline: 2px solid var(--ac); outline-offset: -2px; }
+
+/* ---------- fase 2: casca do app (coluna central com abas de documento, paletas nas laterais) ---------- */
+.app:not(.mobile) .workspace { background: var(--bg); }
+.app:not(.mobile) .center { border-left: 1px solid var(--ln); border-right: 1px solid var(--ln); background: var(--canvas); }
+.app:not(.mobile) .stagewrap { background: var(--canvas); }
+.app:not(.mobile) .slot > .pal-col { border: 0; }
+.app:not(.mobile) .center > .slot > .pal-col { border-top: 1px solid var(--ln); }
+.rx.dt-wrap { min-width: 0; }
+.rx .dt { min-width: 0; }
+.rx .dt-l { min-width: 0; overflow: hidden; }
+.rx .doc { min-width: 0; max-width: 220px; cursor: default; }
+.rx .doc-n { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.rx .doc .doc-x { width: 16px; height: 16px; opacity: 0.55; }
+.rx .doc:hover .doc-x, .rx .doc.on .doc-x { opacity: 1; }
+.rx .doc.drop { box-shadow: inset 2px 0 0 var(--ac); }
+.rx .doc:focus-visible { outline: 2px solid var(--ac); outline-offset: -2px; }
+.rx .doc .ic { color: var(--ico); }
+.rx .dt-r .ib:disabled { opacity: 0.3; }
+.rx .dt-r .cb.fs { max-width: 260px; }
+.rx .dt-r .cb.fs b { font-weight: 600; }
+
+/* Propriedades (direita) */
+.rx.pal-col.right, .pal-col.right { display: flex; flex-direction: column; min-height: 0; min-width: 0; background: var(--pal); }
+.pal-col.right > .rx:first-child, .pal-col.right > .rx:last-child { flex: none; }
+.pal-col.right .claude-host { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; overflow: hidden; background: var(--panel); }
+.rx.props-wrap { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; background: var(--pal); }
+.rx .props-scroll { flex: 1 1 auto; min-height: 0; overflow: auto; }
+.rx .pc-t { flex: 1 1 auto; height: 100%; display: flex; align-items: center; gap: 5px; font-weight: 600; min-width: 0; }
+.rx .pc-t > span { flex: 0 1 auto; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rx .pc-h .cnt { margin-left: 4px; }
+.rx .pr .pv .mut { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rx .pr:hover .pk, .rx .pr:focus-within .pk { color: var(--tx); }
+.rx .pv .cz { margin-right: 2px; }
+.rx .pv .ck { flex: none; }
+.rx .pr.ed .pv > .cb { flex: 1 1 auto; width: 100%; }
+.rx .chkrow { display: inline-flex; align-items: center; gap: 4px; height: 100%; padding: 0 6px; width: 100%; }
+.rx .pr.ed .pv:has(.chkrow) { background: var(--cell); }
+.rx .ds { height: auto; min-height: 56px; max-height: 96px; overflow: auto; }
+.rx .ptabs button.cl { color: var(--tx2); }
+.rx .ptabs button.cl.on { color: var(--tx); }
+.rx .rp .tbn { font-weight: 400; }
+.rx .pvz { padding: 8px; }
+
+/* Quantitativo (inferior) */
+.rx.pal-col.bottom { display: flex; flex-direction: column; min-height: 0; min-width: 0; background: var(--pal); }
+.rx .pb { flex: 1 1 auto; min-height: 0; }
+.rx .pb .ph { overflow: hidden; flex-wrap: nowrap; white-space: nowrap; }
+.rx .pb .ph > * { flex: none; }
+.rx .pb .ph .sp { flex: 1 1 0; min-width: 0; }
+.rx .pb .ph .tot { flex: 0 1 auto; min-width: 0; overflow: hidden; }
+.rx .pb .ph .lb { margin-right: 2px; }
+.rx .qw { overflow: auto; padding-right: 0; }
+.rx .qt-wide { width: max(100%, 1060px); }
+.rx .qt .mut, .rx .qt .warn-tx { color: var(--tx3); }
+.rx .qt .warn-tx { color: var(--warn-tx); }
+.rx .qt td .cz { margin-right: 4px; vertical-align: -1px; display: inline-block; }
+.rx .qt .empty-row { white-space: normal; padding: 6px 8px; }
+.rx .qt tbody tr[tabindex]:hover td { background: var(--hi2); }
+.rx .qt tbody tr.sel td { background: var(--hi); }
+.rx .qt tr.gr th[scope="row"] { height: 21px; padding: 0 8px; text-align: left; border-bottom: 1px solid var(--ln3); }
+.rx .qt tr.gr th.num { text-align: right; }
+
+/* a vista 3D agora tem o resumo e o sólido selecionado nas paletas (Resumo da folha, Propriedades) */
+.app:not(.mobile) .v3-panel { display: none; }
+/* o index.css usa .pri para o ponto de prioridade (8 px): o botão principal da base não herda isso */
+.rx .tbn.pri { width: auto; height: 22px; border-radius: 2px; }
+.rx .pv.wr { flex-wrap: wrap; gap: 4px 6px; }
+.rx .pr.ed textarea.in.sm { height: 23px; min-height: 23px; overflow: hidden; }
+.rx .pr.ed textarea.in.sm:focus { height: 58px; overflow: auto; }
+
+/* campo numérico seguido de unidade (%, °): o campo encolhe e a unidade fica à vista */
+.rx .pr.ed .pv > input.in { width: auto; flex: 1 1 0; min-width: 0; }
+.rx .pr.ed .pv > .mut { padding-right: 8px; flex: none; }
+
+/* ================================================================ R3 — fase 3: diálogos, avisos e telas de estado
+   Seções 17, 26, 31 e 32 de rodada2/base.css (com `.tr ` → `.rx `) mais as peças próprias de cada diálogo.
+   O véu (.rx.veu) é a raiz do diálogo: leva `rx` na própria raiz, então o seletor é `.rx.veu`. */
+
+/* ---------- 17. diálogo modal ---------- */
+.rx.veu { position: fixed; inset: 0; z-index: 100; display: grid; place-items: center; padding: 16px; background: var(--veu); animation: fade var(--t-fast); }
+.rx .dlg { position: relative; display: flex; flex-direction: column; max-width: calc(100vw - 32px); max-height: calc(100vh - 32px); max-height: calc(100dvh - 32px); background: var(--pal); border: 1px solid var(--hi2-ln); box-shadow: var(--sombra); border-radius: 3px; animation: rise var(--t-med) var(--ease-out); }
+.rx .dlg:focus { outline: none; }
+.rx .dlg.fix { width: min(960px, calc(100vw - 32px)); height: min(592px, calc(100vh - 32px)); height: min(592px, calc(100dvh - 32px)); } /* mesmo tamanho em todas as abas de Configurações */
+.rx .dlg-t { height: 30px; flex: none; display: flex; align-items: center; gap: 8px; padding: 0 4px 0 10px; background: var(--ph); border-bottom: 1px solid var(--ln); font-weight: 600; }
+.rx .dlg-t h2 { flex: 1 1 auto; font-weight: 600; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rx .dlg-t .am { flex: none; }
+.rx .dlg-b { flex: 1 1 auto; min-height: 0; overflow: auto; padding: 12px; display: flex; flex-direction: column; gap: 10px; user-select: text; }
+.rx .dlg-b > * { flex: none; }
+.rx .dlg-b p { color: var(--tx2); line-height: 17px; white-space: normal; }
+.rx .dlg-b p b { color: var(--tx); font-weight: 600; }
+.rx .dlg-f { flex: none; display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: center; gap: 6px; padding: 9px 12px; border-top: 1px solid var(--ln2); background: var(--cell); }
+.rx .dlg-f .sp { flex: 1 1 auto; }
+.rx .dlg-f .nota { align-self: center; color: var(--tx2); margin-left: 6px; white-space: normal; }
+.rx .dlg-f .nota b { color: var(--tx); font-weight: 600; }
+.rx .dlg-f .arq { margin-right: auto; display: flex; align-items: center; gap: 6px; color: var(--tx2); min-width: 0; }
+.rx .dlg-f .arq b { color: var(--tx); font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rx .gbx { border: 1px solid var(--ln2); padding: 14px 10px 10px; position: relative; display: flex; flex-direction: column; gap: 7px; min-width: 0; }
+.rx .gbx > h3 { position: absolute; top: -9px; left: 8px; padding: 0 5px; background: var(--pal); color: var(--tx2); }
+.rx .gbx > p { color: var(--tx2); }
+.rx .fld { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.rx .fld > span:first-child { width: 120px; flex: none; color: var(--tx2); }
+.rx .fld .in, .rx .fld .cb { flex: 1 1 auto; height: 24px; }
+.rx .fld.fx > span:first-child { width: auto; flex: 1 1 auto; }
+.rx .fld .un { color: var(--tx2); flex: none; }
+.rx .fv { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.rx .fv > span:first-child { color: var(--tx2); white-space: nowrap; }
+.rx .fv .in, .rx .fv .cb { height: 24px; width: 100%; }
+.rx .c2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.rx .c3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.rx .row3 { display: flex; align-items: flex-end; gap: 10px; }
+.rx .nm, .rx input.in.nm { text-align: right; justify-content: flex-end; }
+.rx .nt { color: var(--tx2); line-height: 16px; white-space: normal; }
+.rx .opc { display: flex; align-items: center; gap: 7px; min-width: 0; }
+.rx label.opc { cursor: default; }
+.rx .opc.h { gap: 14px; }
+.rx .opc.h label { display: flex; align-items: center; gap: 7px; }
+.rx .opc .in.inl { flex: none; width: 56px; height: 22px; }
+.rx input.ck, .rx input.rd { appearance: none; -webkit-appearance: none; width: 13px; height: 13px; margin: 0; flex: none; border: 1px solid var(--tx3); background: var(--in); display: inline-grid; place-items: center; cursor: default; }
+.rx input.rd { border-radius: 50%; }
+.rx input.ck:checked::after { content: ""; width: 7px; height: 4px; margin-top: -2px; border-left: 2px solid var(--tx); border-bottom: 2px solid var(--tx); transform: rotate(-45deg); }
+.rx input.rd:checked::after { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--tx); }
+.rx input.ck:focus-visible, .rx input.rd:focus-visible { outline: 2px solid var(--ac); outline-offset: 1px; }
+.rx input.ck:disabled, .rx input.rd:disabled { opacity: 0.4; }
+.rx .dtabs { display: flex; flex: none; gap: 1px; border-bottom: 1px solid var(--ln2); padding: 0 12px; margin-top: 8px; }
+.rx .dtabs button { height: 24px; padding: 0 12px; color: var(--tx2); border: 1px solid transparent; border-bottom: 0; margin-bottom: -1px; border-radius: 2px 2px 0 0; white-space: nowrap; }
+.rx .dtabs button.on { color: var(--tx); font-weight: 600; background: var(--pal); border-color: var(--ln2); box-shadow: inset 0 2px 0 var(--ac); }
+.rx .btn { box-shadow: none; min-height: 0; line-height: 1.25; font-weight: 400; text-align: center; color: var(--tx); }
+.rx .btn:not(.ghost):not(.primary) { box-shadow: none; }
+.rx .btn:hover:not(:disabled):not(.off) { background: var(--hi2); }
+.rx .btn.pri:not(.ghost):not(.primary) { border-color: var(--ac); box-shadow: inset 0 0 0 1px var(--ac); font-weight: 600; background: var(--btn); }
+.rx .btn.sm { height: 24px; min-width: 0; padding: 0 10px; }
+.rx .btn.dg { color: var(--err); }
+.rx .btn.off, .rx .tbn.off { opacity: 0.5; }
+.rx .tbn:hover:not(:disabled):not(.off) { background: var(--hi2); }
+.rx .tbn:disabled { opacity: 0.4; }
+.rx .ib:disabled { opacity: 0.4; }
+.rx input.in, .rx textarea.in { height: 24px; }
+.rx textarea.in { height: auto; min-height: 58px; padding-top: 4px; padding-bottom: 4px; resize: none; line-height: 16px; display: block; }
+.rx input.in.invalid { border-color: var(--err); }
+.rx input.in:disabled, .rx select:disabled { opacity: 0.5; }
+.rx input.in.mono, .rx textarea.in.mono { font-family: var(--mono); }
+.rx .msg { display: flex; gap: 12px; align-items: flex-start; }
+.rx .msg p { color: var(--tx); line-height: 18px; white-space: normal; }
+.rx .msg p.d { color: var(--tx2); margin-top: 6px; }
+.rx .msg b { font-weight: 600; color: var(--tx-hi); }
+.rx .msg .qi { flex: none; margin-top: 1px; }
+.rx .msg .qi circle, .rx .msg .qi path { fill: none; stroke: var(--ac); stroke-width: 1.8; }
+.rx .msg .qi.wa path { stroke: var(--warn); }
+.rx .warnl { color: var(--warn-tx); }
+:root[data-theme='light'] .rx .warnl { color: var(--warn); }
+.rx .kv { display: flex; align-items: center; justify-content: flex-start; gap: 8px; min-height: 20px; white-space: nowrap; }
+.rx .kv > span:first-child { width: 122px; flex: none; color: var(--tx2); }
+.rx .kv b { font-weight: 600; }
+.rx .lin2 { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.rx .lin2 p { flex: 1 1 0; min-width: 0; margin-left: 4px; }
+.rx .lin { display: flex; align-items: center; gap: 10px; }
+.rx .lin > span { flex: 1 1 auto; color: var(--tx2); }
+.rx .lin b { color: var(--tx-hi); font-weight: 700; }
+.rx .lin .wr2 { white-space: normal; line-height: 16px; }
+.rx .rsl { color: var(--tx2); }
+.rx .rsl b { color: var(--tx-hi); font-weight: 600; }
+.rx .tk { display: flex; flex-wrap: wrap; gap: 4px; }
+.rx .tk .tbn { height: 20px; }
+.rx .rg { display: flex; flex-direction: column; gap: 7px; }
+
+/* ---------- 26. diálogo: grade de teclas (Atalhos), amostras, caixa de lista ---------- */
+.rx .kg { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; align-items: start; }
+.rx .ks { position: relative; overflow: auto; border: 1px solid var(--ln2); background: var(--cell); }
+.rx .kt { width: 100%; border-collapse: collapse; table-layout: fixed; }
+.rx .kt caption { height: 22px; line-height: 21px; padding: 0 8px; text-align: left; font-weight: 600; background: var(--ph); white-space: nowrap; }
+.rx .kt caption span { font-weight: 400; color: var(--tx2); }
+.rx .kt th, .rx .kt td { height: 24px; padding: 0 8px; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; border-right: 1px solid var(--ln3); border-bottom: 1px solid var(--ln3); font-weight: 400; }
+.rx .kt thead th { background: var(--cell); color: var(--tx2); font-weight: 600; border-top: 1px solid var(--ln); border-bottom: 1px solid var(--ln2); position: sticky; top: 0; z-index: 1; }
+.rx .kt tr.gr th { background: var(--pal); color: var(--tx2); font-weight: 600; }
+.rx .kt .c0 { width: 30px; padding: 0 0 0 7px; }
+.rx .kt .ct { width: 138px; padding: 0 3px; }
+.rx .kt .cf { width: 82px; text-align: center; color: var(--tx2); }
+.rx .kt td.ct { background: var(--in); }
+.rx .kt td.ct button { display: flex; width: 100%; height: 22px; align-items: center; padding: 0 4px; }
+.rx .kt td.ct button:focus-visible { outline: 2px solid var(--ac); outline-offset: -2px; }
+.rx .kt td.ct .esp { color: var(--tx); }
+.rx .kt tr.esc td { background: var(--hi2); }
+.rx .kt tr.esc td.ct { background: var(--in); box-shadow: inset 0 0 0 1px var(--ac); color: var(--tx); }
+.rx .kc { display: inline-flex; align-items: center; justify-content: center; min-width: 22px; height: 17px; padding: 0 5px; border: 1px solid var(--hi2-ln); background: var(--btn); color: var(--tx); font-weight: 600; border-radius: 2px; }
+.rx .sw { width: 12px; height: 12px; flex: none; border: 1px solid var(--tx3); border-radius: 0; margin: 0; vertical-align: baseline; display: block; }
+.rx .sw.on { outline: 2px solid var(--tx); outline-offset: 1px; }
+.rx .lbx { background: var(--in); border: 1px solid var(--ln2); overflow: auto; }
+.rx .lbi { width: 100%; height: 21px; display: flex; align-items: center; gap: 8px; padding: 0 8px; border: 1px solid transparent; }
+.rx .lbi.on { background: var(--hi); border-color: var(--ac); font-weight: 600; color: var(--tx-hi); }
+.rx .lbd { margin-left: auto; font-weight: 400; color: var(--tx); }
+
+/* ---------- 31. campo de cor: amostra + texto ---------- */
+.rx .cor { position: relative; display: flex; align-items: center; gap: 8px; height: 24px; padding: 0 6px; background: var(--in); border: 1px solid var(--ln2); border-radius: 2px; min-width: 0; }
+.rx .cor .cz { width: 30px; height: 14px; }
+.rx .cor.fl1 { flex: 1 1 auto; }
+.rx .cor input[type="color"] { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: default; padding: 0; border: 0; }
+.rx .cor:focus-within { outline: 2px solid var(--ac); outline-offset: -2px; }
+
+/* ---------- 32. controle deslizante (.sld) e grade 3 x 3 de posição (.pgd, .pgc) ---------- */
+.rx .sld { position: relative; display: block; height: 22px; touch-action: none; min-width: 60px; flex: 1 1 auto; color: var(--tx); }
+.rx .sld::before { content: ""; position: absolute; left: 0; right: 0; top: 10px; height: 2px; background: var(--ln2); }
+.rx .sld i { position: absolute; left: 0; top: 10px; height: 2px; background: var(--tx2); }
+.rx .sld b { position: absolute; top: 4px; width: 8px; height: 14px; margin-left: -4px; background: var(--tx); border: 1px solid var(--ln); }
+.rx .sld u { position: absolute; top: 14px; width: 1px; height: 4px; background: var(--tx3); text-decoration: none; }
+.rx .sld:focus-visible { outline: 2px solid var(--ac); outline-offset: 1px; }
+.rx .pgd { display: grid; grid-template-columns: repeat(3, 44px); grid-auto-rows: 32px; gap: 4px; padding: 6px; background: var(--in); border: 1px solid var(--ln2); align-self: flex-start; }
+.rx .pgc { border: 1px solid var(--ln2); display: flex; align-items: center; justify-content: center; }
+.rx .pgc i { width: 8px; height: 8px; background: var(--ln2); }
+.rx .pgc.on { background: var(--hi); border-color: var(--ac); }
+.rx .pgc.on i { background: var(--tx); }
+.rx .pgc:focus-visible { outline: 2px solid var(--ac); outline-offset: 1px; }
+
+/* ---------- peças de cada diálogo ---------- */
+/* Escala da folha */
+.rx .d2 { display: grid; grid-template-columns: 196px minmax(0, 1fr); gap: 12px; margin-top: 6px; }
+.rx .d2r { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.rx .gbx.esc .fld > span:first-child { width: auto; flex: 1 1 auto; }
+.rx .gbx.esc .fld .pre { color: var(--tx2); flex: none; width: auto; }
+.rx .gbx.esc .fld .in { flex: none; width: 62px; }
+.rx .gbx.esc .lbx { max-height: 250px; }
+/* Exportar PDF e Carimbos em lote */
+.rx .ex2 { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 14px; align-items: start; padding-top: 6px; }
+.rx .ex2 > div { display: flex; flex-direction: column; gap: 18px; min-width: 0; }
+.rx .dlg .ex2 .fld > span:first-child { width: 92px; }
+.rx .stp { display: grid; grid-template-columns: minmax(0, 1fr) 252px; gap: 16px; align-items: start; }
+.rx .stp > div { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.rx .stp h3 { color: var(--tx2); }
+.rx .prevst { max-width: 100%; max-height: 90px; object-fit: contain; background: #fff; border: 1px solid var(--ln2); }
+/* Colunas personalizadas e Modelo de status */
+.rx .col1 { display: flex; flex-direction: column; gap: 6px; }
+.rx .crw { display: flex; align-items: center; gap: 8px; }
+.rx .crw .in { flex: 1 1 auto; }
+.rx .crw .cb { flex: none; width: 110px; }
+.rx .crw .fm { flex: 1 1 auto; min-width: 0; }
+.rx .st-l { display: flex; flex-direction: column; border: 1px solid var(--ln2); background: var(--cell); }
+.rx .st-l .li { display: flex; align-items: center; gap: 6px; padding: 5px 6px; border-bottom: 1px solid var(--ln3); }
+.rx .st-l .li:last-child { border-bottom: 0; }
+.rx .st-l .li .in { flex: 1 1 auto; }
+.rx .st-l .cor { flex: none; width: 30px; padding: 0; justify-content: center; }
+.rx .st-l .cor .cz { width: 18px; height: 12px; border-color: var(--ln); }
+/* Renomear folhas */
+.rx .rnp { border: 1px solid var(--ln2); background: var(--cell); max-height: 220px; overflow: auto; }
+.rx .rnp .kv { min-height: 22px; padding: 0 8px; border-bottom: 1px solid var(--ln3); }
+.rx .rnp .kv:last-child { border-bottom: 0; }
+.rx .rnp .kv > span:first-child { flex: 1 1 0; min-width: 0; width: auto; overflow: hidden; text-overflow: ellipsis; }
+.rx .rnp .kv > b, .rx .rnp .kv > span:last-child { flex: 1 1 0; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.rx .rnp .kv.h { background: var(--ph); color: var(--tx2); font-weight: 600; }
+.rx .rnp .mais { padding: 4px 8px; color: var(--tx2); }
+.rx .in.ind { margin-left: 20px; width: calc(100% - 20px); }
+/* Base de preços */
+.rx .progress { height: 6px; background: var(--in); border: 1px solid var(--ln2); }
+.rx .progress > div { height: 100%; background: var(--ac); }
+/* Configurações */
+.rx .cfg { padding: 14px 14px 12px; gap: 14px; }
+.rx .cfg .c2c { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; align-items: stretch; }
+.rx .cfg .col { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.rx .cfg .gbx { gap: 8px; padding-top: 16px; }
+.rx .cfg .fld > span:first-child { width: 150px; }
+.rx .cfg .aj { padding-left: 158px; margin-top: -2px; }
+.rx .cfg .kv > span:first-child { width: 150px; }
+.rx .cfg .gbx.fl1 { flex: 1 1 auto; }
+.rx .cfg .vv { display: flex; align-items: center; gap: 8px; white-space: nowrap; }
+.rx .pvw { border: 1px solid var(--ln2); background: var(--pal); }
+.rx .pvw .dtabs { margin-top: 0; padding: 4px 6px 0; background: var(--rib2); }
+.rx .pv-r { display: flex; align-items: flex-start; gap: 3px; padding: 4px 4px 0; height: 80px; background: var(--rib); border-bottom: 1px solid var(--ln); }
+.rx .pv-b { padding: 10px; display: flex; flex-direction: column; gap: 12px; }
+.rx .pvw .l1 { display: flex; align-items: center; gap: 12px; white-space: nowrap; }
+.rx .pvw .lbx { margin: 0; }
+.rx .pv-s { display: flex; align-items: center; gap: 10px; height: 24px; background: var(--st); border-top: 1px solid var(--ln); white-space: nowrap; padding-left: 8px; overflow: hidden; }
+.rx .lc { color: var(--ac); }
+.rx .chp { min-width: 26px; height: 18px; padding: 0 6px; display: inline-flex; align-items: center; justify-content: center; font-weight: 600; border-radius: 2px; background: var(--ac); color: var(--on-ac); }
+.rx .th { width: 100%; border-collapse: collapse; table-layout: fixed; }
+.rx .th th, .rx .th td { height: 22px; padding: 0 8px; text-align: left; white-space: nowrap; border-bottom: 1px solid var(--ln3); font-weight: 400; }
+.rx .th thead th { color: var(--tx2); font-weight: 600; border-bottom: 1px solid var(--ln2); }
+.rx .notes { max-height: 160px; overflow: auto; border: 1px solid var(--ln2); background: var(--cell); padding: 6px 10px; color: var(--tx2); line-height: 17px; }
+.rx .notes .notes-h { margin: 6px 0 2px; color: var(--tx); font-weight: 600; }
+.rx .notes ul, .rx .notes ol { margin: 2px 0; padding-left: 18px; }
+.rx .notes a { color: var(--ac); }
+/* Marcador novo / editar */
+.rx .dlg-b.mkp { padding: 0; }
+.rx .mk-b { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 12px; padding: 16px 12px 12px; align-items: stretch; }
+.rx .mk-c { display: flex; flex-direction: column; gap: 15px; min-width: 0; }
+.rx .mk .gbx { gap: 6px; }
+.rx .mk .fld > span:first-child { width: 152px; }
+.rx .mk .f2 { display: flex; gap: 14px; }
+.rx .mk .f2 .fld { flex: 1 1 0; min-width: 0; }
+.rx .mk .f2 .fld.au > span:first-child { width: auto; }
+.rx .mk .vars { display: flex; flex-direction: column; gap: 1px; line-height: 17px; color: var(--tx2); }
+.rx .mk .res { border: 1px solid var(--ln2); background: var(--cell); max-height: 180px; overflow: auto; }
+.rx .mk .res button { display: flex; align-items: center; gap: 8px; width: 100%; min-height: 22px; padding: 0 8px; border-bottom: 1px solid var(--ln3); }
+.rx .mk .res button:hover { background: var(--hi2); }
+.rx .mk .res button .d { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rx .mk .res button .c { width: 60px; flex: none; color: var(--tx2); }
+.rx .mk .opcfld { padding-left: 160px; }
+
+/* ---------- aviso de folha sem escala: faixa fixa acima da mesa (16) ---------- */
+.rx .al .gl { color: var(--warn); }
+.rx .al.info .gl { color: var(--tx2); }
+:root[data-theme='light'] .rx .al .gl { color: var(--warn-tx); }
+.rx .al > span:not(.sp) { overflow: hidden; text-overflow: ellipsis; }
+.al-host { flex: none; min-width: 0; }
+.viewer-wrap { flex-direction: column; }
+.viewer-wrap > .viewer { flex: 1 1 0; min-height: 0; }
+
+/* ---------- aviso transitório (toast) ---------- */
+.rx.toast { position: fixed; left: 50%; bottom: 36px; transform: translateX(-50%); z-index: 200; display: inline-flex; align-items: center; gap: 8px; min-height: 28px; max-width: calc(100vw - 24px); padding: 4px 14px 4px 9px; background: var(--menu); border: 1px solid var(--hi2-ln); border-radius: 2px; box-shadow: var(--sombra); color: var(--tx); white-space: nowrap; backdrop-filter: none; -webkit-backdrop-filter: none; pointer-events: none; }
+.rx.toast .gl { flex: none; color: var(--tx2); }
+.rx.toast > span { overflow: hidden; text-overflow: ellipsis; }
+.rx.toast.er { border-color: var(--warn); }
+.rx.toast.er .gl { color: var(--warn-tx); }
+:root[data-theme='light'] .rx.toast.er .gl { color: var(--warn); }
+
+/* ---------- tela inicial sem arquivo ---------- */
+.viewer.empty.rx { display: grid; place-items: center; background: var(--canvas); }
+.rx .drop { width: min(560px, calc(100% - 32px)); min-height: 300px; max-height: calc(100% - 32px); border: 2px dashed var(--hi2-ln); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; padding: 16px; background: var(--canvas); text-align: center; }
+.viewer.empty.drag .drop { border-color: var(--ac); }
+.rx .drop h2 { font-size: 16px; font-weight: 600; line-height: 22px; color: var(--tx-hi); }
+.rx .drop p { color: var(--tx); }
+.rx .dr-bt { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 8px; margin-top: 4px; }
+.rx .dr-ic { color: var(--ico); }
+.rx .drop kbd { padding: 0 6px; border: 1px solid var(--ln2); background: var(--in); color: var(--tx2); }
+.rx .drop .btn { min-width: 0; }
+
+/* ---------- passo a passo e dicas ricas na estética R3 ---------- */
+.tour.rx .tour-spot { border-radius: 2px; box-shadow: 0 0 0 9999px rgba(8, 10, 16, 0.62), 0 0 0 2px var(--ac); }
+.tour.rx .tour-bubble { border-radius: 3px; background: var(--menu); border: 1px solid var(--hi2-ln); box-shadow: var(--sombra); padding: 12px 14px 10px; backdrop-filter: none; -webkit-backdrop-filter: none; }
+.tour.rx .tour-step { font-size: 12px; letter-spacing: 0; text-transform: none; color: var(--tx2); font-weight: 400; }
+.tour.rx .tour-bubble h3 { font-size: 13px; font-weight: 600; margin: 3px 0 5px; color: var(--tx-hi); }
+.tour.rx .tour-bubble p { font-size: 12px; line-height: 17px; color: var(--tx2); margin: 0 0 10px; }
+.tour.rx .tour-actions { display: flex; align-items: center; gap: 6px; }
+.tour.rx .tour-actions .sp { flex: 1 1 auto; }
+.rich-tip.rx { border-radius: 2px; background: var(--menu); border: 1px solid var(--hi2-ln); box-shadow: var(--sombra); padding: 8px 10px 9px; font-size: 12px; backdrop-filter: none; -webkit-backdrop-filter: none; }
+.rich-tip.rx .rich-tip-head b { font-size: 12px; font-weight: 600; }
+.rich-tip.rx .rich-tip-head kbd { background: var(--in); border: 1px solid var(--ln2); border-radius: 0; padding: 0 5px; font-size: 12px; color: var(--tx2); }
+.rich-tip.rx p { font-size: 12px; line-height: 16px; margin: 5px 0 7px; color: var(--tx2); }
+.rich-tip.rx .rich-tip-demo { background: #fff; border: 1px solid var(--ln2); border-radius: 0; }
+
+/* ---------- janela estreita e celular ---------- */
+@media (max-width: 820px) {
+  .rx .cfg .c2c, .rx .ex2, .rx .stp, .rx .mk-b, .rx .d2 { grid-template-columns: minmax(0, 1fr); }
+  .rx .dlg { max-width: calc(100vw - 16px); }
+  .rx.veu { padding: 8px; }
+  .rx .kt .cf, .rx .kt th.cf { display: none; }
+  .rx .fld { flex-wrap: wrap; }
+  .rx .cfg .aj { padding-left: 0; }
+  .rx .al { height: auto; min-height: 30px; flex-wrap: wrap; white-space: normal; padding-top: 4px; padding-bottom: 4px; }
+  .app.mobile .rx.toast { bottom: calc(150px + env(safe-area-inset-bottom)); }
+}
+
+/* ---------- ajustes finais dos diálogos ---------- */
+.rx a.btn { color: var(--tx); text-decoration: none; }
+.rx .tbn.pickl { position: relative; }
+.rx .tbn.pickl input[type="color"] { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; padding: 0; border: 0; cursor: default; }
+.rx .tbn.pickl:focus-within { outline: 2px solid var(--ac); outline-offset: -2px; }
+.rx .dlg-b.keys { overflow: hidden; }
+.rx .dlg-b.keys > .kg { flex: 1 1 0; min-height: 0; grid-template-rows: minmax(0, 1fr); }
+.rx .dlg-b.keys > .kg > .ks { height: 100%; }
+.rx .dlg-b > .c2c { flex: 1 1 auto; }
+.rx .cor > .cz:only-child { margin: 0 auto; }
+/* demos das dicas: o desenho está sobre papel branco, então usa o acento do tema claro (o laranja de antes era marca, não interface) */
+:root { --demo-ac: var(--acento-claro); }
+.rx .btn { flex: none; }
+.rx .mk .f2 .fld.cfx { flex: 0 0 auto; }
+.rx .mk .cor.w112 { flex: none; width: 112px; }
+/* o index.css usa .pri para o ponto de prioridade (8 px de largura): o botão principal dos diálogos não herda isso */
+.rx .btn.pri { width: auto; }
+/* entrada e saída (Presence) do aviso e do véu dos diálogos */
+.rx.toast { animation: toast-in var(--t-med) var(--ease-out); }
+.presence.leaving .rx.veu, .presence.leaving .rx.toast { animation: fadeout var(--t-fast) ease forwards; pointer-events: none; }
+/* vidro (interruptor em Configurações > Aparência, desligado por padrão): o diálogo fica translúcido; o título e o rodapé seguem opacos */
+:root:not([data-glass='off']) .rx .dlg { background: var(--glass-bg); backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur); }
+@media (prefers-reduced-transparency: reduce) {
+  .rx .dlg { background: var(--pal) !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
+}
+
+/* ---------- estados vazios e erros no estilo R3 (modos sem conteúdo, 3D sem escala ou sem volumes, falha inesperada) ---------- */
+.pages-view.empty.rx { background: var(--canvas); border: 0; border-radius: 0; }
+.rx .vz { color: var(--tx); text-align: center; padding: 0 16px; }
+.v3-empty.rx { border-radius: 2px; background: var(--menu); border: 1px solid var(--hi2-ln); box-shadow: var(--sombra); color: var(--tx); font-size: 12px; line-height: 17px; backdrop-filter: none; -webkit-backdrop-filter: none; }
+.crash.rx { max-width: 460px; margin: 18vh auto 0; color: var(--tx); }
+.crash.rx h2 { font-size: 16px; font-weight: 600; color: var(--tx-hi); margin: 0 0 8px; }
+.crash.rx p { color: var(--tx2); line-height: 18px; }
+.crash.rx .row { justify-content: center; margin-top: 16px; }
+.crash.rx .btn { flex: none; min-width: 0; }
+
+/* ================================================================ R3 — fase 4: Pranchas, Comparar e 3D
+   Faixa (revisões A e B, caixa de marcar com contagem, contador do resultado), grade de folhas, mesa da comparação e leituras da barra de status.
+   Medidas de rodada2/pranchas.src.html e comparar*.src.html. */
+.rx .rvb { display: flex; align-items: flex-start; gap: 8px; padding: 2px 4px 0 2px; }
+.rx .rvb .ic { margin-top: 4px; }
+.rx .rvb .col { display: flex; flex-direction: column; min-width: 0; }
+.rx .rvb .rl { height: 24px; display: flex; align-items: center; white-space: nowrap; color: var(--tx2); }
+.rx .rvb .cb { width: 100%; }
+.rx .rvb .rs2 { height: 22px; display: flex; align-items: center; color: var(--tx3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rx .rvb.nolead { padding-left: 4px; }
+.rx .grp > .gb > .vs2 { height: 56px; margin-top: 8px; align-self: flex-start; }
+.rx .rtx { align-self: flex-start; padding: 6px 8px 0 2px; color: var(--tx2); white-space: nowrap; }
+.rx .sb .cnt { padding-left: 8px; color: var(--tx3); }
+.rx .ck.on { border-color: var(--tx2); }
+.rx .sb[role='checkbox'] .sl { flex: 1 1 auto; }
+
+/* barra de status: leituras por modo */
+.rx .stx { display: inline-flex; align-items: center; gap: 5px; padding: 0 10px; border-left: 1px solid var(--ln2); color: var(--tx2); }
+.rx .stx b { font-weight: 600; color: var(--tx); }
+
+/* Pranchas: papel sobre a mesa, sem cartões */
+.rx.pgr { position: relative; flex: 1 1 auto; min-height: 0; overflow: auto; background: var(--canvas); display: grid; grid-template-columns: repeat(auto-fill, 252px); column-gap: 22px; row-gap: 20px; justify-content: start; align-content: start; padding: 20px 21px; }
+.rx .fo { position: relative; display: flex; flex-direction: column; min-width: 0; }
+.rx .fo-p { height: 178px; display: flex; align-items: center; justify-content: center; }
+.rx .fo-p .thumb-img { height: 100%; width: auto; max-width: 100%; border-radius: 0; background: #fff; box-shadow: 0 0 0 1px #1c1d1f, 1px 2px 0 1px #303135, 3px 5px 9px rgba(0, 0, 0, 0.38); }
+:root[data-theme='light'] .rx .fo-p .thumb-img { box-shadow: 0 0 0 1px #2e3136, 0 3px 10px rgba(0, 0, 0, 0.35); }
+.rx .fo-c { margin-top: 9px; height: 22px; display: flex; align-items: center; gap: 6px; padding: 0 4px 0 2px; white-space: nowrap; border: 1px solid transparent; }
+.rx .fo-n { min-width: 24px; text-align: center; font-weight: 700; color: var(--tx-hi); border: 1px solid var(--ln); background: var(--in); line-height: 16px; }
+.rx .fo-l { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; font-weight: 600; }
+.rx .fo-in { flex: 1 1 auto; min-width: 0; height: 18px; padding: 0 4px; font: inherit; font-weight: 600; color: var(--tx); background: var(--in); border: 1px solid var(--ac); border-radius: 0; outline: 0; user-select: text; }
+.rx .fo-e { padding: 0 4px; line-height: 15px; border: 1px solid #8a8d94; color: var(--tx); }
+.rx .fo-e[data-warn] { color: var(--warn-tx); border-color: var(--warn); background: var(--warn-bg); }
+.rx .fo-d { height: 17px; display: flex; justify-content: space-between; gap: 8px; padding: 0 5px 0 33px; color: var(--tx2); white-space: nowrap; }
+.rx .fo-d b { font-weight: 600; color: var(--tx); }
+.rx .fo.sel .fo-p .thumb-img { outline: 2px solid var(--ac); outline-offset: 3px; }
+.rx .fo.sel .fo-c { background: var(--hi); border-color: var(--ac); }
+.rx .fo.dragging { opacity: 0.35; }
+.rx .fo.drop-before::before, .rx .fo.drop-after::after { content: ''; position: absolute; top: -6px; width: 3px; height: 190px; background: var(--ac); }
+.rx .fo.drop-before::before { left: -12px; }
+.rx .fo.drop-after::after { right: -12px; }
+@media (max-width: 820px) {
+  .rx.pgr { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); column-gap: 14px; padding: 14px; }
+  .rx .fo-p { height: 150px; }
+}
+
+/* Comparar: mesa cinza com folga nos dois lados; lado a lado em dois painéis com cabeçalho */
+.rx.cmp-scroll, .cmp-scroll { flex: 1 1 auto; min-width: 0; overflow: auto; background: var(--canvas); }
+.cmp-mesa { display: flex; justify-content: center; width: max-content; min-width: 100%; padding: 30px; box-sizing: border-box; }
+.cmp-sheet { position: relative; flex: none; background: #fff; box-shadow: 0 0 0 1px #1c1d1f, 0 3px 10px rgba(0, 0, 0, 0.35); }
+.cmp-sheet canvas { display: block; image-rendering: auto; }
+.rx.cmp-side { flex: 1 1 auto; min-width: 0; display: grid; grid-template-columns: minmax(0, 1fr) 1px minmax(0, 1fr); background: var(--canvas); }
+.rx .cmp-pane { position: relative; overflow: hidden; min-width: 0; }
+.rx .cmp-pane .cmp-scroll { position: absolute; inset: 22px 0 0 0; }
+.rx .pnh { position: absolute; left: 0; right: 0; top: 0; z-index: 2; height: 22px; display: flex; align-items: center; gap: 6px; padding: 0 8px; background: var(--rib2); border-bottom: 1px solid var(--ln); white-space: nowrap; color: var(--tx2); }
+.rx .pnh b { color: var(--tx); font-weight: 600; }
+.rx .dvs { background: var(--ln); }
+.rx .tag { display: inline-flex; align-items: center; gap: 5px; padding: 0 5px 0 4px; line-height: 15px; font-weight: 700; color: var(--tx-hi); background: var(--in); border: 1px solid var(--ln2); }
+.rx .tag .sw.red { background: #ff3c00; }
+.rx .tag .sw.blue { background: #0000ff; }
+.app:not(.mobile) .compare > .al-host { flex: none; }
+
+/* contador do grupo Resultado: quebra em duas linhas em vez de alargar a faixa (janela de 1280 px) */
+.rx .rtx { white-space: normal; max-width: 128px; line-height: 14px; }
+.v3-empty.rx p { margin: 0; }
+
+/* 3D em tela dividida (aba Início/Exibir): a barra de camadas e vistas é uma faixa fina no topo, não um cartão sobre a cena */
+.view3d.compact .v3-bar { left: 0; right: 0; top: 0; max-width: none; gap: 4px; padding: 3px 6px; border: 0; border-bottom: 1px solid var(--ln); border-radius: 0; box-shadow: none; background: var(--rib2); backdrop-filter: none; -webkit-backdrop-filter: none; }
+.view3d.compact .v3-bar .chip { border-radius: 0; padding: 1px 8px; font-size: 12px; }
+.view3d.compact .v3-bar .btn { border-radius: 0; }
+
+/* painel do Claude (coluna da direita): mesmas medidas das paletas; o laranja do Claude só aparece aqui */
+.pal-col.right .claude { font-size: 12px; color: var(--text); }
+.pal-col.right .claude-head { height: 24px; padding: 0 6px 0 8px; background: var(--ph); border-bottom: 1px solid var(--ln); gap: 6px; font-size: 12px; }
+.pal-col.right .claude-head .icon-btn { border-radius: 0; }
+.pal-col.right .claude-list { padding: 8px; gap: 6px; }
+.pal-col.right .claude-empty p { line-height: 17px; }
+.pal-col.right .suggestion { border-radius: 0; background: var(--cell); border: 1px solid var(--ln2); padding: 6px 8px; font-size: 12px; line-height: 16px; }
+.pal-col.right .suggestion:hover { border-color: var(--claude-orange); background: color-mix(in srgb, var(--claude-orange) 10%, var(--cell)); }
+.pal-col.right .bubble { border-radius: 0; max-width: 100%; padding: 6px 8px; font-size: 12px; line-height: 17px; animation: none; border: 1px solid var(--ln2); }
+.pal-col.right .bubble.user { align-self: stretch; background: var(--hi); color: var(--text); border-color: var(--ac); }
+.pal-col.right .bubble.assistant { align-self: stretch; background: var(--cell); }
+.pal-col.right .bubble.error { border-color: var(--warn); background: var(--warn-bg); color: var(--warn-tx); }
+.pal-col.right .bubble code { border-radius: 0; }
+.pal-col.right .tool-line { font-size: 12px; color: var(--text-2); padding-left: 2px; }
+.pal-col.right .claude-input { padding: 6px; gap: 6px; border-top: 1px solid var(--ln); }
+.pal-col.right .claude-input textarea { border-radius: 0; background: var(--in); border: 1px solid var(--ln2); padding: 5px 7px; font-size: 12px; }
+.pal-col.right .send { width: auto; min-width: 28px; height: 28px; border-radius: 0; padding: 0 8px; gap: 6px; }
+.pal-col.right .send.stop { background: var(--btn); border: 1px solid var(--ln2); display: inline-flex; align-items: center; }
+.pal-col.right .send.stop svg { color: var(--err); fill: var(--err); }
+.send .send-t { display: none; }
+.pal-col.right .send .send-t { display: inline; font-size: 12px; }

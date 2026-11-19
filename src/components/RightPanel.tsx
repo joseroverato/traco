@@ -1,6 +1,8 @@
 import { Suspense, lazy, useState } from 'react'
 import { ChevronsRight, Copy, Download, Pencil, Plus, RotateCcw, Send, Sparkles, SquareDashed, Trash2, Upload, X } from 'lucide-react'
-import { defaultPresets, uid, useStore } from '../store'
+import { useStore } from '../store'
+import { activatePreset, deletePreset, duplicatePreset, editPreset, exportLibrary, importLibrary, newPreset, presetInUse, resetLibrary } from '../presetLib'
+import { TabPill } from './TabPill'
 import type { Markup, Preset } from '../types'
 import { DEFAULT_SOLID_HEIGHT, fmt, measureOf, polyArea, scaleFor } from '../geometry'
 import { isIssue, issueList } from '../issues'
@@ -140,7 +142,7 @@ function Props() {
       )}
       {m.kind === 'redact' && (
         <>
-          <div className="seg wide">
+          <div className="seg wide"><TabPill />
             <button className={m.fill === '#000000' ? 'active' : ''} onClick={() => up({ fill: '#000000' })}>{t('rightpanel.tarja_preta')}</button>
             <button className={m.fill === '#ffffff' ? 'active' : ''} onClick={() => up({ fill: '#ffffff' })}>{t('rightpanel.apagar_branco')}</button>
           </div>
@@ -284,35 +286,11 @@ function Presets() {
   const groups = Array.from(new Set(s.presets.map((p) => p.group)))
   const list = s.presets.filter((p) => `${p.name} ${p.group} ${p.code}`.toLowerCase().includes(q.toLowerCase()))
 
-  const activate = (p: Preset) => {
-    if (s.activePreset === p.id) return s.set({ activePreset: null, tool: 'select' })
-    s.set({ activePreset: p.id, tool: p.measure, selected: [] })
-  }
-  const add = () => s.set({ presetDialog: { id: null } })
-  const exportLib = () => {
-    const blob = new Blob([JSON.stringify(s.presets, null, 2)], { type: 'application/json' })
-    const a = document.createElement('a')
-    a.href = URL.createObjectURL(blob)
-    a.download = 'biblioteca-marcadores.json'
-    a.click()
-  }
-  const importLib = () => {
-    const i = document.createElement('input')
-    i.type = 'file'
-    i.accept = '.json'
-    i.onchange = async () => {
-      const f = i.files?.[0]
-      if (!f) return
-      try {
-        const arr = JSON.parse(await f.text()) as Preset[]
-        s.setPresets([...s.presets, ...arr.map((p) => ({ ...p, id: uid() }))])
-        s.notify(t('rightpanel.marcadores_importados', { length: arr.length }))
-      } catch {
-        s.notify(t('rightpanel.arquivo_de_biblioteca_invalido'))
-      }
-    }
-    i.click()
-  }
+  const inUse = (p: Preset) => presetInUse(s.activePreset, s.tool, p)
+  const activate = activatePreset
+  const add = newPreset
+  const exportLib = exportLibrary
+  const importLib = importLibrary
 
   return (
     <div className="presets">
@@ -329,16 +307,16 @@ function Presets() {
             <div className="group-title">{g}</div>
             {items.map((p) => (
               <div key={p.id}>
-                <div className={`preset ${s.activePreset === p.id ? 'active' : ''}`} onClick={() => activate(p)}>
+                <div className={`preset ${inUse(p) ? 'active' : ''}`} onClick={() => activate(p)}>
                   <PresetSwatch p={p} />
                   <div className="preset-txt">
                     <span className="preset-name">{p.name}</span>
                     <span className="muted small">{MEASURE_LABEL[p.measure]}{p.formula ? ` = ${p.formula}` : p.factor !== 1 ? ` × ${fmt(p.factor)}` : ''} · {unitName(p.resultUnit)}{p.code ? ` · ${p.code}` : ''}</span>
                   </div>
                   <div className="preset-actions" onClick={(e) => e.stopPropagation()}>
-                    <button className="icon-btn xs" data-tip={t('rightpanel.editar')} onClick={() => s.set({ presetDialog: { id: p.id } })}><Pencil size={13} /></button>
-                    <button className="icon-btn xs" data-tip={t('rightpanel.duplicar')} onClick={() => { const i = s.presets.indexOf(p); const c = { ...p, id: uid(), name: t('rightpanel.copia_de', { nome: p.name }) }; s.setPresets([...s.presets.slice(0, i + 1), c, ...s.presets.slice(i + 1)]); s.set({ presetDialog: { id: c.id } }) }}><Copy size={13} /></button>
-                    <button className="icon-btn xs" data-tip={t('rightpanel.excluir')} onClick={() => s.setPresets(s.presets.filter((x) => x.id !== p.id))}><Trash2 size={13} /></button>
+                    <button className="icon-btn xs" data-tip={t('rightpanel.editar')} onClick={() => editPreset(p.id)}><Pencil size={13} /></button>
+                    <button className="icon-btn xs" data-tip={t('rightpanel.duplicar')} onClick={() => duplicatePreset(p)}><Copy size={13} /></button>
+                    <button className="icon-btn xs" data-tip={t('rightpanel.excluir')} onClick={() => deletePreset(p.id)}><Trash2 size={13} /></button>
                   </div>
                 </div>
               </div>
@@ -349,7 +327,7 @@ function Presets() {
       <div className="pad-x lib-actions">
         <button className="btn ghost sm" onClick={importLib}><Upload size={13} /> {t('rightpanel.importar')}</button>
         <button className="btn ghost sm" onClick={exportLib}><Download size={13} /> {t('rightpanel.exportar')}</button>
-        <button className="btn ghost sm" onClick={() => s.setPresets(defaultPresets())}><RotateCcw size={13} /> {t('rightpanel.padrao')}</button>
+        <button className="btn ghost sm" onClick={resetLibrary}><RotateCcw size={13} /> {t('rightpanel.padrao')}</button>
       </div>
     </div>
   )
@@ -383,6 +361,7 @@ export function RightPanel() {
   return (
     <aside className="panel right">
       <header className="tabs">
+        <TabPill />
         <button className={cur === 'presets' ? 'active' : ''} onClick={() => set({ selected: [], rightTab: 'presets' })}>{t('rightpanel.marcadores')}</button>
         <button className={cur === 'props' ? 'active' : ''} onClick={() => set({ rightTab: 'props' })}>{t('rightpanel.propriedades')}</button>
         <button className={`claude-tab ${cur === 'claude' ? 'active' : ''}`} onClick={() => set({ rightTab: 'claude' })}><Sparkles size={13} /> Claude</button>
